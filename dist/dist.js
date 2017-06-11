@@ -155,5 +155,7 @@ class ComponentManager {
   }
 }
 
+window.ComponentManager = ComponentManager;
+
 
 },{}]},{},[1]);

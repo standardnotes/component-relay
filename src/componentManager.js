@@ -3,6 +3,7 @@ class ComponentManager {
   constructor(loggingEnabled) {
     this.sentMessages = [];
     this.messageQueue = [];
+    this.loggingEnabled = loggingEnabled;
 
     window.addEventListener("message", function(event){
       if(loggingEnabled) {
@@ -60,6 +61,10 @@ class ComponentManager {
     var sentMessage = JSON.parse(JSON.stringify(message));
     sentMessage.callback = callback;
     this.sentMessages.push(sentMessage);
+
+    if(this.loggingEnabled) {
+      console.log("Posting message:", message);
+    }
 
     window.parent.postMessage(message, '*');
   }
@@ -139,7 +144,9 @@ class ComponentManager {
   activateThemes(urls) {
     this.deactivateAllCustomThemes();
 
-    console.log("Activiating themes", urls);
+    if(this.loggingEnabled) {
+      console.log("Activating themes:", urls);
+    }
 
     if(!urls) {
       return;

@@ -16,6 +16,8 @@ class ComponentManager {
     if(payload.action === "component-registered") {
       this.sessionKey = payload.sessionKey;
       this.onReady();
+    } else if(payload.action === "themes") {
+      this.activateThemes(payload.data.themes);
     }
 
     else if(payload.original) {
@@ -75,13 +77,10 @@ class ComponentManager {
     }.bind(this));
   }
 
-  streamReferences(callback) {
-    this.postMessage("stream-references", {}, function(data){
-      var references = data.references;
-      var tagRefs = references.filter(function(ref){
-        return ref.content_type === "Tag";
-      })
-      callback(tagRefs);
+  streamContextItem(callback) {
+    this.postMessage("stream-context-item", null, function(data){
+      var item = data.item;
+      callback(item);
     }.bind(this));
   }
 
@@ -133,6 +132,48 @@ class ComponentManager {
     copy.parent = null;
     return copy;
   }
+
+
+  /* Themes */
+
+  activateThemes(urls) {
+    this.deactivateAllCustomThemes();
+
+    console.log("Activiating themes", urls);
+
+    if(!urls) {
+      return;
+    }
+
+    for(var url of urls) {
+      if(!url) {
+        continue;
+      }
+
+      var link = document.createElement("link");
+      link.href = url;
+      link.type = "text/css";
+      link.rel = "stylesheet";
+      link.media = "screen,print";
+      link.className = "custom-theme";
+      document.getElementsByTagName("head")[0].appendChild(link);
+    }
+  }
+
+  deactivateAllCustomThemes() {
+    var elements = document.getElementsByClassName("custom-theme");
+
+    [].forEach.call(elements, function (element) {
+      if(element) {
+        element.disabled = true;
+        element.parentNode.removeChild(element);
+      }
+    });
+  }
+
+
+  /* Utilities */
+
 
   generateUUID() {
     var crypto = window.crypto || window.msCrypto;

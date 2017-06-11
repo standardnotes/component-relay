@@ -1,11 +1,11 @@
 class ComponentManager {
 
-  constructor($timeout) {
+  constructor() {
     this.sentMessages = [];
     this.messageQueue = [];
 
     window.addEventListener("message", function(event){
-      console.log("Autocomplete tags: message received", event.data);
+      console.log("Components API: message received", event.data);
       this.handleMessage(event.data);
     }.bind(this), false);
   }
@@ -160,4 +160,4 @@ class ComponentManager {
 }
 
 window.ComponentManager = ComponentManager;
-window.SNComponentManager = new SNComponentManager()
+window.SNComponentManager = new ComponentManager()

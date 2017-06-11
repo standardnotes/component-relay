@@ -1,0 +1,14 @@
+{
+  "name": "components-api",
+  "description": "Standard Notes componenet API",
+  "main": "dist/dist.js",
+  "license": "MIT",
+  "homepage": "https://github.com/sn-extensions/components-api",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

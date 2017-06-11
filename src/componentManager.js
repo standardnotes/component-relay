@@ -1,11 +1,13 @@
 class ComponentManager {
 
-  constructor() {
+  constructor(loggingEnabled) {
     this.sentMessages = [];
     this.messageQueue = [];
 
     window.addEventListener("message", function(event){
-      console.log("Components API: message received", event.data);
+      if(loggingEnabled) {
+        console.log("Components API Message received:", event.data);
+      }
       this.handleMessage(event.data);
     }.bind(this), false);
   }
@@ -158,6 +160,3 @@ class ComponentManager {
     }
   }
 }
-
-window.ComponentManager = ComponentManager;
-window.SNComponentManager = new ComponentManager()

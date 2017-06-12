@@ -1,9 +1,10 @@
 class ComponentManager {
 
-  constructor(loggingEnabled) {
+  constructor(loggingEnabled, onReady) {
     this.sentMessages = [];
     this.messageQueue = [];
     this.loggingEnabled = loggingEnabled;
+    this.onReadyCallback = onReady;
 
     window.addEventListener("message", function(event){
       if(loggingEnabled) {
@@ -16,7 +17,13 @@ class ComponentManager {
   handleMessage(payload) {
     if(payload.action === "component-registered") {
       this.sessionKey = payload.sessionKey;
+      this.componentData = payload.componentData;
       this.onReady();
+
+      if(this.loggingEnabled) {
+        console.log("Component successfully registered with payload:", payload);
+      }
+
     } else if(payload.action === "themes") {
       this.activateThemes(payload.data.themes);
     }
@@ -38,6 +45,24 @@ class ComponentManager {
       this.postMessage(message.action, message.data, message.callback);
     }
     this.messageQueue = [];
+
+    if(this.onReadyCallback) {
+      this.onReadyCallback();
+    }
+  }
+
+  setComponentDataValueForKey(key, value) {
+    this.componentData[key] = value;
+    this.postMessage("set-component-data", {componentData: this.componentData}, function(data){});
+  }
+
+  clearComponentData() {
+    this.componentData = {};
+    this.postMessage("set-component-data", {componentData: this.componentData}, function(data){});
+  }
+
+  componentDataValueForKey(key) {
+    return this.componentData[key];
   }
 
   postMessage(action, data, callback) {

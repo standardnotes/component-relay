@@ -1,10 +1,11 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 class ComponentManager {
 
-  constructor(loggingEnabled) {
+  constructor(loggingEnabled, onReady) {
     this.sentMessages = [];
     this.messageQueue = [];
     this.loggingEnabled = loggingEnabled;
+    this.onReadyCallback = onReady;
 
     window.addEventListener("message", function (event) {
       if (loggingEnabled) {
@@ -17,7 +18,12 @@ class ComponentManager {
   handleMessage(payload) {
     if (payload.action === "component-registered") {
       this.sessionKey = payload.sessionKey;
+      this.componentData = payload.componentData;
       this.onReady();
+
+      if (this.loggingEnabled) {
+        console.log("Component successfully registered with payload:", payload);
+      }
     } else if (payload.action === "themes") {
       this.activateThemes(payload.data.themes);
     } else if (payload.original) {
@@ -37,6 +43,24 @@ class ComponentManager {
       this.postMessage(message.action, message.data, message.callback);
     }
     this.messageQueue = [];
+
+    if (this.onReadyCallback) {
+      this.onReadyCallback();
+    }
+  }
+
+  setComponentDataValueForKey(key, value) {
+    this.componentData[key] = value;
+    this.postMessage("set-component-data", { componentData: this.componentData }, function (data) {});
+  }
+
+  clearComponentData() {
+    this.componentData = {};
+    this.postMessage("set-component-data", { componentData: this.componentData }, function (data) {});
+  }
+
+  componentDataValueForKey(key) {
+    return this.componentData[key];
   }
 
   postMessage(action, data, callback) {

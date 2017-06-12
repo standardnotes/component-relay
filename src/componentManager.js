@@ -1,13 +1,14 @@
 class ComponentManager {
 
-  constructor(loggingEnabled, onReady) {
+  constructor(permissions, onReady) {
     this.sentMessages = [];
     this.messageQueue = [];
-    this.loggingEnabled = loggingEnabled;
+    this.permissions = permissions;
+    this.loggingEnabled = false;
     this.onReadyCallback = onReady;
 
     window.addEventListener("message", function(event){
-      if(loggingEnabled) {
+      if(this.loggingEnabled) {
         console.log("Components API Message received:", event.data);
       }
       this.handleMessage(event.data);
@@ -80,6 +81,7 @@ class ComponentManager {
       data: data,
       messageId: this.generateUUID(),
       sessionKey: this.sessionKey,
+      permissions: this.permissions,
       api: "component"
     }
 

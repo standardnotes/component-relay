@@ -149,7 +149,7 @@ class ComponentManager {
   }
 
   saveItem(item) {
-    this.saveItems[item];
+    this.saveItems([item]);
   }
 
   saveItems(items) {

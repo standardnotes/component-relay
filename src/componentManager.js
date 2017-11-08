@@ -1,4 +1,4 @@
-export default class ComponentManager {
+class ComponentManager {
 
   constructor(permissions, onReady) {
     this.sentMessages = [];
@@ -242,6 +242,11 @@ export default class ComponentManager {
       return uuid;
     }
   }
+}
+
+
+if(typeof module != "undefined" && typeof module.exports != "undefined") {
+  module.exports = ComponentManager;
 }
 
 if(window) {

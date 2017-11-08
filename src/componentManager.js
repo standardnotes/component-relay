@@ -1,4 +1,4 @@
-class ComponentManager {
+export default class ComponentManager {
 
   constructor(permissions, onReady) {
     this.sentMessages = [];
@@ -244,4 +244,6 @@ class ComponentManager {
   }
 }
 
-window.ComponentManager = ComponentManager;
+if(window) {
+  window.ComponentManager = ComponentManager;
+}

@@ -1,7 +1,17 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-class ComponentManager {
+"use strict";
 
-  constructor(permissions, onReady) {
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var ComponentManager = function () {
+  function ComponentManager(permissions, onReady) {
+    _classCallCheck(this, ComponentManager);
+
     this.sentMessages = [];
     this.messageQueue = [];
     this.permissions = permissions;
@@ -16,226 +26,300 @@ class ComponentManager {
     }.bind(this), false);
   }
 
-  handleMessage(payload) {
-    if (payload.action === "component-registered") {
-      this.sessionKey = payload.sessionKey;
-      this.componentData = payload.componentData;
-      this.onReady();
+  _createClass(ComponentManager, [{
+    key: "handleMessage",
+    value: function handleMessage(payload) {
+      if (payload.action === "component-registered") {
+        this.sessionKey = payload.sessionKey;
+        this.componentData = payload.componentData;
+        this.onReady();
 
-      if (this.loggingEnabled) {
-        console.log("Component successfully registered with payload:", payload);
+        if (this.loggingEnabled) {
+          console.log("Component successfully registered with payload:", payload);
+        }
+      } else if (payload.action === "themes") {
+        this.activateThemes(payload.data.themes);
+      } else if (payload.original) {
+        // get callback from queue
+        var originalMessage = this.sentMessages.filter(function (message) {
+          return message.messageId === payload.original.messageId;
+        })[0];
+
+        if (originalMessage.callback) {
+          originalMessage.callback(payload.data);
+        }
       }
-    } else if (payload.action === "themes") {
-      this.activateThemes(payload.data.themes);
-    } else if (payload.original) {
-      // get callback from queue
-      var originalMessage = this.sentMessages.filter(function (message) {
-        return message.messageId === payload.original.messageId;
-      })[0];
+    }
+  }, {
+    key: "onReady",
+    value: function onReady() {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
 
-      if (originalMessage.callback) {
-        originalMessage.callback(payload.data);
+      try {
+        for (var _iterator = this.messageQueue[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var message = _step.value;
+
+          this.postMessage(message.action, message.data, message.callback);
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+
+      this.messageQueue = [];
+
+      if (this.onReadyCallback) {
+        this.onReadyCallback();
       }
     }
-  }
-
-  onReady() {
-    for (var message of this.messageQueue) {
-      this.postMessage(message.action, message.data, message.callback);
+  }, {
+    key: "setComponentDataValueForKey",
+    value: function setComponentDataValueForKey(key, value) {
+      this.componentData[key] = value;
+      this.postMessage("set-component-data", { componentData: this.componentData }, function (data) {});
     }
-    this.messageQueue = [];
-
-    if (this.onReadyCallback) {
-      this.onReadyCallback();
+  }, {
+    key: "clearComponentData",
+    value: function clearComponentData() {
+      this.componentData = {};
+      this.postMessage("set-component-data", { componentData: this.componentData }, function (data) {});
     }
-  }
+  }, {
+    key: "componentDataValueForKey",
+    value: function componentDataValueForKey(key) {
+      return this.componentData[key];
+    }
+  }, {
+    key: "postMessage",
+    value: function postMessage(action, data, callback) {
+      if (!this.sessionKey) {
+        this.messageQueue.push({
+          action: action,
+          data: data,
+          callback: callback
+        });
+        return;
+      }
 
-  setComponentDataValueForKey(key, value) {
-    this.componentData[key] = value;
-    this.postMessage("set-component-data", { componentData: this.componentData }, function (data) {});
-  }
-
-  clearComponentData() {
-    this.componentData = {};
-    this.postMessage("set-component-data", { componentData: this.componentData }, function (data) {});
-  }
-
-  componentDataValueForKey(key) {
-    return this.componentData[key];
-  }
-
-  postMessage(action, data, callback) {
-    if (!this.sessionKey) {
-      this.messageQueue.push({
+      var message = {
         action: action,
         data: data,
-        callback: callback
-      });
-      return;
+        messageId: this.generateUUID(),
+        sessionKey: this.sessionKey,
+        permissions: this.permissions,
+        api: "component"
+      };
+
+      var sentMessage = JSON.parse(JSON.stringify(message));
+      sentMessage.callback = callback;
+      this.sentMessages.push(sentMessage);
+
+      if (this.loggingEnabled) {
+        console.log("Posting message:", message);
+      }
+
+      window.parent.postMessage(message, '*');
     }
-
-    var message = {
-      action: action,
-      data: data,
-      messageId: this.generateUUID(),
-      sessionKey: this.sessionKey,
-      permissions: this.permissions,
-      api: "component"
-    };
-
-    var sentMessage = JSON.parse(JSON.stringify(message));
-    sentMessage.callback = callback;
-    this.sentMessages.push(sentMessage);
-
-    if (this.loggingEnabled) {
-      console.log("Posting message:", message);
+  }, {
+    key: "setSize",
+    value: function setSize(type, width, height) {
+      this.postMessage("set-size", { type: type, width: width, height: height }, function (data) {});
     }
-
-    window.parent.postMessage(message, '*');
-  }
-
-  setSize(type, width, height) {
-    this.postMessage("set-size", { type: type, width: width, height: height }, function (data) {});
-  }
-
-  streamItems(callback) {
-    this.postMessage("stream-items", { content_types: ["Tag"] }, function (data) {
-      var tags = data.items;
-      callback(tags);
-    }.bind(this));
-  }
-
-  streamContextItem(callback) {
-    this.postMessage("stream-context-item", null, function (data) {
-      var item = data.item;
-      callback(item);
-    }.bind(this));
-  }
-
-  selectItem(item) {
-    this.postMessage("select-item", { item: this.jsonObjectForItem(item) });
-  }
-
-  createItem(item) {
-    this.postMessage("create-item", { item: this.jsonObjectForItem(item) }, function (data) {
-      var item = data.item;
-      this.associateItem(item);
-    }.bind(this));
-  }
-
-  associateItem(item) {
-    this.postMessage("associate-item", { item: this.jsonObjectForItem(item) });
-  }
-
-  deassociateItem(item) {
-    this.postMessage("deassociate-item", { item: this.jsonObjectForItem(item) });
-  }
-
-  clearSelection() {
-    this.postMessage("clear-selection", { content_type: "Tag" });
-  }
-
-  deleteItem(item) {
-    this.deleteItems([item]);
-  }
-
-  deleteItems(items) {
-    var params = {
-      items: items.map(function (item) {
+  }, {
+    key: "streamItems",
+    value: function streamItems(callback) {
+      this.postMessage("stream-items", { content_types: ["Tag"] }, function (data) {
+        var tags = data.items;
+        callback(tags);
+      }.bind(this));
+    }
+  }, {
+    key: "streamContextItem",
+    value: function streamContextItem(callback) {
+      this.postMessage("stream-context-item", null, function (data) {
+        var item = data.item;
+        callback(item);
+      }.bind(this));
+    }
+  }, {
+    key: "selectItem",
+    value: function selectItem(item) {
+      this.postMessage("select-item", { item: this.jsonObjectForItem(item) });
+    }
+  }, {
+    key: "createItem",
+    value: function createItem(item) {
+      this.postMessage("create-item", { item: this.jsonObjectForItem(item) }, function (data) {
+        var item = data.item;
+        this.associateItem(item);
+      }.bind(this));
+    }
+  }, {
+    key: "associateItem",
+    value: function associateItem(item) {
+      this.postMessage("associate-item", { item: this.jsonObjectForItem(item) });
+    }
+  }, {
+    key: "deassociateItem",
+    value: function deassociateItem(item) {
+      this.postMessage("deassociate-item", { item: this.jsonObjectForItem(item) });
+    }
+  }, {
+    key: "clearSelection",
+    value: function clearSelection() {
+      this.postMessage("clear-selection", { content_type: "Tag" });
+    }
+  }, {
+    key: "deleteItem",
+    value: function deleteItem(item) {
+      this.deleteItems([item]);
+    }
+  }, {
+    key: "deleteItems",
+    value: function deleteItems(items) {
+      var params = {
+        items: items.map(function (item) {
+          return this.jsonObjectForItem(item);
+        }.bind(this))
+      };
+      this.postMessage("delete-items", params);
+    }
+  }, {
+    key: "saveItem",
+    value: function saveItem(item) {
+      this.saveItems([item]);
+    }
+  }, {
+    key: "saveItems",
+    value: function saveItems(items) {
+      items = items.map(function (item) {
         return this.jsonObjectForItem(item);
-      }.bind(this))
-    };
-    this.postMessage("delete-items", params);
-  }
+      }.bind(this));
 
-  saveItem(item) {
-    this.saveItems([item]);
-  }
-
-  saveItems(items) {
-    items = items.map(function (item) {
-      return this.jsonObjectForItem(item);
-    }.bind(this));
-
-    this.postMessage("save-items", { items: items }, function (data) {});
-  }
-
-  jsonObjectForItem(item) {
-    var copy = Object.assign({}, item);
-    copy.children = null;
-    copy.parent = null;
-    return copy;
-  }
-
-  /* Themes */
-
-  activateThemes(urls) {
-    this.deactivateAllCustomThemes();
-
-    if (this.loggingEnabled) {
-      console.log("Activating themes:", urls);
+      this.postMessage("save-items", { items: items }, function (data) {});
+    }
+  }, {
+    key: "jsonObjectForItem",
+    value: function jsonObjectForItem(item) {
+      var copy = Object.assign({}, item);
+      copy.children = null;
+      copy.parent = null;
+      return copy;
     }
 
-    if (!urls) {
-      return;
-    }
+    /* Themes */
 
-    for (var url of urls) {
-      if (!url) {
-        continue;
+  }, {
+    key: "activateThemes",
+    value: function activateThemes(urls) {
+      this.deactivateAllCustomThemes();
+
+      if (this.loggingEnabled) {
+        console.log("Activating themes:", urls);
       }
 
-      var link = document.createElement("link");
-      link.href = url;
-      link.type = "text/css";
-      link.rel = "stylesheet";
-      link.media = "screen,print";
-      link.className = "custom-theme";
-      document.getElementsByTagName("head")[0].appendChild(link);
-    }
-  }
-
-  deactivateAllCustomThemes() {
-    var elements = document.getElementsByClassName("custom-theme");
-
-    [].forEach.call(elements, function (element) {
-      if (element) {
-        element.disabled = true;
-        element.parentNode.removeChild(element);
+      if (!urls) {
+        return;
       }
-    });
-  }
 
-  /* Utilities */
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
 
-  generateUUID() {
-    var crypto = window.crypto || window.msCrypto;
-    if (crypto) {
-      var buf = new Uint32Array(4);
-      crypto.getRandomValues(buf);
-      var idx = -1;
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        idx++;
-        var r = buf[idx >> 3] >> idx % 8 * 4 & 15;
-        var v = c == 'x' ? r : r & 0x3 | 0x8;
-        return v.toString(16);
+      try {
+        for (var _iterator2 = urls[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var url = _step2.value;
+
+          if (!url) {
+            continue;
+          }
+
+          var link = document.createElement("link");
+          link.href = url;
+          link.type = "text/css";
+          link.rel = "stylesheet";
+          link.media = "screen,print";
+          link.className = "custom-theme";
+          document.getElementsByTagName("head")[0].appendChild(link);
+        }
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+    }
+  }, {
+    key: "deactivateAllCustomThemes",
+    value: function deactivateAllCustomThemes() {
+      var elements = document.getElementsByClassName("custom-theme");
+
+      [].forEach.call(elements, function (element) {
+        if (element) {
+          element.disabled = true;
+          element.parentNode.removeChild(element);
+        }
       });
-    } else {
-      var d = new Date().getTime();
-      if (window.performance && typeof window.performance.now === "function") {
-        d += performance.now(); //use high-precision timer if available
-      }
-      var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        var r = (d + Math.random() * 16) % 16 | 0;
-        d = Math.floor(d / 16);
-        return (c == 'x' ? r : r & 0x3 | 0x8).toString(16);
-      });
-      return uuid;
     }
-  }
+
+    /* Utilities */
+
+  }, {
+    key: "generateUUID",
+    value: function generateUUID() {
+      var crypto = window.crypto || window.msCrypto;
+      if (crypto) {
+        var buf = new Uint32Array(4);
+        crypto.getRandomValues(buf);
+        var idx = -1;
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          idx++;
+          var r = buf[idx >> 3] >> idx % 8 * 4 & 15;
+          var v = c == 'x' ? r : r & 0x3 | 0x8;
+          return v.toString(16);
+        });
+      } else {
+        var d = new Date().getTime();
+        if (window.performance && typeof window.performance.now === "function") {
+          d += performance.now(); //use high-precision timer if available
+        }
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = (d + Math.random() * 16) % 16 | 0;
+          d = Math.floor(d / 16);
+          return (c == 'x' ? r : r & 0x3 | 0x8).toString(16);
+        });
+        return uuid;
+      }
+    }
+  }]);
+
+  return ComponentManager;
+}();
+
+exports.default = ComponentManager;
+
+
+if (window) {
+  window.ComponentManager = ComponentManager;
 }
-
-window.ComponentManager = ComponentManager;
-
-
-},{}]},{},[1]);
+//# sourceMappingURL=dist.js.map

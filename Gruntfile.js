@@ -15,7 +15,7 @@ module.exports = function(grunt) {
    babel: {
         options: {
             sourceMap: true,
-            presets: ['es2016']
+            presets: ['es2015']
         },
         dist: {
             files: {
@@ -39,5 +39,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-babel');
   grunt.loadNpmTasks('grunt-browserify');
 
-  grunt.registerTask('default', ['babel', 'browserify']);
+  grunt.registerTask('default', ['babel']);
 };

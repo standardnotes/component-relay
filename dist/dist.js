@@ -135,19 +135,51 @@ var ComponentManager = function () {
     }
   }, {
     key: "streamItems",
-    value: function streamItems(callback) {
-      this.postMessage("stream-items", { content_types: ["Tag"] }, function (data) {
-        var tags = data.items;
-        callback(tags);
+    value: function streamItems(contentType) {
+      this.postMessage("stream-items", { content_types: [contentType] }, function (data) {
+        var _this = this;
+
+        var items = data.items;
+        if (this.streamedItems) {
+          var filteredItems = items.filter(function (item) {
+            var localCopy = _this.streamItems.filter(function (candidate) {
+              return candidate.uuid == item.uuid;
+            });
+            // If a local copy doesn't exist, it's probably a new item, so we want to return it.
+            if (!localCopy) {
+              return true;
+            } else {
+              // The incoming timestamp should be greater than our last saved timestamp
+              return item.updated_at > localCopy.updated_at;
+            }
+          });
+          // All items should be saved, but only the filtered items should be sent back to the callback
+          this.streamItems = items;
+          callback(filteredItems);
+        } else {
+          this.streamItems = items;
+          callback(items);
+        }
       }.bind(this));
     }
   }, {
     key: "streamContextItem",
     value: function streamContextItem(callback) {
+      var _this2 = this;
+
       this.postMessage("stream-context-item", null, function (data) {
         var item = data.item;
+        /*
+          When an item is saved via saveItem, its updated_at value is set client side to the current date.
+          If we make a change locally, then for whatever reason receive an item via streamItems/streamContextItem,
+          we want to ignore that change if it was made prior to the latest change we've made.
+        */
+        if (_this2.streamedContextItem && _this2.streamedContextItem.updated_at > item.updated_at) {
+          return;
+        }
+        _this2.streamedContextItem = item;
         callback(item);
-      }.bind(this));
+      });
     }
   }, {
     key: "selectItem",
@@ -201,6 +233,7 @@ var ComponentManager = function () {
     key: "saveItems",
     value: function saveItems(items) {
       items = items.map(function (item) {
+        item.updated_at = new Date();
         return this.jsonObjectForItem(item);
       }.bind(this));
 

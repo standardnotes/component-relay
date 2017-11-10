@@ -244,6 +244,23 @@ class ComponentManager {
   /* Utilities */
 
 
+  /*
+    This function prevents actions like saves from being made after every keystroke, and instead
+    waits defaultDelay before performing function. For example, if a user types a keystroke, and the clienet calls saveItem,
+    a 250ms delay will begin. If they type another keystroke within 250ms, the previously pending
+    save will be cancelled, and another 250ms delay occurs. If ater 250ms the pending delay is not cleared by a future call,
+    the save will finally trigger.
+  */
+  replacePendingAndPerformAfterDelay(block, delay = 250) {
+    if(this.pendingTimeout) {
+      clearTimeout(this.pendingTimeout);
+    }
+    this.pendingTimeout = setTimeout(function () {
+      block();
+    }, delay);
+  }
+
+
   generateUUID() {
     var crypto = window.crypto || window.msCrypto;
     if(crypto) {

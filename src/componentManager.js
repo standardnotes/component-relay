@@ -7,6 +7,9 @@ class ComponentManager {
     this.loggingEnabled = false;
     this.onReadyCallback = onReady;
 
+    this.coallesedSaving = true;
+    this.coallesedSavingDelay = 250;
+
     window.addEventListener("message", function(event){
       if(this.loggingEnabled) {
         console.log("Components API Message received:", event.data);
@@ -188,9 +191,31 @@ class ComponentManager {
       return this.jsonObjectForItem(item);
     }.bind(this));
 
-    this.postMessage("save-items", {items: items}, function(data){
+    let saveBlock = () => {
+      this.postMessage("save-items", {items: items}, function(data){
 
-    });
+      });
+    }
+
+    /*
+        Coallesed saving prevents saves from being made after every keystroke, and instead
+        waits coallesedSavingDelay before performing action. For example, if a user types a keystroke, and the clienet calls saveItem,
+        a 250ms delay will begin. If they type another keystroke within 250ms, the previously pending
+        save will be cancelled, and another 250ms delay occurs. If ater 250ms the pending delay is not cleared by a future call,
+        the save will finally trigger.
+
+        Note: it's important to modify saving items updated_at immediately and not after delay. If you modify after delay,
+        a delayed sync could just be wrapping up, and will send back old data and replace what the user has typed.
+    */
+    if(this.coallesedSaving == true) {
+      if(this.pendingSave) {
+        clearTimeout(this.pendingSave);
+      }
+
+      this.pendingSave = setTimeout(() => {
+        saveBlock();
+      }, this.coallesedSavingDelay);
+    }
   }
 
   jsonObjectForItem(item) {
@@ -242,23 +267,6 @@ class ComponentManager {
 
 
   /* Utilities */
-
-
-  /*
-    This function prevents actions like saves from being made after every keystroke, and instead
-    waits defaultDelay before performing function. For example, if a user types a keystroke, and the clienet calls saveItem,
-    a 250ms delay will begin. If they type another keystroke within 250ms, the previously pending
-    save will be cancelled, and another 250ms delay occurs. If ater 250ms the pending delay is not cleared by a future call,
-    the save will finally trigger.
-  */
-  replacePendingAndPerformAfterDelay(block, delay = 250) {
-    if(this.pendingTimeout) {
-      clearTimeout(this.pendingTimeout);
-    }
-    this.pendingTimeout = setTimeout(function () {
-      block();
-    }, delay);
-  }
 
 
   generateUUID() {

@@ -138,8 +138,11 @@ var ComponentManager = function () {
     }
   }, {
     key: "streamItems",
-    value: function streamItems(contentType) {
-      this.postMessage("stream-items", { content_types: [contentType] }, function (data) {
+    value: function streamItems(contentTypes, callback) {
+      if (!Array.isArray(contentTypes)) {
+        contentTypes = [contentTypes];
+      }
+      this.postMessage("stream-items", { content_types: contentTypes }, function (data) {
         var _this = this;
 
         var items = data.items;

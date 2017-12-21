@@ -105,8 +105,11 @@ class ComponentManager {
     })
   }
 
-  streamItems(contentType) {
-    this.postMessage("stream-items", {content_types: [contentType]}, function(data){
+  streamItems(contentTypes, callback) {
+    if(!Array.isArray(contentTypes)) {
+      contentTypes = [contentTypes];
+    }
+    this.postMessage("stream-items", {content_types: contentTypes}, function(data){
       var items = data.items;
       if(this.streamedItems) {
         var filteredItems = items.filter((item) => {

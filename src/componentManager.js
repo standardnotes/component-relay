@@ -152,10 +152,11 @@ class ComponentManager {
     this.postMessage("select-item", {item: this.jsonObjectForItem(item)});
   }
 
-  createItem(item) {
+  createItem(item, callback) {
     this.postMessage("create-item", {item: this.jsonObjectForItem(item)}, function(data){
       var item = data.item;
       this.associateItem(item);
+      callback && callback(item);
     }.bind(this));
   }
 
@@ -182,6 +183,12 @@ class ComponentManager {
       }.bind(this))
     };
     this.postMessage("delete-items", params);
+  }
+
+  sendCustomEvent(action, data, callback) {
+    this.postMessage(action, data, function(data){
+      callback && callback(data);
+    }.bind(this));
   }
 
   saveItem(item) {

@@ -194,10 +194,11 @@ var ComponentManager = function () {
     }
   }, {
     key: "createItem",
-    value: function createItem(item) {
+    value: function createItem(item, callback) {
       this.postMessage("create-item", { item: this.jsonObjectForItem(item) }, function (data) {
         var item = data.item;
         this.associateItem(item);
+        callback && callback(item);
       }.bind(this));
     }
   }, {
@@ -229,6 +230,13 @@ var ComponentManager = function () {
         }.bind(this))
       };
       this.postMessage("delete-items", params);
+    }
+  }, {
+    key: "sendCustomEvent",
+    value: function sendCustomEvent(action, data, callback) {
+      this.postMessage(action, data, function (data) {
+        callback && callback(data);
+      }.bind(this));
     }
   }, {
     key: "saveItem",

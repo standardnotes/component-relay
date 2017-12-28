@@ -22,7 +22,7 @@ class ComponentManager {
     if(payload.action === "component-registered") {
       this.sessionKey = payload.sessionKey;
       this.componentData = payload.componentData;
-      this.onReady();
+      this.onReady(payload.data);
 
       if(this.loggingEnabled) {
         console.log("Component successfully registered with payload:", payload);
@@ -44,15 +44,20 @@ class ComponentManager {
     }
   }
 
-  onReady() {
+  onReady(data) {
     for(var message of this.messageQueue) {
       this.postMessage(message.action, message.data, message.callback);
     }
     this.messageQueue = [];
+    this.environment = data.environment;
 
     if(this.onReadyCallback) {
       this.onReadyCallback();
     }
+  }
+
+  isRunningInDesktopApplication() {
+    return this.environment === "desktop";
   }
 
   setComponentDataValueForKey(key, value) {

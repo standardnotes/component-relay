@@ -31,7 +31,7 @@ var ComponentManager = function () {
       if (payload.action === "component-registered") {
         this.sessionKey = payload.sessionKey;
         this.componentData = payload.componentData;
-        this.onReady();
+        this.onReady(payload.data);
 
         if (this.loggingEnabled) {
           console.log("Component successfully registered with payload:", payload);
@@ -51,7 +51,7 @@ var ComponentManager = function () {
     }
   }, {
     key: "onReady",
-    value: function onReady() {
+    value: function onReady(data) {
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -78,10 +78,16 @@ var ComponentManager = function () {
       }
 
       this.messageQueue = [];
+      this.environment = data.environment;
 
       if (this.onReadyCallback) {
         this.onReadyCallback();
       }
+    }
+  }, {
+    key: "isRunningInDesktopApplication",
+    value: function isRunningInDesktopApplication() {
+      return this.environment === "desktop";
     }
   }, {
     key: "setComponentDataValueForKey",

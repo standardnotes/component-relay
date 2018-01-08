@@ -149,35 +149,13 @@ var ComponentManager = function () {
         contentTypes = [contentTypes];
       }
       this.postMessage("stream-items", { content_types: contentTypes }, function (data) {
-        var _this = this;
-
-        var items = data.items;
-        if (this.streamedItems) {
-          var filteredItems = items.filter(function (item) {
-            var localCopy = _this.streamedItems.filter(function (candidate) {
-              return candidate.uuid == item.uuid;
-            });
-            // If a local copy doesn't exist, it's probably a new item, so we want to return it.
-            if (!localCopy) {
-              return true;
-            } else {
-              // The incoming timestamp should be greater than our last saved timestamp
-              return item.updated_at > localCopy.updated_at;
-            }
-          });
-          // All items should be saved, but only the filtered items should be sent back to the callback
-          this.streamedItems = items;
-          callback(filteredItems);
-        } else {
-          this.streamedItems = items;
-          callback(items);
-        }
+        callback(data.items);
       }.bind(this));
     }
   }, {
     key: "streamContextItem",
     value: function streamContextItem(callback) {
-      var _this2 = this;
+      var _this = this;
 
       this.postMessage("stream-context-item", null, function (data) {
         var item = data.item;
@@ -186,10 +164,10 @@ var ComponentManager = function () {
           If we make a change locally, then for whatever reason receive an item via streamItems/streamContextItem,
           we want to ignore that change if it was made prior to the latest change we've made.
         */
-        if (_this2.streamedContextItem && _this2.streamedContextItem.uuid == item.uuid && _this2.streamedContextItem.updated_at > item.updated_at) {
+        if (_this.streamedContextItem && _this.streamedContextItem.uuid == item.uuid && _this.streamedContextItem.updated_at > item.updated_at) {
           return;
         }
-        _this2.streamedContextItem = item;
+        _this.streamedContextItem = item;
         callback(item);
       });
     }
@@ -252,7 +230,7 @@ var ComponentManager = function () {
   }, {
     key: "saveItems",
     value: function saveItems(items) {
-      var _this3 = this;
+      var _this2 = this;
 
       items = items.map(function (item) {
         item.updated_at = new Date();
@@ -260,7 +238,7 @@ var ComponentManager = function () {
       }.bind(this));
 
       var saveBlock = function saveBlock() {
-        _this3.postMessage("save-items", { items: items }, function (data) {});
+        _this2.postMessage("save-items", { items: items }, function (data) {});
       };
 
       /*

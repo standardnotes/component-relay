@@ -115,25 +115,7 @@ class ComponentManager {
       contentTypes = [contentTypes];
     }
     this.postMessage("stream-items", {content_types: contentTypes}, function(data){
-      var items = data.items;
-      if(this.streamedItems) {
-        var filteredItems = items.filter((item) => {
-          var localCopy = this.streamedItems.filter((candidate) => {return candidate.uuid == item.uuid });
-          // If a local copy doesn't exist, it's probably a new item, so we want to return it.
-          if(!localCopy) {
-            return true;
-          } else {
-            // The incoming timestamp should be greater than our last saved timestamp
-            return item.updated_at > localCopy.updated_at;
-          }
-        })
-        // All items should be saved, but only the filtered items should be sent back to the callback
-        this.streamedItems = items;
-        callback(filteredItems);
-      } else {
-        this.streamedItems = items;
-        callback(items);
-      }
+      callback(data.items);
     }.bind(this));
   }
 
@@ -145,7 +127,8 @@ class ComponentManager {
         If we make a change locally, then for whatever reason receive an item via streamItems/streamContextItem,
         we want to ignore that change if it was made prior to the latest change we've made.
       */
-      if(this.streamedContextItem && this.streamedContextItem.uuid == item.uuid && this.streamedContextItem.updated_at > item.updated_at) {
+      if(this.streamedContextItem && this.streamedContextItem.uuid == item.uuid
+        && this.streamedContextItem.updated_at > item.updated_at) {
         return;
       }
       this.streamedContextItem = item;

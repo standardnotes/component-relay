@@ -118,7 +118,7 @@ class ComponentManager {
       var items = data.items;
       if(this.streamedItems) {
         var filteredItems = items.filter((item) => {
-          var localCopy = this.streamItems.filter((candidate) => {return candidate.uuid == item.uuid });
+          var localCopy = this.streamedItems.filter((candidate) => {return candidate.uuid == item.uuid });
           // If a local copy doesn't exist, it's probably a new item, so we want to return it.
           if(!localCopy) {
             return true;
@@ -128,10 +128,10 @@ class ComponentManager {
           }
         })
         // All items should be saved, but only the filtered items should be sent back to the callback
-        this.streamItems = items;
+        this.streamedItems = items;
         callback(filteredItems);
       } else {
-        this.streamItems = items;
+        this.streamedItems = items;
         callback(items);
       }
     }.bind(this));

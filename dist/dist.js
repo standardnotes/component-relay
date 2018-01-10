@@ -12,6 +12,7 @@ var ComponentManager = function () {
     this.messageQueue = [];
     this.permissions = permissions;
     this.loggingEnabled = false;
+    this.acceptsThemes = true;
     this.onReadyCallback = onReady;
 
     this.coallesedSaving = true;
@@ -37,7 +38,9 @@ var ComponentManager = function () {
           console.log("Component successfully registered with payload:", payload);
         }
       } else if (payload.action === "themes") {
-        this.activateThemes(payload.data.themes);
+        if (this.acceptsThemes) {
+          this.activateThemes(payload.data.themes);
+        }
       } else if (payload.original) {
         // get callback from queue
         var originalMessage = this.sentMessages.filter(function (message) {

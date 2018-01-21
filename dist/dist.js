@@ -227,12 +227,12 @@ var ComponentManager = function () {
     }
   }, {
     key: "saveItem",
-    value: function saveItem(item) {
-      this.saveItems([item]);
+    value: function saveItem(item, callback) {
+      this.saveItems([item], callback);
     }
   }, {
     key: "saveItems",
-    value: function saveItems(items) {
+    value: function saveItems(items, callback) {
       var _this2 = this;
 
       items = items.map(function (item) {
@@ -241,7 +241,9 @@ var ComponentManager = function () {
       }.bind(this));
 
       var saveBlock = function saveBlock() {
-        _this2.postMessage("save-items", { items: items }, function (data) {});
+        _this2.postMessage("save-items", { items: items }, function (data) {
+          callback && callback();
+        });
       };
 
       /*

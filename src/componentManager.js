@@ -182,11 +182,11 @@ class ComponentManager {
     }.bind(this));
   }
 
-  saveItem(item) {
-    this.saveItems([item]);
+  saveItem(item, callback) {
+    this.saveItems([item], callback);
   }
 
-  saveItems(items) {
+  saveItems(items, callback) {
     items = items.map(function(item) {
       item.updated_at = new Date();
       return this.jsonObjectForItem(item);
@@ -194,7 +194,7 @@ class ComponentManager {
 
     let saveBlock = () => {
       this.postMessage("save-items", {items: items}, function(data){
-
+        callback && callback();
       });
     }
 

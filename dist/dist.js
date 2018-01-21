@@ -10,7 +10,7 @@ var ComponentManager = function () {
 
     this.sentMessages = [];
     this.messageQueue = [];
-    this.permissions = permissions;
+    this.initialPermissions = permissions;
     this.loggingEnabled = false;
     this.acceptsThemes = true;
     this.onReadyCallback = onReady;
@@ -55,6 +55,10 @@ var ComponentManager = function () {
   }, {
     key: "onReady",
     value: function onReady(data) {
+      if (this.initialPermissions && this.initialPermissions.length > 0) {
+        this.requestPermissions(this.initialPermissions);
+      }
+
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -126,7 +130,6 @@ var ComponentManager = function () {
         data: data,
         messageId: this.generateUUID(),
         sessionKey: this.sessionKey,
-        permissions: this.permissions,
         api: "component"
       };
 
@@ -144,6 +147,13 @@ var ComponentManager = function () {
     key: "setSize",
     value: function setSize(type, width, height) {
       this.postMessage("set-size", { type: type, width: width, height: height }, function (data) {});
+    }
+  }, {
+    key: "requestPermissions",
+    value: function requestPermissions(permissions, callback) {
+      this.postMessage("request-permissions", { permissions: permissions }, function (data) {
+        callback && callback();
+      }.bind(this));
     }
   }, {
     key: "streamItems",

@@ -3,7 +3,7 @@ class ComponentManager {
   constructor(permissions, onReady) {
     this.sentMessages = [];
     this.messageQueue = [];
-    this.permissions = permissions;
+    this.initialPermissions = permissions;
     this.loggingEnabled = false;
     this.acceptsThemes = true;
     this.onReadyCallback = onReady;
@@ -48,6 +48,10 @@ class ComponentManager {
   }
 
   onReady(data) {
+    if(this.initialPermissions && this.initialPermissions.length > 0) {
+      this.requestPermissions(this.initialPermissions);
+    }
+
     for(var message of this.messageQueue) {
       this.postMessage(message.action, message.data, message.callback);
     }
@@ -92,7 +96,6 @@ class ComponentManager {
       data: data,
       messageId: this.generateUUID(),
       sessionKey: this.sessionKey,
-      permissions: this.permissions,
       api: "component"
     }
 
@@ -111,6 +114,12 @@ class ComponentManager {
     this.postMessage("set-size", {type: type, width: width, height: height}, function(data){
 
     })
+  }
+
+  requestPermissions(permissions, callback) {
+    this.postMessage("request-permissions", {permissions: permissions}, function(data){
+      callback && callback();
+    }.bind(this));
   }
 
   streamItems(contentTypes, callback) {

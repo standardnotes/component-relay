@@ -174,19 +174,21 @@ var ComponentManager = function () {
   }, {
     key: "streamContextItem",
     value: function streamContextItem(callback) {
-      var _this = this;
-
       this.postMessage("stream-context-item", null, function (data) {
         var item = data.item;
         /*
           When an item is saved via saveItem, its updated_at value is set client side to the current date.
           If we make a change locally, then for whatever reason receive an item via streamItems/streamContextItem,
           we want to ignore that change if it was made prior to the latest change we've made.
+           Update 1/22/18: However, if a user is restoring a note from version history, this change
+          will not pass through this filter and will thus be ignored. Because the client now handles
+          this case with isMetadataUpdate, we no longer need the below.
         */
-        if (_this.streamedContextItem && _this.streamedContextItem.uuid == item.uuid && _this.streamedContextItem.updated_at > item.updated_at) {
-          return;
-        }
-        _this.streamedContextItem = item;
+        // if(this.streamedContextItem && this.streamedContextItem.uuid == item.uuid
+        //   && this.streamedContextItem.updated_at > item.updated_at) {
+        //   return;
+        // }
+        // this.streamedContextItem = item;
         callback(item);
       });
     }
@@ -249,7 +251,7 @@ var ComponentManager = function () {
   }, {
     key: "saveItems",
     value: function saveItems(items, callback) {
-      var _this2 = this;
+      var _this = this;
 
       items = items.map(function (item) {
         item.updated_at = new Date();
@@ -257,7 +259,7 @@ var ComponentManager = function () {
       }.bind(this));
 
       var saveBlock = function saveBlock() {
-        _this2.postMessage("save-items", { items: items }, function (data) {
+        _this.postMessage("save-items", { items: items }, function (data) {
           callback && callback();
         });
       };

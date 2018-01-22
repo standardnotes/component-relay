@@ -144,12 +144,16 @@ class ComponentManager {
         When an item is saved via saveItem, its updated_at value is set client side to the current date.
         If we make a change locally, then for whatever reason receive an item via streamItems/streamContextItem,
         we want to ignore that change if it was made prior to the latest change we've made.
+
+        Update 1/22/18: However, if a user is restoring a note from version history, this change
+        will not pass through this filter and will thus be ignored. Because the client now handles
+        this case with isMetadataUpdate, we no longer need the below.
       */
-      if(this.streamedContextItem && this.streamedContextItem.uuid == item.uuid
-        && this.streamedContextItem.updated_at > item.updated_at) {
-        return;
-      }
-      this.streamedContextItem = item;
+      // if(this.streamedContextItem && this.streamedContextItem.uuid == item.uuid
+      //   && this.streamedContextItem.updated_at > item.updated_at) {
+      //   return;
+      // }
+      // this.streamedContextItem = item;
       callback(item);
     });
   }

@@ -86,10 +86,16 @@ var ComponentManager = function () {
 
       this.messageQueue = [];
       this.environment = data.environment;
+      this.uuid = data.uuid;
 
       if (this.onReadyCallback) {
         this.onReadyCallback();
       }
+    }
+  }, {
+    key: "getSelfComponentUUID",
+    value: function getSelfComponentUUID() {
+      return this.uuid;
     }
   }, {
     key: "isRunningInDesktopApplication",

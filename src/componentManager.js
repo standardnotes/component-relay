@@ -55,12 +55,18 @@ class ComponentManager {
     for(var message of this.messageQueue) {
       this.postMessage(message.action, message.data, message.callback);
     }
+
     this.messageQueue = [];
     this.environment = data.environment;
+    this.uuid = data.uuid;
 
     if(this.onReadyCallback) {
       this.onReadyCallback();
     }
+  }
+
+  getSelfComponentUUID() {
+    return this.uuid;
   }
 
   isRunningInDesktopApplication() {

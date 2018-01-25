@@ -247,7 +247,7 @@ class ComponentManager {
 
   getItemAppDataValue(item, key) {
     let AppDomain = "org.standardnotes.sn";
-    var data = item.content.appData[AppDomain];
+    var data = item.content.appData && item.content.appData[AppDomain];
     if(data) {
       return data[key];
     } else {

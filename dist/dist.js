@@ -295,7 +295,7 @@ var ComponentManager = function () {
     key: "getItemAppDataValue",
     value: function getItemAppDataValue(item, key) {
       var AppDomain = "org.standardnotes.sn";
-      var data = item.content.appData[AppDomain];
+      var data = item.content.appData && item.content.appData[AppDomain];
       if (data) {
         return data[key];
       } else {

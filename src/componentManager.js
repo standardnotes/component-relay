@@ -7,7 +7,6 @@ class ComponentManager {
     this.loggingEnabled = false;
     this.acceptsThemes = true;
     this.onReadyCallback = onReady;
-    this.unhandledMessageHandler = null;
 
     this.coallesedSaving = true;
     this.coallesedSavingDelay = 250;
@@ -44,19 +43,6 @@ class ComponentManager {
 
       if(originalMessage.callback) {
         originalMessage.callback(payload.data);
-      }
-    }
-
-    else {
-      // Unhandled message
-      /*
-        An unhandled message can occur in the event where the extension window is reloaded.
-        In that case, this.sentMessages will be cleared, and a message will arrive that will
-        not find any suitable handlers, and will fall through. The unhandledMessageHandler
-        gives the interested party the option to reload their UI in that case.
-       */
-      if(this.unhandledMessageHandler) {
-        this.unhandledMessageHandler(payload.data);
       }
     }
   }

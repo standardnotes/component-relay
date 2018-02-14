@@ -1,6 +1,6 @@
 {
   "name": "sn-components-api",
-  "version": "1.0.25",
+  "version": "1.0.246",
   "main": "dist/dist.js",
   "devDependencies": {
     "babel-cli": "^6.18.0",

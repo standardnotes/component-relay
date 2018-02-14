@@ -14,7 +14,6 @@ var ComponentManager = function () {
     this.loggingEnabled = false;
     this.acceptsThemes = true;
     this.onReadyCallback = onReady;
-    this.unhandledMessageHandler = null;
 
     this.coallesedSaving = true;
     this.coallesedSavingDelay = 250;
@@ -50,11 +49,6 @@ var ComponentManager = function () {
 
         if (originalMessage.callback) {
           originalMessage.callback(payload.data);
-        }
-      } else {
-        // Unhandled message
-        if (this.unhandledMessageHandler) {
-          this.unhandledMessageHandler(payload.data);
         }
       }
     }

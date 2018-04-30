@@ -11,12 +11,26 @@ class ComponentManager {
     this.coallesedSaving = true;
     this.coallesedSavingDelay = 250;
 
-    window.addEventListener("message", function(event){
-      if(this.loggingEnabled) {
-        console.log("Components API Message received:", event.data);
-      }
-      this.handleMessage(event.data);
-    }.bind(this), false);
+    let messageHandler = (event, mobileSource) => {
+      if (this.loggingEnabled) { console.log("Components API Message received:", event.data, "mobile?", mobileSource)}
+
+      this.origin = event.origin;
+      this.mobileSource = mobileSource;
+      // If from mobile app, JSON needs to be used.
+      let data = mobileSource ? JSON.parse(event.data) : event.data;
+      this.handleMessage(data);
+    }
+
+    // Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
+    // for postMessage API to work properly.
+
+    document.addEventListener("message", function (event) {
+      messageHandler(event, true);
+    }, false);
+
+    window.addEventListener("message", function (event) {
+      messageHandler(event, false);
+    }, false);
   }
 
   handleMessage(payload) {
@@ -109,11 +123,16 @@ class ComponentManager {
     sentMessage.callback = callback;
     this.sentMessages.push(sentMessage);
 
+    // Mobile (React Native) requires a string for the postMessage API.
+    if(this.mobileSource) {
+      message = JSON.stringify(message);
+    }
+
     if(this.loggingEnabled) {
       console.log("Posting message:", message);
     }
 
-    window.parent.postMessage(message, '*');
+    window.parent.postMessage(message, this.origin);
   }
 
   setSize(type, width, height) {

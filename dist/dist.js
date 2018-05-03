@@ -25,7 +25,11 @@ var ComponentManager = function () {
         console.log("Components API Message received:", event.data, "mobile?", mobileSource);
       }
 
-      _this.origin = event.origin;
+      // The first message will be the most reliable one, so we won't change it after any subsequent events,
+      // in case you receive an event from another window.
+      if (!_this.origin) {
+        _this.origin = event.origin;
+      }
       _this.mobileSource = mobileSource;
       // If from mobile app, JSON needs to be used.
       var data = mobileSource ? JSON.parse(event.data) : event.data;

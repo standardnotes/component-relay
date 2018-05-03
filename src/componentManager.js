@@ -14,7 +14,11 @@ class ComponentManager {
     let messageHandler = (event, mobileSource) => {
       if (this.loggingEnabled) { console.log("Components API Message received:", event.data, "mobile?", mobileSource)}
 
-      this.origin = event.origin;
+      // The first message will be the most reliable one, so we won't change it after any subsequent events,
+      // in case you receive an event from another window.
+      if(!this.origin) {
+        this.origin = event.origin;
+      }
       this.mobileSource = mobileSource;
       // If from mobile app, JSON needs to be used.
       let data = mobileSource ? JSON.parse(event.data) : event.data;

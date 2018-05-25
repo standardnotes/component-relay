@@ -188,8 +188,22 @@ class ComponentManager {
   createItem(item, callback) {
     this.postMessage("create-item", {item: this.jsonObjectForItem(item)}, function(data){
       var item = data.item;
+
+      // A previous version of the SN app had an issue where the item in the reply to create-item
+      // would be nested inside "items" and not "item". So handle both cases here.
+      if(!item && data.items && data.items.length > 0) {
+        item = data.items[0];
+      }
+
       this.associateItem(item);
       callback && callback(item);
+    }.bind(this));
+  }
+
+  createItems(items, callback) {
+    let mapped = items.map((item) => {return this.jsonObjectForItem(item)});
+    this.postMessage("create-items", {items: mapped}, function(data){
+      callback && callback(data.items);
     }.bind(this));
   }
 

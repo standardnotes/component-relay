@@ -1,6 +1,6 @@
 # Components API
 
-To get started using the Components API, read the [getting started guide](https://github.com/sn-extensions/docs/blob/master/Components%20API%20Documentation.md).
+To get started using the Components API, read the [getting started guide](https://docs.standardnotes.org/extensions/components.html).
 
 ## Installation
 

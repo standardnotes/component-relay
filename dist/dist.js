@@ -292,12 +292,22 @@ var ComponentManager = function () {
   }, {
     key: "saveItem",
     value: function saveItem(item, callback) {
-      this.saveItems([item], callback);
+      var skipDebouncer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+      this.saveItems([item], callback, skipDebouncer);
     }
+
+    /*
+    skipDebouncer allows saves to go through right away rather than waiting for timeout.
+    This should be used when saving items via other means besides keystrokes.
+     */
+
   }, {
     key: "saveItems",
     value: function saveItems(items, callback) {
       var _this3 = this;
+
+      var skipDebouncer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
       items = items.map(function (item) {
         item.updated_at = new Date();
@@ -319,7 +329,7 @@ var ComponentManager = function () {
          Note: it's important to modify saving items updated_at immediately and not after delay. If you modify after delay,
         a delayed sync could just be wrapping up, and will send back old data and replace what the user has typed.
       */
-      if (this.coallesedSaving == true) {
+      if (this.coallesedSaving == true && !skipDebouncer) {
         if (this.pendingSave) {
           clearTimeout(this.pendingSave);
         }
@@ -327,6 +337,8 @@ var ComponentManager = function () {
         this.pendingSave = setTimeout(function () {
           saveBlock();
         }, this.coallesedSavingDelay);
+      } else {
+        saveBlock();
       }
     }
   }, {

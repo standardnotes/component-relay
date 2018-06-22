@@ -238,11 +238,15 @@ class ComponentManager {
     }.bind(this));
   }
 
-  saveItem(item, callback) {
-    this.saveItems([item], callback);
+  saveItem(item, callback, skipDebouncer = false) {
+    this.saveItems([item], callback, skipDebouncer);
   }
 
-  saveItems(items, callback) {
+  /*
+  skipDebouncer allows saves to go through right away rather than waiting for timeout.
+  This should be used when saving items via other means besides keystrokes.
+   */
+  saveItems(items, callback, skipDebouncer = false) {
     items = items.map(function(item) {
       item.updated_at = new Date();
       return this.jsonObjectForItem(item);
@@ -264,7 +268,7 @@ class ComponentManager {
       Note: it's important to modify saving items updated_at immediately and not after delay. If you modify after delay,
       a delayed sync could just be wrapping up, and will send back old data and replace what the user has typed.
     */
-    if(this.coallesedSaving == true) {
+    if(this.coallesedSaving == true && !skipDebouncer) {
       if(this.pendingSave) {
         clearTimeout(this.pendingSave);
       }
@@ -272,6 +276,8 @@ class ComponentManager {
       this.pendingSave = setTimeout(() => {
         saveBlock();
       }, this.coallesedSavingDelay);
+    } else {
+      saveBlock();
     }
   }
 

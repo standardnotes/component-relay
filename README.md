@@ -2,11 +2,11 @@
 
 To get started using the Components API, read the [getting started guide](https://docs.standardnotes.org/extensions/components.html).
 
-## Installation
+## Installation      
 
-#### With Bower:
-
-    bower install --save sn-components-api
+```
+npm install --save sn-components-api
+```
 
 #### Manual:
 

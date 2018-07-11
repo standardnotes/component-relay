@@ -69,6 +69,11 @@ var ComponentManager = function () {
           return message.messageId === payload.original.messageId;
         })[0];
 
+        if (!originalMessage) {
+          // Connection must have been reset. Alert the user.
+          alert("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.");
+        }
+
         if (originalMessage.callback) {
           originalMessage.callback(payload.data);
         }

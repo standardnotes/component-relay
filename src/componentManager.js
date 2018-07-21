@@ -332,14 +332,15 @@ class ComponentManager {
   }
 
   deactivateAllCustomThemes() {
-    var elements = document.getElementsByClassName("custom-theme");
-
-    [].forEach.call(elements, function (element) {
+    // make copy, as it will be modified during loop
+    // `getElementsByClassName` is an HTMLCollection, not an Array
+    var elements = Array.from(document.getElementsByClassName("custom-theme")).slice()
+    for(var element of elements) {
       if(element) {
         element.disabled = true;
         element.parentNode.removeChild(element);
       }
-    });
+    }
   }
 
 

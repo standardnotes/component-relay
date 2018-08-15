@@ -224,17 +224,20 @@ class ComponentManager {
     this.postMessage("clear-selection", {content_type: "Tag"});
   }
 
-  deleteItem(item) {
-    this.deleteItems([item]);
+  deleteItem(item, callback) {
+    this.deleteItems([item], callback);
   }
 
-  deleteItems(items) {
+  deleteItems(items, callback) {
     var params = {
       items: items.map(function(item){
         return this.jsonObjectForItem(item);
       }.bind(this))
     };
-    this.postMessage("delete-items", params);
+
+    this.postMessage("delete-items", params, (data) => {
+      callback && callback(data);
+    });
   }
 
   sendCustomEvent(action, data, callback) {

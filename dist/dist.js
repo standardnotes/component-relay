@@ -274,18 +274,21 @@ var ComponentManager = function () {
     }
   }, {
     key: "deleteItem",
-    value: function deleteItem(item) {
-      this.deleteItems([item]);
+    value: function deleteItem(item, callback) {
+      this.deleteItems([item], callback);
     }
   }, {
     key: "deleteItems",
-    value: function deleteItems(items) {
+    value: function deleteItems(items, callback) {
       var params = {
         items: items.map(function (item) {
           return this.jsonObjectForItem(item);
         }.bind(this))
       };
-      this.postMessage("delete-items", params);
+
+      this.postMessage("delete-items", params, function (data) {
+        callback && callback(data);
+      });
     }
   }, {
     key: "sendCustomEvent",

@@ -305,6 +305,22 @@ var ComponentManager = function () {
       this.saveItems([item], callback, skipDebouncer);
     }
 
+    /* Presave allows clients to perform any actions last second before the save actually occurs (like setting previews).
+       Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
+       hook into the debounce cycle so that clients don't have to implement their own debouncing.
+     */
+
+  }, {
+    key: "saveItemWithPresave",
+    value: function saveItemWithPresave(item, presave, callback) {
+      this.saveItemsWithPresave([item], presave, callback);
+    }
+  }, {
+    key: "saveItemsWithPresave",
+    value: function saveItemsWithPresave(items, presave, callback) {
+      this.saveItems(items, callback, false, presave);
+    }
+
     /*
     skipDebouncer allows saves to go through right away rather than waiting for timeout.
     This should be used when saving items via other means besides keystrokes.
@@ -316,6 +332,7 @@ var ComponentManager = function () {
       var _this3 = this;
 
       var skipDebouncer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var presave = arguments[3];
 
       items = items.map(function (item) {
         item.updated_at = new Date();
@@ -323,6 +340,8 @@ var ComponentManager = function () {
       }.bind(this));
 
       var saveBlock = function saveBlock() {
+        // presave block allows client to gain the benefit of performing something in the debounce cycle.
+        presave && presave();
         _this3.postMessage("save-items", { items: items }, function (data) {
           callback && callback();
         });

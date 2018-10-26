@@ -81,6 +81,7 @@ class ComponentManager {
 
     this.messageQueue = [];
     this.environment = data.environment;
+    this.platform = data.platform;
     this.uuid = data.uuid;
 
     if(this.onReadyCallback) {

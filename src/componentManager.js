@@ -269,15 +269,16 @@ class ComponentManager {
   This should be used when saving items via other means besides keystrokes.
    */
   saveItems(items, callback, skipDebouncer = false, presave) {
-    items = items.map(function(item) {
-      item.updated_at = new Date();
-      return this.jsonObjectForItem(item);
-    }.bind(this));
-
     let saveBlock = () => {
       // presave block allows client to gain the benefit of performing something in the debounce cycle.
       presave && presave();
-      this.postMessage("save-items", {items: items}, function(data){
+
+      let mappedItems = items.map(function(item) {
+        item.updated_at = new Date();
+        return this.jsonObjectForItem(item);
+      }.bind(this));
+
+      this.postMessage("save-items", {items: mappedItems}, function(data){
         callback && callback();
       });
     }

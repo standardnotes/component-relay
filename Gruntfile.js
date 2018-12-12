@@ -4,7 +4,7 @@ module.exports = function(grunt) {
 
     watch: {
       js: {
-        files: ['.src/**/*.js'],
+        files: ['src/**/*.js'],
         tasks: ['babel', 'browserify'],
         options: {
           spawn: false,
@@ -39,5 +39,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-babel');
   grunt.loadNpmTasks('grunt-browserify');
 
-  grunt.registerTask('default', ['babel']);
+  grunt.registerTask('default', ['babel', 'browserify']);
 };

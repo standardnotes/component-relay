@@ -1,3 +1,4 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -6,54 +7,62 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var ComponentManager = function () {
   function ComponentManager(permissions, onReady) {
-    var _this = this;
-
     _classCallCheck(this, ComponentManager);
 
     this.sentMessages = [];
     this.messageQueue = [];
-    this.initialPermissions = permissions;
     this.loggingEnabled = false;
     this.acceptsThemes = true;
+    this.activeThemes = [];
+
+    this.initialPermissions = permissions;
     this.onReadyCallback = onReady;
 
     this.coallesedSaving = true;
     this.coallesedSavingDelay = 250;
 
-    var messageHandler = function messageHandler(event, mobileSource) {
-      if (_this.loggingEnabled) {
-        console.log("Components API Message received:", event.data, "mobile?", mobileSource);
-      }
-
-      // The first message will be the most reliable one, so we won't change it after any subsequent events,
-      // in case you receive an event from another window.
-      if (!_this.origin) {
-        _this.origin = event.origin;
-      }
-      _this.mobileSource = mobileSource;
-      // If from mobile app, JSON needs to be used.
-      var data = mobileSource ? JSON.parse(event.data) : event.data;
-      _this.handleMessage(data);
-    };
-
-    // Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
-    // for postMessage API to work properly.
-
-    document.addEventListener("message", function (event) {
-      messageHandler(event, true);
-    }, false);
-
-    window.addEventListener("message", function (event) {
-      messageHandler(event, false);
-    }, false);
+    this.registerMessageHandler();
   }
 
   _createClass(ComponentManager, [{
+    key: "registerMessageHandler",
+    value: function registerMessageHandler() {
+      var _this = this;
+
+      var messageHandler = function messageHandler(event, mobileSource) {
+        if (_this.loggingEnabled) {
+          console.log("Components API Message received:", event.data, "mobile?", mobileSource);
+        }
+
+        // The first message will be the most reliable one, so we won't change it after any subsequent events,
+        // in case you receive an event from another window.
+        if (!_this.origin) {
+          _this.origin = event.origin;
+        }
+        _this.mobileSource = mobileSource;
+        // If from mobile app, JSON needs to be used.
+        var data = mobileSource ? JSON.parse(event.data) : event.data;
+        _this.handleMessage(data);
+      };
+
+      // Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
+      // for postMessage API to work properly.
+
+      document.addEventListener("message", function (event) {
+        messageHandler(event, true);
+      }, false);
+
+      window.addEventListener("message", function (event) {
+        messageHandler(event, false);
+      }, false);
+    }
+  }, {
     key: "handleMessage",
     value: function handleMessage(payload) {
       if (payload.action === "component-registered") {
         this.sessionKey = payload.sessionKey;
         this.componentData = payload.componentData;
+
         this.onReady(payload.data);
 
         if (this.loggingEnabled) {
@@ -115,6 +124,12 @@ var ComponentManager = function () {
       this.environment = data.environment;
       this.platform = data.platform;
       this.uuid = data.uuid;
+
+      if (this.loggingEnabled) {
+        console.log("onReadyData", data);
+      }
+
+      this.activateThemes(data.activeThemeUrls || []);
 
       if (this.onReadyCallback) {
         this.onReadyCallback();
@@ -394,36 +409,32 @@ var ComponentManager = function () {
 
   }, {
     key: "activateThemes",
-    value: function activateThemes(urls) {
-      this.deactivateAllCustomThemes();
-
-      if (this.loggingEnabled) {
-        console.log("Activating themes:", urls);
-      }
-
-      if (!urls) {
+    value: function activateThemes(incomingUrls) {
+      if (this.activeThemes.sort().toString() == incomingUrls.sort().toString()) {
+        // incoming are same as active, do nothing
         return;
       }
+
+      var themesToActivate = incomingUrls || [];
+      var themesToDeactivate = [];
 
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
 
       try {
-        for (var _iterator2 = urls[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var url = _step2.value;
+        for (var _iterator2 = this.activeThemes[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var activeUrl = _step2.value;
 
-          if (!url) {
-            continue;
+          if (!incomingUrls.includes(activeUrl)) {
+            // active not present in incoming, deactivate it
+            themesToDeactivate.push(activeUrl);
+          } else {
+            // already present in active themes, remove it from themesToActivate
+            themesToActivate = themesToActivate.filter(function (candidate) {
+              return candidate != activeUrl;
+            });
           }
-
-          var link = document.createElement("link");
-          link.href = url;
-          link.type = "text/css";
-          link.rel = "stylesheet";
-          link.media = "screen,print";
-          link.className = "custom-theme";
-          document.getElementsByTagName("head")[0].appendChild(link);
         }
       } catch (err) {
         _didIteratorError2 = true;
@@ -439,25 +450,21 @@ var ComponentManager = function () {
           }
         }
       }
-    }
-  }, {
-    key: "deactivateAllCustomThemes",
-    value: function deactivateAllCustomThemes() {
-      // make copy, as it will be modified during loop
-      // `getElementsByClassName` is an HTMLCollection, not an Array
-      var elements = Array.from(document.getElementsByClassName("custom-theme")).slice();
+
+      if (this.loggingEnabled) {
+        console.log("Deactivating themes:", themesToDeactivate);
+        console.log("Activating themes:", themesToActivate);
+      }
+
       var _iteratorNormalCompletion3 = true;
       var _didIteratorError3 = false;
       var _iteratorError3 = undefined;
 
       try {
-        for (var _iterator3 = elements[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var element = _step3.value;
+        for (var _iterator3 = themesToDeactivate[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var theme = _step3.value;
 
-          if (element) {
-            element.disabled = true;
-            element.parentNode.removeChild(element);
-          }
+          this.deactivateTheme(theme);
         }
       } catch (err) {
         _didIteratorError3 = true;
@@ -473,7 +480,86 @@ var ComponentManager = function () {
           }
         }
       }
+
+      this.activeThemes = themesToActivate;
+
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
+
+      try {
+        for (var _iterator4 = themesToActivate[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var url = _step4.value;
+
+          if (!url) {
+            continue;
+          }
+
+          var link = document.createElement("link");
+          link.href = url;
+          link.type = "text/css";
+          link.rel = "stylesheet";
+          link.media = "screen,print";
+          link.className = "custom-theme";
+          document.getElementsByTagName("head")[0].appendChild(link);
+        }
+      } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
+          }
+        } finally {
+          if (_didIteratorError4) {
+            throw _iteratorError4;
+          }
+        }
+      }
     }
+  }, {
+    key: "themeElementForUrl",
+    value: function themeElementForUrl(url) {
+      var elements = Array.from(document.getElementsByClassName("custom-theme")).slice();
+      return elements.find(function (element) {
+        return element.href == url;
+      });
+    }
+  }, {
+    key: "deactivateTheme",
+    value: function deactivateTheme(url) {
+      var element = this.themeElementForUrl(url);
+      if (element) {
+        element.disabled = true;
+        element.parentNode.removeChild(element);
+      }
+    }
+
+    /* Theme caching is currently disabled. Might be enabled in the future if neccessary. */
+    /*
+    activateCachedThemes() {
+      let themes = this.getCachedThemeUrls();
+      let writeToCache = false;
+      if(this.loggingEnabled) { console.log("Activating cached themes", themes); }
+      this.activateThemes(themes, writeToCache);
+    }
+     cacheThemeUrls(urls) {
+      if(this.loggingEnabled) { console.log("Caching theme urls", urls); }
+      localStorage.setItem("cachedThemeUrls", JSON.stringify(urls));
+    }
+     decacheThemeUrls() {
+      localStorage.removeItem("cachedThemeUrls");
+    }
+     getCachedThemeUrls() {
+      let urls = localStorage.getItem("cachedThemeUrls");
+      if(urls) {
+        return JSON.parse(urls);
+      } else {
+        return [];
+      }
+    }
+    */
 
     /* Utilities */
 
@@ -516,4 +602,6 @@ if (typeof module != "undefined" && typeof module.exports != "undefined") {
 if (window) {
   window.ComponentManager = ComponentManager;
 }
-//# sourceMappingURL=dist.js.map
+
+
+},{}]},{},[1]);

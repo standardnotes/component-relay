@@ -3,14 +3,20 @@ class ComponentManager {
   constructor(permissions, onReady) {
     this.sentMessages = [];
     this.messageQueue = [];
-    this.initialPermissions = permissions;
     this.loggingEnabled = false;
     this.acceptsThemes = true;
+    this.activeThemes = [];
+
+    this.initialPermissions = permissions;
     this.onReadyCallback = onReady;
 
     this.coallesedSaving = true;
     this.coallesedSavingDelay = 250;
 
+    this.registerMessageHandler();
+  }
+
+  registerMessageHandler() {
     let messageHandler = (event, mobileSource) => {
       if (this.loggingEnabled) { console.log("Components API Message received:", event.data, "mobile?", mobileSource)}
 
@@ -41,6 +47,7 @@ class ComponentManager {
     if(payload.action === "component-registered") {
       this.sessionKey = payload.sessionKey;
       this.componentData = payload.componentData;
+
       this.onReady(payload.data);
 
       if(this.loggingEnabled) {
@@ -83,6 +90,10 @@ class ComponentManager {
     this.environment = data.environment;
     this.platform = data.platform;
     this.uuid = data.uuid;
+
+    if(this.loggingEnabled) { console.log("onReadyData", data); }
+
+    this.activateThemes(data.activeThemeUrls || []);
 
     if(this.onReadyCallback) {
       this.onReadyCallback();
@@ -325,18 +336,39 @@ class ComponentManager {
 
   /* Themes */
 
-  activateThemes(urls) {
-    this.deactivateAllCustomThemes();
-
-    if(this.loggingEnabled) {
-      console.log("Activating themes:", urls);
-    }
-
-    if(!urls) {
+  activateThemes(incomingUrls) {
+    if(this.activeThemes.sort().toString() == incomingUrls.sort().toString()) {
+      // incoming are same as active, do nothing
       return;
     }
 
-    for(var url of urls) {
+    let themesToActivate = incomingUrls || [];
+    let themesToDeactivate = [];
+
+    for(var activeUrl of this.activeThemes) {
+      if(!incomingUrls.includes(activeUrl)) {
+        // active not present in incoming, deactivate it
+        themesToDeactivate.push(activeUrl);
+      } else {
+        // already present in active themes, remove it from themesToActivate
+        themesToActivate = themesToActivate.filter((candidate) => {
+          return candidate != activeUrl;
+        })
+      }
+    }
+
+    if(this.loggingEnabled) {
+      console.log("Deactivating themes:", themesToDeactivate);
+      console.log("Activating themes:", themesToActivate);
+    }
+
+    for(var theme of themesToDeactivate) {
+      this.deactivateTheme(theme);
+    }
+
+    this.activeThemes = themesToActivate;
+
+    for(var url of themesToActivate) {
       if(!url) {
         continue;
       }
@@ -351,17 +383,48 @@ class ComponentManager {
     }
   }
 
-  deactivateAllCustomThemes() {
-    // make copy, as it will be modified during loop
-    // `getElementsByClassName` is an HTMLCollection, not an Array
-    var elements = Array.from(document.getElementsByClassName("custom-theme")).slice()
-    for(var element of elements) {
-      if(element) {
-        element.disabled = true;
-        element.parentNode.removeChild(element);
-      }
+  themeElementForUrl(url) {
+    var elements = Array.from(document.getElementsByClassName("custom-theme")).slice();
+    return elements.find((element) => {
+      return element.href == url;
+    })
+  }
+
+  deactivateTheme(url) {
+    let element = this.themeElementForUrl(url);
+    if(element) {
+      element.disabled = true;
+      element.parentNode.removeChild(element);
     }
   }
+
+  /* Theme caching is currently disabled. Might be enabled in the future if neccessary. */
+  /*
+  activateCachedThemes() {
+    let themes = this.getCachedThemeUrls();
+    let writeToCache = false;
+    if(this.loggingEnabled) { console.log("Activating cached themes", themes); }
+    this.activateThemes(themes, writeToCache);
+  }
+
+  cacheThemeUrls(urls) {
+    if(this.loggingEnabled) { console.log("Caching theme urls", urls); }
+    localStorage.setItem("cachedThemeUrls", JSON.stringify(urls));
+  }
+
+  decacheThemeUrls() {
+    localStorage.removeItem("cachedThemeUrls");
+  }
+
+  getCachedThemeUrls() {
+    let urls = localStorage.getItem("cachedThemeUrls");
+    if(urls) {
+      return JSON.parse(urls);
+    } else {
+      return [];
+    }
+  }
+  */
 
 
   /* Utilities */

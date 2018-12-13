@@ -337,6 +337,7 @@ class ComponentManager {
   /* Themes */
 
   activateThemes(incomingUrls) {
+    if(this.loggingEnabled) { console.log("Incoming themes", incomingUrls); }
     if(this.activeThemes.sort().toString() == incomingUrls.sort().toString()) {
       // incoming are same as active, do nothing
       return;
@@ -366,7 +367,7 @@ class ComponentManager {
       this.deactivateTheme(theme);
     }
 
-    this.activeThemes = themesToActivate;
+    this.activeThemes = incomingUrls;
 
     for(var url of themesToActivate) {
       if(!url) {

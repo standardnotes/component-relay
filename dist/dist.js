@@ -410,6 +410,9 @@ var ComponentManager = function () {
   }, {
     key: "activateThemes",
     value: function activateThemes(incomingUrls) {
+      if (this.loggingEnabled) {
+        console.log("Incoming themes", incomingUrls);
+      }
       if (this.activeThemes.sort().toString() == incomingUrls.sort().toString()) {
         // incoming are same as active, do nothing
         return;
@@ -481,7 +484,7 @@ var ComponentManager = function () {
         }
       }
 
-      this.activeThemes = themesToActivate;
+      this.activeThemes = incomingUrls;
 
       var _iteratorNormalCompletion4 = true;
       var _didIteratorError4 = false;

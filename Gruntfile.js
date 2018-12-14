@@ -5,7 +5,7 @@ module.exports = function(grunt) {
     watch: {
       js: {
         files: ['src/**/*.js'],
-        tasks: ['babel', 'browserify'],
+        tasks: ['babel'],
         options: {
           spawn: false,
         },
@@ -22,16 +22,7 @@ module.exports = function(grunt) {
                 'dist/dist.js': 'src/componentManager.js'
             }
         }
-    },
-
-    browserify: {
-      dist: {
-        files: {
-          'dist/dist.js': 'dist/dist.js'
-        }
-      }
     }
-
   });
 
   grunt.loadNpmTasks('grunt-newer');
@@ -39,5 +30,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-babel');
   grunt.loadNpmTasks('grunt-browserify');
 
-  grunt.registerTask('default', ['babel', 'browserify']);
+  grunt.registerTask('default', ['babel']);
 };

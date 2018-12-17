@@ -375,6 +375,7 @@ class ComponentManager {
       }
 
       var link = document.createElement("link");
+      link.id = btoa(url);
       link.href = url;
       link.type = "text/css";
       link.rel = "stylesheet";
@@ -387,7 +388,8 @@ class ComponentManager {
   themeElementForUrl(url) {
     var elements = Array.from(document.getElementsByClassName("custom-theme")).slice();
     return elements.find((element) => {
-      return element.href == url;
+      // We used to search here by `href`, but on desktop, with local file:// urls, that didn't work for some reason.
+      return element.id == btoa(url);
     })
   }
 

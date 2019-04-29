@@ -349,14 +349,43 @@ var ComponentManager = function () {
       var skipDebouncer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
       var presave = arguments[3];
 
-      var saveBlock = function saveBlock() {
+      var saveBlock = function saveBlock(itemsToSave) {
         // presave block allows client to gain the benefit of performing something in the debounce cycle.
         presave && presave();
 
-        var mappedItems = items.map(function (item) {
-          item.updated_at = new Date();
-          return this.jsonObjectForItem(item);
-        }.bind(_this3));
+        var mappedUuids = [];
+        var mappedItems = [];
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+          for (var _iterator2 = itemsToSave[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var item = _step2.value;
+
+            // To prevent duplicates
+            if (mappedUuids.includes(item.uuid)) {
+              continue;
+            }
+
+            mappedUuids.push(item.uuid);
+            item.updated_at = new Date();
+            mappedItems.push(_this3.jsonObjectForItem(item));
+          }
+        } catch (err) {
+          _didIteratorError2 = true;
+          _iteratorError2 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+              _iterator2.return();
+            }
+          } finally {
+            if (_didIteratorError2) {
+              throw _iteratorError2;
+            }
+          }
+        }
 
         _this3.postMessage("save-items", { items: mappedItems }, function (data) {
           callback && callback();
@@ -371,17 +400,26 @@ var ComponentManager = function () {
         the save will finally trigger.
          Note: it's important to modify saving items updated_at immediately and not after delay. If you modify after delay,
         a delayed sync could just be wrapping up, and will send back old data and replace what the user has typed.
-      */
+       */
+
+      // We also need to make sure that when we clear a pending save timeout, we carry over those pending items into the new save.
+      if (!this.pendingSaveItems) {
+        this.pendingSaveItems = [];
+      }
+
       if (this.coallesedSaving == true && !skipDebouncer) {
         if (this.pendingSave) {
           clearTimeout(this.pendingSave);
         }
 
+        this.pendingSaveItems = this.pendingSaveItems.concat(items);
         this.pendingSave = setTimeout(function () {
-          saveBlock();
+          saveBlock(_this3.pendingSaveItems);
+          // Clear pending save items
+          _this3.pendingSaveItems = [];
         }, this.coallesedSavingDelay);
       } else {
-        saveBlock();
+        saveBlock(items);
       }
     }
   }, {
@@ -420,13 +458,13 @@ var ComponentManager = function () {
       var themesToActivate = incomingUrls || [];
       var themesToDeactivate = [];
 
-      var _iteratorNormalCompletion2 = true;
-      var _didIteratorError2 = false;
-      var _iteratorError2 = undefined;
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
 
       try {
-        for (var _iterator2 = this.activeThemes[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var activeUrl = _step2.value;
+        for (var _iterator3 = this.activeThemes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var activeUrl = _step3.value;
 
           if (!incomingUrls.includes(activeUrl)) {
             // active not present in incoming, deactivate it
@@ -437,36 +475,6 @@ var ComponentManager = function () {
               return candidate != activeUrl;
             });
           }
-        }
-      } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
-          }
-        } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
-          }
-        }
-      }
-
-      if (this.loggingEnabled) {
-        console.log("Deactivating themes:", themesToDeactivate);
-        console.log("Activating themes:", themesToActivate);
-      }
-
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
-
-      try {
-        for (var _iterator3 = themesToDeactivate[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var theme = _step3.value;
-
-          this.deactivateTheme(theme);
         }
       } catch (err) {
         _didIteratorError3 = true;
@@ -483,15 +491,45 @@ var ComponentManager = function () {
         }
       }
 
-      this.activeThemes = incomingUrls;
+      if (this.loggingEnabled) {
+        console.log("Deactivating themes:", themesToDeactivate);
+        console.log("Activating themes:", themesToActivate);
+      }
 
       var _iteratorNormalCompletion4 = true;
       var _didIteratorError4 = false;
       var _iteratorError4 = undefined;
 
       try {
-        for (var _iterator4 = themesToActivate[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-          var url = _step4.value;
+        for (var _iterator4 = themesToDeactivate[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var theme = _step4.value;
+
+          this.deactivateTheme(theme);
+        }
+      } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
+          }
+        } finally {
+          if (_didIteratorError4) {
+            throw _iteratorError4;
+          }
+        }
+      }
+
+      this.activeThemes = incomingUrls;
+
+      var _iteratorNormalCompletion5 = true;
+      var _didIteratorError5 = false;
+      var _iteratorError5 = undefined;
+
+      try {
+        for (var _iterator5 = themesToActivate[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+          var url = _step5.value;
 
           if (!url) {
             continue;
@@ -507,16 +545,16 @@ var ComponentManager = function () {
           document.getElementsByTagName("head")[0].appendChild(link);
         }
       } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion4 && _iterator4.return) {
-            _iterator4.return();
+          if (!_iteratorNormalCompletion5 && _iterator5.return) {
+            _iterator5.return();
           }
         } finally {
-          if (_didIteratorError4) {
-            throw _iteratorError4;
+          if (_didIteratorError5) {
+            throw _iteratorError5;
           }
         }
       }

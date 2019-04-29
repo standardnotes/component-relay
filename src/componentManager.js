@@ -280,16 +280,24 @@ class ComponentManager {
   This should be used when saving items via other means besides keystrokes.
    */
   saveItems(items, callback, skipDebouncer = false, presave) {
-    let saveBlock = () => {
+    let saveBlock = (itemsToSave) => {
       // presave block allows client to gain the benefit of performing something in the debounce cycle.
       presave && presave();
 
-      let mappedItems = items.map(function(item) {
-        item.updated_at = new Date();
-        return this.jsonObjectForItem(item);
-      }.bind(this));
+      let mappedUuids = [];
+      let mappedItems = [];
+      for(let item of itemsToSave) {
+        // To prevent duplicates
+        if(mappedUuids.includes(item.uuid)) {
+          continue;
+        }
 
-      this.postMessage("save-items", {items: mappedItems}, function(data){
+        mappedUuids.push(item.uuid);
+        item.updated_at = new Date();
+        mappedItems.push(this.jsonObjectForItem(item));
+      }
+
+      this.postMessage("save-items", {items: mappedItems}, (data) => {
         callback && callback();
       });
     }
@@ -303,17 +311,25 @@ class ComponentManager {
 
       Note: it's important to modify saving items updated_at immediately and not after delay. If you modify after delay,
       a delayed sync could just be wrapping up, and will send back old data and replace what the user has typed.
+
     */
+
+    // We also need to make sure that when we clear a pending save timeout, we carry over those pending items into the new save.
+    if(!this.pendingSaveItems) { this.pendingSaveItems = [];}
+
     if(this.coallesedSaving == true && !skipDebouncer) {
       if(this.pendingSave) {
         clearTimeout(this.pendingSave);
       }
 
+      this.pendingSaveItems = this.pendingSaveItems.concat(items);
       this.pendingSave = setTimeout(() => {
-        saveBlock();
+        saveBlock(this.pendingSaveItems);
+        // Clear pending save items
+        this.pendingSaveItems = [];
       }, this.coallesedSavingDelay);
     } else {
-      saveBlock();
+      saveBlock(items);
     }
   }
 

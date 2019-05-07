@@ -17,29 +17,41 @@ class ComponentManager {
   }
 
   registerMessageHandler() {
-    let messageHandler = (event, mobileSource) => {
-      if (this.loggingEnabled) { console.log("Components API Message received:", event.data, "mobile?", mobileSource)}
+    let messageHandler = (event) => {
+      if (this.loggingEnabled) { console.log("Components API Message received:", event.data)}
 
       // The first message will be the most reliable one, so we won't change it after any subsequent events,
       // in case you receive an event from another window.
       if(!this.origin) {
         this.origin = event.origin;
       }
-      this.mobileSource = mobileSource;
-      // If from mobile app, JSON needs to be used.
-      let data = mobileSource ? JSON.parse(event.data) : event.data;
-      this.handleMessage(data);
+
+      // Mobile environment sends data as JSON string
+      let data = event.data;
+      let parsedData = typeof data === "string" ? JSON.parse(data) : data;
+      this.handleMessage(parsedData);
     }
 
-    // Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
-    // for postMessage API to work properly.
+    /*
+      Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
+      for postMessage API to work properly.
+
+      Update May 2019:
+      As part of transitioning React Native webview into the community package,
+      we'll now only need to use window.addEventListener.
+
+      However, we want to maintain backward compatibility for Mobile < v3.0.5, so we'll keep document.addEventListener
+
+      Also, even with the new version of react-native-webview, Android may still require document.addEventListener (while iOS still only requires window.addEventListener)
+      https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
+     */
 
     document.addEventListener("message", function (event) {
-      messageHandler(event, true);
+      messageHandler(event);
     }, false);
 
     window.addEventListener("message", function (event) {
-      messageHandler(event, false);
+      messageHandler(event);
     }, false);
   }
 
@@ -78,6 +90,11 @@ class ComponentManager {
   }
 
   onReady(data) {
+    this.environment = data.environment;
+    this.platform = data.platform;
+    this.uuid = data.uuid;
+    this.isMobile = this.environment == "mobile";
+
     if(this.initialPermissions && this.initialPermissions.length > 0) {
       this.requestPermissions(this.initialPermissions);
     }
@@ -87,9 +104,6 @@ class ComponentManager {
     }
 
     this.messageQueue = [];
-    this.environment = data.environment;
-    this.platform = data.platform;
-    this.uuid = data.uuid;
 
     if(this.loggingEnabled) { console.log("onReadyData", data); }
 
@@ -145,7 +159,7 @@ class ComponentManager {
     this.sentMessages.push(sentMessage);
 
     // Mobile (React Native) requires a string for the postMessage API.
-    if(this.mobileSource) {
+    if(this.isMobile) {
       message = JSON.stringify(message);
     }
 

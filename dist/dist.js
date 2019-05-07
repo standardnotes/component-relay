@@ -28,9 +28,9 @@ var ComponentManager = function () {
     value: function registerMessageHandler() {
       var _this = this;
 
-      var messageHandler = function messageHandler(event, mobileSource) {
+      var messageHandler = function messageHandler(event) {
         if (_this.loggingEnabled) {
-          console.log("Components API Message received:", event.data, "mobile?", mobileSource);
+          console.log("Components API Message received:", event.data);
         }
 
         // The first message will be the most reliable one, so we won't change it after any subsequent events,
@@ -38,21 +38,30 @@ var ComponentManager = function () {
         if (!_this.origin) {
           _this.origin = event.origin;
         }
-        _this.mobileSource = mobileSource;
-        // If from mobile app, JSON needs to be used.
-        var data = mobileSource ? JSON.parse(event.data) : event.data;
-        _this.handleMessage(data);
+
+        // Mobile environment sends data as JSON string
+        var data = event.data;
+        var parsedData = typeof data === "string" ? JSON.parse(data) : data;
+        _this.handleMessage(parsedData);
       };
 
-      // Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
-      // for postMessage API to work properly.
+      /*
+        Mobile (React Native) uses `document`, web/desktop uses `window`.addEventListener
+        for postMessage API to work properly.
+         Update May 2019:
+        As part of transitioning React Native webview into the community package,
+        we'll now only need to use window.addEventListener.
+         However, we want to maintain backward compatibility for Mobile < v3.0.5, so we'll keep document.addEventListener
+         Also, even with the new version of react-native-webview, Android may still require document.addEventListener (while iOS still only requires window.addEventListener)
+        https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
+       */
 
       document.addEventListener("message", function (event) {
-        messageHandler(event, true);
+        messageHandler(event);
       }, false);
 
       window.addEventListener("message", function (event) {
-        messageHandler(event, false);
+        messageHandler(event);
       }, false);
     }
   }, {
@@ -90,6 +99,11 @@ var ComponentManager = function () {
   }, {
     key: "onReady",
     value: function onReady(data) {
+      this.environment = data.environment;
+      this.platform = data.platform;
+      this.uuid = data.uuid;
+      this.isMobile = this.environment == "mobile";
+
       if (this.initialPermissions && this.initialPermissions.length > 0) {
         this.requestPermissions(this.initialPermissions);
       }
@@ -120,9 +134,6 @@ var ComponentManager = function () {
       }
 
       this.messageQueue = [];
-      this.environment = data.environment;
-      this.platform = data.platform;
-      this.uuid = data.uuid;
 
       if (this.loggingEnabled) {
         console.log("onReadyData", data);
@@ -186,7 +197,7 @@ var ComponentManager = function () {
       this.sentMessages.push(sentMessage);
 
       // Mobile (React Native) requires a string for the postMessage API.
-      if (this.mobileSource) {
+      if (this.isMobile) {
         message = JSON.stringify(message);
       }
 

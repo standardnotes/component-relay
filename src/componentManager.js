@@ -298,15 +298,8 @@ class ComponentManager {
       // presave block allows client to gain the benefit of performing something in the debounce cycle.
       presave && presave();
 
-      let mappedUuids = [];
       let mappedItems = [];
       for(let item of itemsToSave) {
-        // To prevent duplicates
-        if(mappedUuids.includes(item.uuid)) {
-          continue;
-        }
-
-        mappedUuids.push(item.uuid);
         item.updated_at = new Date();
         mappedItems.push(this.jsonObjectForItem(item));
       }
@@ -336,6 +329,15 @@ class ComponentManager {
         clearTimeout(this.pendingSave);
       }
 
+      let incomingIds = items.map((item) => item.uuid);
+
+      // Replace any existing save items with incoming values
+      // Only keep items here who are not in incomingIds
+      this.pendingSaveItems = this.pendingSaveItems.filter((item) => {
+        return !incomingIds.includes(item.uuid);
+      })
+
+        // Add new items, now that we've made sure it's cleared of incoming items.
       this.pendingSaveItems = this.pendingSaveItems.concat(items);
       this.pendingSave = setTimeout(() => {
         saveBlock(this.pendingSaveItems);

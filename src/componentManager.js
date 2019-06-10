@@ -193,22 +193,22 @@ class ComponentManager {
 
   streamContextItem(callback) {
     this.postMessage("stream-context-item", null, (data) => {
-      var item = data.item;
+      let item = data.item;
       /*
-        When an item is saved via saveItem, its updated_at value is set client side to the current date.
-        If we make a change locally, then for whatever reason receive an item via streamItems/streamContextItem,
-        we want to ignore that change if it was made prior to the latest change we've made.
-
-        Update 1/22/18: However, if a user is restoring a note from version history, this change
-        will not pass through this filter and will thus be ignored. Because the client now handles
-        this case with isMetadataUpdate, we no longer need the below.
+        If this is a new context item than the context item the component was currently entertaining,
+        we want to immediately commit any pending saves, because if you send the new context item to the
+        component before it has commited its presave, it will end up first replacing the UI with new context item,
+        and when the debouncer executes to read the component UI, it will be reading the new UI for the previous item.
       */
-      // if(this.streamedContextItem && this.streamedContextItem.uuid == item.uuid
-      //   && this.streamedContextItem.updated_at > item.updated_at) {
-      //   return;
-      // }
-      // this.streamedContextItem = item;
-      callback(item);
+      let isNewItem = !this.lastStreamedItem || this.lastStreamedItem.uuid !== item.uuid;
+      if(isNewItem && this.pendingSaveTimeout) {
+        clearTimeout(this.pendingSaveTimeout);
+        this._performSavingOfItems(this.pendingSaveParams);
+        this.pendingSaveTimeout = null;
+        this.pendingSaveParams = null;
+      }
+      this.lastStreamedItem = item;
+      callback(this.lastStreamedItem);
     });
   }
 
@@ -289,63 +289,61 @@ class ComponentManager {
     this.saveItems(items, callback, false, presave);
   }
 
+  _performSavingOfItems({items, presave, callback}) {
+    // presave block allows client to gain the benefit of performing something in the debounce cycle.
+    presave && presave();
+
+    let mappedItems = [];
+    for(let item of items) {
+      mappedItems.push(this.jsonObjectForItem(item));
+    }
+
+    this.postMessage("save-items", {items: mappedItems}, (data) => {
+      callback && callback();
+    });
+  }
+
   /*
   skipDebouncer allows saves to go through right away rather than waiting for timeout.
   This should be used when saving items via other means besides keystrokes.
-   */
+  */
   saveItems(items, callback, skipDebouncer = false, presave) {
-    let saveBlock = (itemsToSave) => {
-      // presave block allows client to gain the benefit of performing something in the debounce cycle.
-      presave && presave();
 
-      let mappedItems = [];
-      for(let item of itemsToSave) {
-        item.updated_at = new Date();
-        mappedItems.push(this.jsonObjectForItem(item));
-      }
-
-      this.postMessage("save-items", {items: mappedItems}, (data) => {
-        callback && callback();
-      });
-    }
-
-    /*
-      Coallesed saving prevents saves from being made after every keystroke, and instead
-      waits coallesedSavingDelay before performing action. For example, if a user types a keystroke, and the clienet calls saveItem,
-      a 250ms delay will begin. If they type another keystroke within 250ms, the previously pending
-      save will be cancelled, and another 250ms delay occurs. If ater 250ms the pending delay is not cleared by a future call,
-      the save will finally trigger.
-
-      Note: it's important to modify saving items updated_at immediately and not after delay. If you modify after delay,
-      a delayed sync could just be wrapping up, and will send back old data and replace what the user has typed.
-
-    */
-
-    // We also need to make sure that when we clear a pending save timeout, we carry over those pending items into the new save.
+    // We need to make sure that when we clear a pending save timeout,
+    // we carry over those pending items into the new save.
     if(!this.pendingSaveItems) { this.pendingSaveItems = [];}
 
     if(this.coallesedSaving == true && !skipDebouncer) {
-      if(this.pendingSave) {
-        clearTimeout(this.pendingSave);
+      if(this.pendingSaveTimeout) {
+        clearTimeout(this.pendingSaveTimeout);
       }
 
       let incomingIds = items.map((item) => item.uuid);
 
       // Replace any existing save items with incoming values
       // Only keep items here who are not in incomingIds
-      this.pendingSaveItems = this.pendingSaveItems.filter((item) => {
+      let preexistingItems = this.pendingSaveItems.filter((item) => {
         return !incomingIds.includes(item.uuid);
       })
 
         // Add new items, now that we've made sure it's cleared of incoming items.
-      this.pendingSaveItems = this.pendingSaveItems.concat(items);
-      this.pendingSave = setTimeout(() => {
-        saveBlock(this.pendingSaveItems);
-        // Clear pending save items
+      this.pendingSaveItems = preexistingItems.concat(items);
+
+      // We'll potentially need to commit early if stream-context-item message comes in
+      this.pendingSaveParams = {
+        items: this.pendingSaveItems,
+        presave: presave,
+        callback: callback
+      }
+
+      this.pendingSaveTimeout = setTimeout(() => {
+        this._performSavingOfItems(this.pendingSaveParams);
         this.pendingSaveItems = [];
+        this.pendingSaveTimeout = null;
+        this.pendingSaveParams = null;
       }, this.coallesedSavingDelay);
     } else {
-      saveBlock(items);
+      this._performSavingOfItems({items, presave, callback});
     }
   }
 

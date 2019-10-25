@@ -20,10 +20,24 @@ class ComponentManager {
     let messageHandler = (event) => {
       if (this.loggingEnabled) { console.log("Components API Message received:", event.data)}
 
+      // We don't have access to window.parent.origin due to cross-domain restrictions.
+      // Check referrer if available, otherwise defer to checking for first-run value.
+      // Craft URL objects so that example.com === example.com/
+      if(document.referrer) {
+        let referrer = new URL(document.referrer).origin;
+        let eventOrigin = new URL(event.origin).origin;
+        if(referrer !== eventOrigin) {
+          return;
+        }
+      }
+
       // The first message will be the most reliable one, so we won't change it after any subsequent events,
       // in case you receive an event from another window.
       if(!this.origin) {
         this.origin = event.origin;
+      } else if(event.origin !== this.origin) {
+        // If event origin doesn't match first-run value, return.
+        return;
       }
 
       // Mobile environment sends data as JSON string

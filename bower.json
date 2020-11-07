@@ -1,6 +1,6 @@
 {
   "name": "components-api",
-  "description": "Standard Notes componenet API",
+  "description": "Standard Notes components API",
   "main": "dist/dist.js",
   "license": "MIT",
   "homepage": "https://github.com/sn-extensions/components-api",

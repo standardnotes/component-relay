@@ -2,12 +2,12 @@
 
 To get started using the Components API, read the [getting started guide](https://docs.standardnotes.org/extensions/intro).
 
-## Installation      
+## Installation
 
 ```
 npm install --save sn-components-api
 ```
 
-#### Manual:
+#### Manual
 
 Import the file `dist/dist.js` in your HTML file.

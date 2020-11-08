@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   mode: 'production',
-  entry: './src/index.ts',
+  entry: './lib/index.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'dist.js',
@@ -15,12 +15,14 @@ module.exports = {
     rules: [
       {
         test: /\.(ts|js)?$/,
-        use: {
-          loader: 'ts-loader',
-          options: {
-            transpileOnly: true,
+        use: [
+          'babel-loader', {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+            },
           },
-        },
+        ],
         exclude: /node_modules/,
       },
     ],

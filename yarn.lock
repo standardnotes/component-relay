@@ -1532,11 +1532,6 @@ eslint-plugin-jsdoc@^30.7.7:
     semver "^7.3.2"
     spdx-expression-parse "^3.0.1"
 
-eslint-plugin-prefer-arrow@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-prefer-arrow/-/eslint-plugin-prefer-arrow-1.2.2.tgz#0c6d25a6b94cb3e0110a23d129760af5860edb6e"
-  integrity sha512-C8YMhL+r8RMeMdYAw/rQtE6xNdMulj+zGWud/qIGnlmomiPRaLDGLMeskZ3alN6uMBojmooRimtdrXebLN4svQ==
-
 eslint-scope@^5.0.0, eslint-scope@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/eslint-scope/-/eslint-scope-5.1.1.tgz#e786e59a66cb92b3f6c1fb0d508aab174848f48c"
@@ -2558,6 +2553,10 @@ slice-ansi@^2.1.0:
     ansi-styles "^3.2.0"
     astral-regex "^1.0.0"
     is-fullwidth-code-point "^2.0.0"
+
+"snjs@github:standardnotes/snjs#9e212add83688f65267c9300d7b9d2b1e5772a27":
+  version "1.0.5"
+  resolved "https://codeload.github.com/standardnotes/snjs/tar.gz/9e212add83688f65267c9300d7b9d2b1e5772a27"
 
 source-list-map@^2.0.1:
   version "2.0.1"

@@ -1,8 +1,6 @@
 import Logger from './logger';
-import { generateUUID } from './utils';
-import { ComponentAction, Environment, Platform } from 'snjs';
-
-type Permission = ComponentAction;
+import Utils from './utils';
+import { ComponentAction, Environment, Platform, SNItem } from 'snjs';
 
 enum MessagePayloadApi {
   Component = "component",
@@ -32,24 +30,23 @@ type MessagePayload = {
 }
 
 class ComponentManager {
-  private initialPermissions: Permission[];
+  private initialPermissions: ComponentAction[];
   private onReadyCallback?: () => void;
   private component?: Component = {};
   private sentMessages?: MessagePayload[] = [];
   private messageQueue?: MessagePayload[] = [];
-  private lastStreamedItem?: any;
-  private pendingSaveItems?: any[];
+  private lastStreamedItem?: SNItem;
+  private pendingSaveItems?: SNItem[];
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
   private coallesedSaving = true;
   private coallesedSavingDelay = 250;
 
-  constructor(initialPermissions: Permission[], onReady?: () => void) {
+  constructor(initialPermissions: ComponentAction[], onReady?: () => void) {
     Logger.enabled = true;
 
     this.initialPermissions = initialPermissions;
     this.onReadyCallback = onReady;
-
     this.registerMessageHandler();
   }
 
@@ -217,7 +214,7 @@ class ComponentManager {
     window.parent.postMessage(message, this.component!.origin!);
   }
 
-  private requestPermissions(permissions: Permission[], callback?: (...params: any) => void) {
+  private requestPermissions(permissions: ComponentAction[], callback?: (...params: any) => void) {
     this.postMessage(ComponentAction.RequestPermissions, permissions, function () {
       callback && callback();
     }.bind(this));
@@ -287,7 +284,7 @@ class ComponentManager {
   }
 
   public generateUUID() {
-    return generateUUID();
+    return Utils.generateUuid();
   }
 
   /** Components actions */
@@ -323,11 +320,11 @@ class ComponentManager {
     });
   }
 
-  public selectItem(item: any) {
+  public selectItem(item: SNItem) {
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) });
   }
 
-  public createItem(item: any, callback: (data: any) => void) {
+  public createItem(item: SNItem, callback: (data: any) => void) {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
       let { item } = data;
       /**
@@ -342,18 +339,18 @@ class ComponentManager {
     });
   }
 
-  public createItems(items: any[], callback: (data: any) => void) {
+  public createItems(items: SNItem[], callback: (data: any) => void) {
     const mapped = items.map((item) => this.jsonObjectForItem(item));
     this.postMessage(ComponentAction.CreateItems, { items: mapped }, function(data: any) {
       callback && callback(data.items);
     }.bind(this));
   }
 
-  public associateItem(item: any) {
+  public associateItem(item: SNItem) {
     this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) });
   }
 
-  public deassociateItem(item: any) {
+  public deassociateItem(item: SNItem) {
     this.postMessage(ComponentAction.DeassociateItem, {item: this.jsonObjectForItem(item)} );
   }
 
@@ -361,13 +358,13 @@ class ComponentManager {
     this.postMessage(ComponentAction.ClearSelection, { content_type: "Tag" });
   }
 
-  public deleteItem(item: any, callback: (data: any) => void) {
+  public deleteItem(item: SNItem, callback: (data: any) => void) {
     this.deleteItems([item], callback);
   }
 
-  public deleteItems(items: any[], callback: (data: any) => void) {
+  public deleteItems(items: SNItem[], callback: (data: any) => void) {
     const params = {
-      items: items.map((item: any) => {
+      items: items.map((item: SNItem) => {
         return this.jsonObjectForItem(item);
       }),
     };
@@ -382,35 +379,33 @@ class ComponentManager {
     }.bind(this));
   }
 
-  public saveItem(item: any, callback: (data: any) => void, skipDebouncer = false) {
+  public saveItem(item: SNItem, callback: (data: any) => void, skipDebouncer = false) {
     this.saveItems([item], callback, skipDebouncer);
   }
 
   /**
-   * Presave allows clients to perform any actions last second before the save actually occurs (like setting previews).
+   * @param item The item to be saved
+   * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
-   *
-   * @param item
-   * @param presave
    * @param callback
    */
-  public saveItemWithPresave(item: any, presave: any, callback: (data: any) => void) {
+  public saveItemWithPresave(item: SNItem, presave: any, callback: (data: any) => void) {
     this.saveItemsWithPresave([item], presave, callback);
   }
 
-  public saveItemsWithPresave(items: any[], presave: any, callback: (data: any) => void) {
+  public saveItemsWithPresave(items: SNItem[], presave: any, callback: (data: any) => void) {
     this.saveItems(items, callback, false, presave);
   }
 
-  private _performSavingOfItems({ items, presave, callback }: { items: any, presave: () => void, callback: () => void }) {
+  private _performSavingOfItems({ items, presave, callback }: { items: SNItem[], presave: () => void, callback: () => void }) {
     /**
      * Presave block allows client to gain the benefit of performing something in the debounce cycle.
      */
     presave && presave();
 
     const mappedItems = [];
-    for(const item of items) {
+    for (const item of items) {
       mappedItems.push(this.jsonObjectForItem(item));
     }
 
@@ -420,15 +415,13 @@ class ComponentManager {
   }
 
   /**
-   * skipDebouncer allows saves to go through right away rather than waiting for timeout.
-   * This should be used when saving items via other means besides keystrokes.
-   *
-   * @param items
+   * @param items The items to be saved.
    * @param callback
-   * @param skipDebouncer
+   * @param skipDebouncer Allows saves to go through right away rather than waiting for timeout.
+   * This should be used when saving items via other means besides keystrokes.
    * @param presave
    */
-  public saveItems(items: any, callback: (...data: any) => void, skipDebouncer = false, presave?: any) {
+  public saveItems(items: SNItem[], callback: (...data: any) => void, skipDebouncer = false, presave?: any) {
     /**
      * We need to make sure that when we clear a pending save timeout,
      * we carry over those pending items into the new save.
@@ -442,7 +435,7 @@ class ComponentManager {
         clearTimeout(this.pendingSaveTimeout);
       }
 
-      const incomingIds = items.map((item: any) => item.uuid);
+      const incomingIds = items.map((item: SNItem) => item.uuid);
       /**
        * Replace any existing save items with incoming values.
        * Only keep items here who are not in incomingIds.
@@ -479,9 +472,10 @@ class ComponentManager {
     return copy;
   }
 
-  public getItemAppDataValue(item: any, key: string) {
+  public getItemAppDataValue(item: SNItem, key: string) {
     const appDomain = "org.standardnotes.sn";
-    const data = item.content.appData && item.content.appData[appDomain];
+    const { safeContent } = item.payload;
+    const data = safeContent.appData && safeContent.appData[appDomain];
     return (data) ? data[key] : null;
   }
 }

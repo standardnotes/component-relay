@@ -6,6 +6,7 @@
     "plugin:jsdoc/recommended"
   ],
   "rules": {
-    "eol-last": "warn"
+    "eol-last": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
   }
 }

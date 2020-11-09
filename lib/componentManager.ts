@@ -1,35 +1,6 @@
 import Logger from './logger';
 import { generateUUID } from './utils';
-
-enum ComponentEnvironment {
-  Web = "web",
-  Desktop = "desktop",
-  Mobile = "mobile",
-}
-
-enum ComponentPlatform {
-  Windows = "windows",
-  MacOS = "mac-os",
-  Linux = "linux",
-}
-
-enum ComponentAction {
-  ComponentRegistered = "component-registered",
-  SetComponentData = "set-component-data",
-  ActivateThemes = "themes",
-  RequestPermissions = "request-permissions",
-  SetSize = "set-size",
-  StreamItems = "stream-items",
-  StreamContextItem = "stream-context-item",
-  SelectItem = "select-item",
-  CreateItem = "create-item",
-  CreateItems = "create-items",
-  SaveItems = "save-items",
-  AssociateItem = "associate-item",
-  DeassociateItem = "deassociate-item",
-  ClearSelection = "clear-selection",
-  DeleteItems = "delete-items",
-}
+import { ComponentAction, Environment, Platform } from 'snjs';
 
 type Permission = ComponentAction;
 
@@ -42,8 +13,8 @@ type Component = {
   origin?: string;
   data?: Record<string, any>;
   sessionKey?: string;
-  environment?: ComponentEnvironment;
-  platform?: ComponentPlatform;
+  environment?: Environment;
+  platform?: Platform;
   isMobile?: boolean;
   acceptsThemes?: boolean;
   activeThemes?: string[];
@@ -168,7 +139,7 @@ class ComponentManager {
     this.component!.environment = data.environment;
     this.component!.platform = data.platform;
     this.component!.uuid = data.uuid;
-    this.component!.isMobile = this.component!.environment === "mobile";
+    this.component!.isMobile = this.component!.environment === Environment.Mobile;
 
     if (this.initialPermissions && this.initialPermissions.length > 0) {
       this.requestPermissions(this.initialPermissions);
@@ -194,7 +165,7 @@ class ComponentManager {
   }
 
   public isRunningInDesktopApplication() {
-    return this.component!.environment === ComponentEnvironment.Desktop;
+    return this.component!.environment === Environment.Desktop;
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
@@ -260,7 +231,7 @@ class ComponentManager {
     }
 
     let themesToActivate = incomingUrls;
-    let themesToDeactivate = [];
+    const themesToDeactivate = [];
 
     for (const activeUrl of this.component!.activeThemes!) {
       if (!incomingUrls.includes(activeUrl)) {
@@ -419,6 +390,10 @@ class ComponentManager {
    * Presave allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
+   *
+   * @param item
+   * @param presave
+   * @param callback
    */
   public saveItemWithPresave(item: any, presave: any, callback: (data: any) => void) {
     this.saveItemsWithPresave([item], presave, callback);
@@ -434,8 +409,8 @@ class ComponentManager {
      */
     presave && presave();
 
-    let mappedItems = [];
-    for(let item of items) {
+    const mappedItems = [];
+    for(const item of items) {
       mappedItems.push(this.jsonObjectForItem(item));
     }
 
@@ -447,6 +422,11 @@ class ComponentManager {
   /**
    * skipDebouncer allows saves to go through right away rather than waiting for timeout.
    * This should be used when saving items via other means besides keystrokes.
+   *
+   * @param items
+   * @param callback
+   * @param skipDebouncer
+   * @param presave
    */
   public saveItems(items: any, callback: (...data: any) => void, skipDebouncer = false, presave?: any) {
     /**

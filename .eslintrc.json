@@ -1,0 +1,11 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "jsdoc"],
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "plugin:jsdoc/recommended"
+  ],
+  "rules": {
+    "eol-last": "warn"
+  }
+}

@@ -8,6 +8,7 @@
   "rules": {
     "eol-last": "warn",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "no-multi-spaces": "warn"
+    "no-multi-spaces": "warn",
+    "keyword-spacing": "warn"
   }
 }

@@ -1,7 +1,7 @@
 import ComponentManager from './componentManager';
 
 declare global {
-  interface Window { ComponentManager: any }
+  interface Window { ComponentManager: unknown }
 }
 
 if (typeof module != "undefined" && typeof module.exports != "undefined") {

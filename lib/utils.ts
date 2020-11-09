@@ -1,8 +1,8 @@
 declare global {
-  interface Window { msCrypto: any; }
+  interface Window { msCrypto: unknown; }
 }
 
-export const generateUUID = () => {
+export const generateUUID = (): string => {
   const crypto = window.crypto || window.msCrypto;
 
   if (crypto) {

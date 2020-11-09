@@ -14,16 +14,22 @@
     "snjs": "github:standardnotes/snjs#9e212add83688f65267c9300d7b9d2b1e5772a27",
     "ts-loader": "^8.0.9",
     "tslint": "^6.1.3",
+    "typedoc": "^0.19.2",
     "typescript": "^4.0.5",
     "webpack": "^5.4.0",
-    "webpack-cli": "^4.2.0"
+    "webpack-cli": "^4.2.0",
+    "yarn-or-npm": "^3.0.1"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/sn-extensions/components-api.git"
   },
   "scripts": {
-    "bundle": "webpack",
-    "lint": "eslint lib/**"
-  }
+    "bundle": "yon run lint-fix && webpack && yon run build-types && yon run build-docs",
+    "lint": "eslint",
+    "lint-fix": "yon run lint --fix",
+    "build-docs": "typedoc",
+    "build-types": "tsc"
+  },
+  "types": "dist/@types"
 }

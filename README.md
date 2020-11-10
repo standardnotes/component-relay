@@ -26,7 +26,7 @@ Import the file `dist/dist.js` in your HTML file. For example:
 
 ## Tests
 
-`components-api` uses [Jest](https://jestjs.io/) for tests. Tests are located in the [test](test) directory. Test files should have the following name: `<name>.test.js`.
+`components-api` uses [Jest](https://jestjs.io/) for tests. Tests are located in the [test](test) directory. Test files have the following name: `<name>.test.js`.
 
 ### Run all tests
 

@@ -19,6 +19,9 @@
     "forceConsistentCasingInFileNames": true
   },
   "typedocOptions": {
+    "inputFiles": ["./lib"],
+    "name": "SN Components API",
+    "includeVersion": true,
     "mode": "modules",
     "out": "docs"
   }

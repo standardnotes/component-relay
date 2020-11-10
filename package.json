@@ -28,11 +28,15 @@
     "coverageReporters": [
       "html"
     ],
+    "preset": "ts-jest",
+    "resetMocks": true,
+    "roots": ["<rootDir>/lib", "<rootDir>/test"],
+    "testEnvironment": "node",
     "testMatch": [
       "**/?(*.)+(test).+(ts|tsx|js)"
     ],
     "transform": {
-      "^.+\\.(ts)$": "ts-jest"
+      ".(ts|tsx)": "ts-jest"
     },
     "verbose": true
   },
@@ -44,6 +48,7 @@
     "@types/node": "^14.14.6",
     "@typescript-eslint/eslint-plugin": "^4.6.1",
     "@typescript-eslint/parser": "^4.6.1",
+    "babel-cli": "^6.26.0",
     "babel-jest": "^26.6.3",
     "babel-loader": "^8.1.0",
     "eslint": "^7.13.0",

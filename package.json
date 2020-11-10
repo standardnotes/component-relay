@@ -19,7 +19,7 @@
   },
   "jest": {
     "collectCoverageFrom": [
-      "lib/**/*.ts"
+      "lib/**/{!(index),}.ts"
     ],
     "coverageDirectory": "coverage",
     "coveragePathIgnorePatterns": [

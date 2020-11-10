@@ -1,7 +1,41 @@
 {
   "name": "sn-components-api",
   "version": "2.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sn-extensions/components-api.git"
+  },
   "main": "dist/dist.js",
+  "types": "dist/@types",
+  "scripts": {
+    "build-docs": "typedoc",
+    "build-types": "tsc",
+    "bundle": "yon run lint-fix && webpack --config webpack.prod.js && yon run build-types && yon run build-docs",
+    "coverage": "yon test --coverage --silent",
+    "lint": "eslint",
+    "lint-fix": "yon run lint --fix",
+    "start": "webpack -w --config webpack.dev.js",
+    "test": "jest"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "lib/**/*.ts"
+    ],
+    "coverageDirectory": "coverage",
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/node_modules"
+    ],
+    "coverageReporters": [
+      "html"
+    ],
+    "testMatch": [
+      "**/?(*.)+(test).+(ts|tsx|js)"
+    ],
+    "transform": {
+      "^.+\\.(ts)$": "ts-jest"
+    },
+    "verbose": true
+  },
   "devDependencies": {
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
@@ -24,39 +58,5 @@
     "webpack-cli": "^4.2.0",
     "webpack-merge": "^5.3.0",
     "yarn-or-npm": "^3.0.1"
-  },
-  "jest": {
-    "collectCoverageFrom": [
-      "lib/**/*.ts"
-    ],
-    "coverageDirectory": "coverage",
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/node_modules"
-    ],
-    "coverageReporters": [
-      "html"
-    ],
-    "testMatch": [
-      "**/?(*.)+(test).+(ts|tsx|js)"
-    ],
-    "transform": {
-      "^.+\\.(ts)$": "ts-jest"
-    },
-    "verbose": true
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/sn-extensions/components-api.git"
-  },
-  "scripts": {
-    "start": "webpack -w --config webpack.dev.js",
-    "bundle": "yon run lint-fix && webpack --config webpack.prod.js && yon run build-types && yon run build-docs",
-    "lint": "eslint",
-    "lint-fix": "yon run lint --fix",
-    "build-docs": "typedoc",
-    "build-types": "tsc",
-    "test": "jest",
-    "coverage": "yon test --coverage --silent"
-  },
-  "types": "dist/@types"
+  }
 }

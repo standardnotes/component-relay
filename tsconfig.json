@@ -1,5 +1,6 @@
 {
   "include": ["lib/**/*"],
+  "exclude": ["node_modules", "test/**/*"],
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",

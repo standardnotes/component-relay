@@ -14,7 +14,7 @@
     "coverage": "yon test --coverage --silent",
     "lint": "eslint",
     "lint-fix": "yon run lint --fix",
-    "start": "webpack -w --config webpack.dev.js",
+    "start": "webpack serve -w --config webpack.dev.js",
     "test": "jest"
   },
   "jest": {
@@ -30,7 +30,10 @@
     ],
     "preset": "ts-jest",
     "resetMocks": true,
-    "roots": ["<rootDir>/lib", "<rootDir>/test"],
+    "roots": [
+      "<rootDir>/lib",
+      "<rootDir>/test"
+    ],
     "testEnvironment": "node",
     "testMatch": [
       "**/?(*.)+(test).+(ts|tsx|js)"
@@ -52,6 +55,7 @@
     "babel-jest": "^26.6.3",
     "babel-loader": "^8.1.0",
     "eslint": "^7.13.0",
+    "html-webpack-plugin": "^4.5.0",
     "jest": "^26.6.3",
     "snjs": "github:standardnotes/snjs#9e212add83688f65267c9300d7b9d2b1e5772a27",
     "ts-jest": "^26.4.4",
@@ -61,6 +65,7 @@
     "typescript": "^4.0.5",
     "webpack": "^5.4.0",
     "webpack-cli": "^4.2.0",
+    "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^5.3.0",
     "yarn-or-npm": "^3.0.1"
   }

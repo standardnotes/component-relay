@@ -30,4 +30,17 @@ export default class Utils {
       return (character === 'x' ? r : (r&0x3|0x8)).toString(16);
     });
   }
+
+  static isValidJsonString(str: any) {
+    if (typeof str !== "string") {
+      return false;
+    }
+    try {
+      const result = JSON.parse(str);
+      const type = Object.prototype.toString.call(result);
+      return type === '[object Object]' || type === '[object Array]';
+    } catch (e) {
+      return false;
+    }
+  }
 }

@@ -32,7 +32,8 @@ type MessagePayload = {
 
 type ComponentManagerOptions = {
   coallesedSaving?: boolean,
-  coallesedSavingDelay?: number
+  coallesedSavingDelay?: number,
+  loggingEnabled?: boolean
 }
 
 type ComponentManagerConstructorParams = {
@@ -41,33 +42,44 @@ type ComponentManagerConstructorParams = {
   onReady?: () => void
 }
 
+const initialComponentState: Component = {
+  activeThemes: []
+}
+
 class ComponentManager {
   private initialPermissions?: ComponentAction[];
   private onReadyCallback?: () => void;
-  private component?: Component = {};
+  private component?: Component = initialComponentState;
   private sentMessages?: MessagePayload[] = [];
   private messageQueue?: MessagePayload[] = [];
   private lastStreamedItem?: SNItem;
   private pendingSaveItems?: SNItem[];
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
-  private coallesedSaving = true;
+  private coallesedSaving = false;
   private coallesedSavingDelay = 250;
 
-  constructor({ initialPermissions, options, onReady }: ComponentManagerConstructorParams) {
-    Logger.enabled = true;
-
-    this.initialPermissions = initialPermissions;
-    
-    if (options?.coallesedSaving) {
-      this.coallesedSaving = options.coallesedSaving;
-    }
-
-    if (options?.coallesedSavingDelay) {
-      this.coallesedSavingDelay = options.coallesedSavingDelay;
+  constructor(parameters?: ComponentManagerConstructorParams) {
+    if (parameters?.initialPermissions && parameters.initialPermissions.length > 0) {
+      this.initialPermissions = parameters.initialPermissions;
     }
     
-    this.onReadyCallback = onReady;
+    if (parameters?.options?.coallesedSaving) {
+      this.coallesedSaving = parameters.options.coallesedSaving;
+    }
+
+    if (parameters?.options?.coallesedSavingDelay) {
+      this.coallesedSavingDelay = parameters.options.coallesedSavingDelay;
+    }
+
+    if (parameters?.options?.loggingEnabled) {
+      Logger.enabled = parameters.options.loggingEnabled;
+    }
+
+    if (parameters?.onReady) {
+      this.onReadyCallback = parameters.onReady;
+    }
+
     this.registerMessageHandler();
   }
 
@@ -102,7 +114,7 @@ class ComponentManager {
 
       // Mobile environment sends data as JSON string.
       const { data } = event;
-      const parsedData = typeof data === "string" ? JSON.parse(data) : data;
+      const parsedData = Utils.isValidJsonString(data) ? JSON.parse(data) : data;
       this.handleMessage(parsedData);
     }
 
@@ -243,8 +255,9 @@ class ComponentManager {
 
   private activateThemes(incomingUrls: string[] = []) {
     Logger.info("Incoming themes:", incomingUrls);
+
     if (this.component!.activeThemes!.sort().toString() == incomingUrls.sort().toString()) {
-      // Inncoming theme URLs are same as active, do nothing.
+      // Incoming theme URLs are same as active, do nothing.
       return;
     }
 

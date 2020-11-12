@@ -1,6 +1,6 @@
 import Logger from './logger';
 import Utils from './utils';
-import { ComponentAction, Environment, Platform, SNItem } from 'snjs';
+import { ComponentAction, ContentType, Environment, Platform, SNItem } from 'snjs';
 
 enum MessagePayloadApi {
   Component = "component",
@@ -16,6 +16,7 @@ type Component = {
   isMobile?: boolean;
   acceptsThemes?: boolean;
   activeThemes?: string[];
+  activeThemeUrls?: string[];
 }
 
 type MessagePayload = {
@@ -29,8 +30,19 @@ type MessagePayload = {
   callback?: (...params: any) => void;
 }
 
+type ComponentManagerOptions = {
+  coallesedSaving?: boolean,
+  coallesedSavingDelay?: number
+}
+
+type ComponentManagerConstructorParams = {
+  initialPermissions?: ComponentAction[]
+  options?: ComponentManagerOptions,
+  onReady?: () => void
+}
+
 class ComponentManager {
-  private initialPermissions: ComponentAction[];
+  private initialPermissions?: ComponentAction[];
   private onReadyCallback?: () => void;
   private component?: Component = {};
   private sentMessages?: MessagePayload[] = [];
@@ -42,10 +54,19 @@ class ComponentManager {
   private coallesedSaving = true;
   private coallesedSavingDelay = 250;
 
-  constructor(initialPermissions: ComponentAction[], onReady?: () => void) {
+  constructor({ initialPermissions, options, onReady }: ComponentManagerConstructorParams) {
     Logger.enabled = true;
 
     this.initialPermissions = initialPermissions;
+    
+    if (options?.coallesedSaving) {
+      this.coallesedSaving = options.coallesedSaving;
+    }
+
+    if (options?.coallesedSavingDelay) {
+      this.coallesedSavingDelay = options.coallesedSavingDelay;
+    }
+    
     this.onReadyCallback = onReady;
     this.registerMessageHandler();
   }
@@ -132,7 +153,7 @@ class ComponentManager {
     }
   }
 
-  private onReady(data: any) {
+  private onReady(data: Component) {
     this.component!.environment = data.environment;
     this.component!.platform = data.platform;
     this.component!.uuid = data.uuid;
@@ -148,7 +169,7 @@ class ComponentManager {
 
     this.messageQueue = [];
 
-    Logger.info("onReady data:", data);
+    Logger.info("Data passed to onReady:", data);
 
     this.activateThemes(data.activeThemeUrls || []);
 
@@ -157,12 +178,16 @@ class ComponentManager {
     }
   }
 
-  private getSelfComponentUUID() {
+  public getSelfComponentUUID() {
     return this.component!.uuid;
   }
 
   public isRunningInDesktopApplication() {
     return this.component!.environment === Environment.Desktop;
+  }
+
+  public getComponentDataValueForKey(key: string) {
+    return this.component!.data![key];
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
@@ -175,11 +200,7 @@ class ComponentManager {
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component!.data });
   }
 
-  public componentDataValueForKey(key: string) {
-    return this.component!.data![key];
-  }
-
-  private postMessage(action: ComponentAction, data: any, callback?: (...params: any) => void) {
+  private postMessage(action: ComponentAction, data: Record<string, any>, callback?: (...params: any) => void) {
     if (!this.component!.sessionKey) {
       this.messageQueue!.push({
         action: action,
@@ -215,9 +236,9 @@ class ComponentManager {
   }
 
   private requestPermissions(permissions: ComponentAction[], callback?: (...params: any) => void) {
-    this.postMessage(ComponentAction.RequestPermissions, permissions, function () {
+    this.postMessage(ComponentAction.RequestPermissions, permissions, () => {
       callback && callback();
-    }.bind(this));
+    });
   }
 
   private activateThemes(incomingUrls: string[] = []) {
@@ -283,24 +304,20 @@ class ComponentManager {
     }
   }
 
-  public generateUUID() {
+  private generateUUID() {
     return Utils.generateUuid();
   }
 
   /** Components actions */
 
-  public setSize(type: string, width: number, height: number) {
-    this.postMessage(ComponentAction.SetSize, { type, width, height });
-  }
-
   public streamItems(contentTypes: string[], callback: (data: any) => void) {
-    this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, function (data: any) {
+    this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
       callback(data.items);
-    }.bind(this));
+    });
   }
 
   public streamContextItem(callback: (data: any) => void) {
-    this.postMessage(ComponentAction.StreamContextItem, null, (data) => {
+    this.postMessage(ComponentAction.StreamContextItem, {}, (data) => {
       const { item } = data;
       /**
        * If this is a new context item than the context item the component was currently entertaining,
@@ -309,19 +326,35 @@ class ComponentManager {
        * and when the debouncer executes to read the component UI, it will be reading the new UI for the previous item.
        */
       const isNewItem = !this.lastStreamedItem || this.lastStreamedItem.uuid !== item.uuid;
+
       if (isNewItem && this.pendingSaveTimeout) {
         clearTimeout(this.pendingSaveTimeout);
         this._performSavingOfItems(this.pendingSaveParams);
         this.pendingSaveTimeout = undefined;
         this.pendingSaveParams = undefined;
       }
+
       this.lastStreamedItem = item;
       callback(this.lastStreamedItem);
     });
   }
 
+  /**
+   * Selects an item which content_type must be "Tag".
+   * @param item the item to select.
+   */
   public selectItem(item: SNItem) {
+    if (item.content_type !== ContentType.Tag) {
+      return;
+    }
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) });
+  }
+
+  /**
+   * Clears current selected tags.
+   */
+  public clearSelection() {
+    this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag });
   }
 
   public createItem(item: SNItem, callback: (data: any) => void) {
@@ -341,9 +374,9 @@ class ComponentManager {
 
   public createItems(items: SNItem[], callback: (data: any) => void) {
     const mapped = items.map((item) => this.jsonObjectForItem(item));
-    this.postMessage(ComponentAction.CreateItems, { items: mapped }, function(data: any) {
+    this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
       callback && callback(data.items);
-    }.bind(this));
+    });
   }
 
   public associateItem(item: SNItem) {
@@ -352,10 +385,6 @@ class ComponentManager {
 
   public deassociateItem(item: SNItem) {
     this.postMessage(ComponentAction.DeassociateItem, {item: this.jsonObjectForItem(item)} );
-  }
-
-  public clearSelection() {
-    this.postMessage(ComponentAction.ClearSelection, { content_type: "Tag" });
   }
 
   public deleteItem(item: SNItem, callback: (data: any) => void) {
@@ -374,9 +403,9 @@ class ComponentManager {
   }
 
   public sendCustomEvent(action: ComponentAction, data: any, callback: (data: any) => void) {
-    this.postMessage(action, data, function(data: any){
+    this.postMessage(action, data, (data: any) => {
       callback && callback(data);
-    }.bind(this));
+    });
   }
 
   public saveItem(item: SNItem, callback: (data: any) => void, skipDebouncer = false) {
@@ -384,7 +413,7 @@ class ComponentManager {
   }
 
   /**
-   * @param item The item to be saved
+   * @param item The item to be saved.
    * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
@@ -394,6 +423,13 @@ class ComponentManager {
     this.saveItemsWithPresave([item], presave, callback);
   }
 
+  /**
+   * @param items The items to be saved.
+   * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
+   * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
+   * hook into the debounce cycle so that clients don't have to implement their own debouncing.
+   * @param callback
+   */
   public saveItemsWithPresave(items: SNItem[], presave: any, callback: (data: any) => void) {
     this.saveItems(items, callback, false, presave);
   }
@@ -463,6 +499,10 @@ class ComponentManager {
     } else {
       this._performSavingOfItems({ items, presave, callback });
     }
+  }
+
+  public setSize(type: string, width: string | number, height: string | number) {
+    this.postMessage(ComponentAction.SetSize, { type, width, height });
   }
 
   private jsonObjectForItem(item: any) {

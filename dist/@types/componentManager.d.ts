@@ -1,10 +1,14 @@
-import { ComponentAction, SNItem } from 'snjs';
+import { ComponentAction, ContentType, SNItem } from 'snjs';
 declare type ComponentManagerOptions = {
     coallesedSaving?: boolean;
     coallesedSavingDelay?: number;
+    loggingEnabled?: boolean;
+};
+declare type PermissionObject = {
+    name: ComponentAction;
 };
 declare type ComponentManagerConstructorParams = {
-    initialPermissions?: ComponentAction[];
+    initialPermissions?: PermissionObject[];
     options?: ComponentManagerOptions;
     onReady?: () => void;
 };
@@ -20,7 +24,7 @@ declare class ComponentManager {
     private pendingSaveParams?;
     private coallesedSaving;
     private coallesedSavingDelay;
-    constructor({ initialPermissions, options, onReady }: ComponentManagerConstructorParams);
+    constructor(parameters?: ComponentManagerConstructorParams);
     private registerMessageHandler;
     private handleMessage;
     private onReady;
@@ -36,7 +40,7 @@ declare class ComponentManager {
     private deactivateTheme;
     private generateUUID;
     /** Components actions */
-    streamItems(contentTypes: string[], callback: (data: any) => void): void;
+    streamItems(contentTypes: ContentType[], callback: (data: any) => void): void;
     streamContextItem(callback: (data: any) => void): void;
     /**
      * Selects an item which content_type must be "Tag".

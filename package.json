@@ -17,32 +17,6 @@
     "start": "webpack -w --config webpack.dev.js",
     "test": "jest"
   },
-  "jest": {
-    "collectCoverageFrom": [
-      "lib/**/{!(index),}.ts"
-    ],
-    "coverageDirectory": "coverage",
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/node_modules"
-    ],
-    "coverageReporters": [
-      "html"
-    ],
-    "preset": "ts-jest",
-    "resetMocks": true,
-    "roots": [
-      "<rootDir>/lib",
-      "<rootDir>/test"
-    ],
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/?(*.)+(test).+(ts|tsx|js)"
-    ],
-    "transform": {
-      ".(ts|tsx)": "ts-jest"
-    },
-    "verbose": true
-  },
   "devDependencies": {
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
@@ -51,13 +25,12 @@
     "@types/node": "^14.14.6",
     "@typescript-eslint/eslint-plugin": "^4.6.1",
     "@typescript-eslint/parser": "^4.6.1",
-    "babel-cli": "^6.26.0",
     "babel-jest": "^26.6.3",
-    "babel-loader": "^8.1.0",
+    "babel-loader": "^8.2.1",
     "eslint": "^7.13.0",
     "jest": "^26.6.3",
+    "jsdom": "^16.4.0",
     "snjs": "github:standardnotes/snjs#9e212add83688f65267c9300d7b9d2b1e5772a27",
-    "ts-jest": "^26.4.4",
     "ts-loader": "^8.0.9",
     "tslint": "^6.1.3",
     "typedoc": "^0.19.2",

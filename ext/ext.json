@@ -1,9 +1,0 @@
-{
-  "identifier": "org.standardnotes.sncomponents-api-dev-extension",
-  "name": "Dev Extension",
-  "description": "SN Components API Development Extension.",
-  "content_type": "SN|Component",
-  "area": "editor-stack",
-  "version": "1.0.0",
-  "url": "http://localhost:8081/"
-}

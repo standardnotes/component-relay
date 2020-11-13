@@ -36,8 +36,12 @@ type ComponentManagerOptions = {
   loggingEnabled?: boolean
 }
 
+type PermissionObject = {
+  name: ComponentAction
+}
+
 type ComponentManagerConstructorParams = {
-  initialPermissions?: ComponentAction[]
+  initialPermissions?: PermissionObject[]
   options?: ComponentManagerOptions,
   onReady?: () => void
 }
@@ -47,7 +51,7 @@ const initialComponentState: Component = {
 }
 
 class ComponentManager {
-  private initialPermissions?: ComponentAction[];
+  private initialPermissions?: PermissionObject[];
   private onReadyCallback?: () => void;
   private component?: Component = initialComponentState;
   private sentMessages?: MessagePayload[] = [];
@@ -63,7 +67,7 @@ class ComponentManager {
     if (parameters?.initialPermissions && parameters.initialPermissions.length > 0) {
       this.initialPermissions = parameters.initialPermissions;
     }
-    
+
     if (parameters?.options?.coallesedSaving) {
       this.coallesedSaving = parameters.options.coallesedSaving;
     }
@@ -247,7 +251,7 @@ class ComponentManager {
     window.parent.postMessage(message, this.component!.origin!);
   }
 
-  private requestPermissions(permissions: ComponentAction[], callback?: (...params: any) => void) {
+  private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {
     this.postMessage(ComponentAction.RequestPermissions, permissions, () => {
       callback && callback();
     });
@@ -323,7 +327,7 @@ class ComponentManager {
 
   /** Components actions */
 
-  public streamItems(contentTypes: string[], callback: (data: any) => void) {
+  public streamItems(contentTypes: ContentType[], callback: (data: any) => void) {
     this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
       callback(data.items);
     });

@@ -88,7 +88,7 @@ class ComponentManager {
   }
 
   private registerMessageHandler() {
-    const messageHandler = (event: any) => {
+    const messageHandler = (event: MessageEvent) => {
       Logger.info("Components API Message received:", event.data);
 
       /**
@@ -119,6 +119,12 @@ class ComponentManager {
       // Mobile environment sends data as JSON string.
       const { data } = event;
       const parsedData = Utils.isValidJsonString(data) ? JSON.parse(data) : data;
+
+      if (!parsedData) {
+        Logger.error("Invalid data received. Skipping...");
+        return;
+      }
+
       this.handleMessage(parsedData);
     }
 
@@ -133,12 +139,14 @@ class ComponentManager {
      * https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
      */
     document.addEventListener("message", (event) => {
-      messageHandler(event);
+      messageHandler(event as MessageEvent);
     }, false);
 
     window.addEventListener("message", (event) => {
       messageHandler(event);
     }, false);
+
+    Logger.info("Waiting for messages...");
   }
 
   private handleMessage(payload: MessagePayload) {

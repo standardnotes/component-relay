@@ -17,7 +17,7 @@ describe("Logger", () => {
     Logger.info('A simple message.');
     expect(Logger.enabled).toBe(true);
     expect(console.log).toBeCalledTimes(1);
-    expect(console.log).toBeCalledWith(['A simple message.']);
+    expect(console.log).toBeCalledWith('A simple message.');
   });
 
   it('should output errors to console if "enabled" is false', () => {
@@ -25,7 +25,7 @@ describe("Logger", () => {
     Logger.error('An error occured.');
     expect(Logger.enabled).toBe(false);
     expect(console.error).toBeCalledTimes(1);
-    expect(console.error).toBeCalledWith(['An error occured.']);
+    expect(console.error).toBeCalledWith('An error occured.');
   });
 
   it('should output errors to console if "enabled" is true', () => {
@@ -33,6 +33,6 @@ describe("Logger", () => {
     Logger.error('An error occured.');
     expect(Logger.enabled).toBe(true);
     expect(console.error).toBeCalledTimes(1);
-    expect(console.error).toBeCalledWith(['An error occured.']);
+    expect(console.error).toBeCalledWith('An error occured.');
   });
 });

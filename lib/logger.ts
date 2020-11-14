@@ -6,10 +6,10 @@ export default class Logger {
     if (!this.enabled) {
       return;
     }
-    console.log(message);
+    console.log(...message);
   }
 
   static error(...message: any) {
-    console.error(message);
+    console.error(...message);
   }
 }

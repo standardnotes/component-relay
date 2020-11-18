@@ -1,6 +1,6 @@
 import ComponentManager from './../lib/componentManager';
 
-const postMessage = async (message, targetOrigin) => {
+const postMessage = async (message: Object, targetOrigin: string) => {
   window.postMessage(message, targetOrigin);
 
   /**
@@ -12,18 +12,17 @@ const postMessage = async (message, targetOrigin) => {
 
 const componentRegisteredMessage = {
   action: 'component-registered',
+  sessionKey: 'session-key',
+  componentData: {
+    foo: "bar"
+  },
   data: {
-    sessionKey: 'session-key',
-    componentData: {},
     uuid: "component-uuid",
-    origin: "http://localhost",
-    data: {},
     environment: "web",
     platform: "linux",
     isMobile: false,
-    acceptsThemes: true,
-    activeThemes: [],
-    activeThemeUrls: []
+    themes: [],
+    original: {}
   },
   api: "component",
 };
@@ -33,8 +32,8 @@ const registeredComponentAction = async () => {
 };
 
 describe("ComponentManager", () => {
-  let componentManager;
-  let onReady;
+  let componentManager: ComponentManager;
+  let onReady: jest.Mock;
 
   beforeEach(() => {
     onReady = jest.fn();
@@ -44,7 +43,11 @@ describe("ComponentManager", () => {
   });
 
   afterEach(() => {
-    componentManager = undefined;
+    /**
+     * TODO: need a way to reliably reset JSDOM environment after each test.
+     * This is because Jest does not clean the JSDOM document after each test run.
+     * It only clears the DOM after all tests inside an entire file are completed.
+     */
   });
 
   it('should not be undefined', () => {
@@ -60,10 +63,10 @@ describe("ComponentManager", () => {
     expect(onReady).toBeCalledTimes(1);
   });
 
+  /**
+   * This test will fail because JSDOM is not reset after each test. Looking a solution for this ATM.
+   */
   test('getSelfComponentUUID() before the component is registered should be undefined', async () => {
-    const componentManager = new ComponentManager({
-      onReady,
-    });
     const uuid = componentManager.getSelfComponentUUID();
     expect(uuid).toBeUndefined();
   });
@@ -73,5 +76,17 @@ describe("ComponentManager", () => {
     const uuid = componentManager.getSelfComponentUUID();
     expect(uuid).not.toBeUndefined();
     expect(uuid).toBe(componentRegisteredMessage.data.uuid);
+  });
+
+  test('getComponentDataValueForKey() with a key that does not exist should return undefined', async () => {
+    await registeredComponentAction();
+    const bar = componentManager.getComponentDataValueForKey("bar");
+    expect(bar).toBeUndefined();
+  });
+
+  test('getComponentDataValueForKey() with an existing key should return value', async () => {
+    await registeredComponentAction();
+    const foo = componentManager.getComponentDataValueForKey("foo");
+    expect(foo).toBe(componentRegisteredMessage.componentData.foo);
   });
 });

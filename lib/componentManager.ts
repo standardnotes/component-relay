@@ -2,6 +2,8 @@ import Logger from './logger';
 import Utils from './utils';
 import { ComponentAction, ContentType, Environment, Platform, SNItem } from 'snjs';
 
+const DEFAULT_COALLESED_SAVING_DELAY = 250;
+
 enum MessagePayloadApi {
   Component = "component",
 }
@@ -61,7 +63,7 @@ class ComponentManager {
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
   private coallesedSaving = false;
-  private coallesedSavingDelay = 250;
+  private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
 
   constructor(parameters?: ComponentManagerConstructorParams) {
     if (parameters?.initialPermissions && parameters.initialPermissions.length > 0) {
@@ -85,6 +87,20 @@ class ComponentManager {
     }
 
     this.registerMessageHandler();
+  }
+
+  public deinit() {
+    this.initialPermissions = undefined;
+    this.onReadyCallback = undefined;
+    this.component = undefined;
+    this.sentMessages = [];
+    this.messageQueue = [];
+    this.lastStreamedItem = undefined;
+    this.pendingSaveItems = [];
+    this.pendingSaveTimeout = undefined;
+    this.pendingSaveParams = undefined;
+    this.coallesedSaving = false;
+    this.coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   }
 
   private registerMessageHandler() {
@@ -203,6 +219,9 @@ class ComponentManager {
   }
 
   public getSelfComponentUUID() {
+    if (!this.component) {
+      return;
+    }
     return this.component!.uuid;
   }
 
@@ -211,6 +230,9 @@ class ComponentManager {
   }
 
   public getComponentDataValueForKey(key: string) {
+    if (!this.component!.data) {
+      return;
+    }
     return this.component!.data![key];
   }
 

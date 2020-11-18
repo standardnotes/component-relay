@@ -25,6 +25,7 @@ declare class ComponentManager {
     private coallesedSaving;
     private coallesedSavingDelay;
     constructor(parameters?: ComponentManagerConstructorParams);
+    deinit(): void;
     private registerMessageHandler;
     private handleMessage;
     private onReady;

@@ -8,12 +8,12 @@
   "main": "dist/dist.js",
   "types": "dist/@types",
   "scripts": {
-    "build-docs": "typedoc",
-    "build-types": "tsc",
+    "build:docs": "typedoc",
+    "build:types": "tsc",
     "bundle": "yon run lint-fix && webpack --config webpack.prod.js && yon run build-types",
     "coverage": "yon test --coverage --silent",
-    "lint": "eslint",
-    "lint-fix": "yon run lint --fix",
+    "lint": "eslint lib --ext .ts",
+    "lint:fix": "yon run lint --fix",
     "start": "webpack -w --config webpack.dev.js",
     "test": "jest"
   },

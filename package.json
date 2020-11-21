@@ -10,7 +10,7 @@
   "scripts": {
     "build:docs": "typedoc",
     "build:types": "tsc",
-    "bundle": "yon run lint-fix && webpack --config webpack.prod.js && yon run build-types",
+    "bundle": "yon run lint:fix && webpack --config webpack.prod.js && yon run build:types",
     "coverage": "yon test --coverage --silent",
     "lint": "eslint lib --ext .ts",
     "lint:fix": "yon run lint --fix",

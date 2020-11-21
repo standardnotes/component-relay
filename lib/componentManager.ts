@@ -1,6 +1,6 @@
 import Logger from './logger';
 import Utils from './utils';
-import { ComponentAction, ContentType, Environment, Platform, SNItem } from 'snjs';
+import { ComponentAction, ContentType, Environment, Platform, SNItem } from '@standardnotes/snjs';
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250;
 

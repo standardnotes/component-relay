@@ -1113,6 +1113,18 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@standardnotes/sncrypto-common@^1.2.9":
+  version "1.2.9"
+  resolved "https://registry.yarnpkg.com/@standardnotes/sncrypto-common/-/sncrypto-common-1.2.9.tgz#5212a959e4ec563584e42480bfd39ef129c3cbdf"
+  integrity sha512-xJ5IUGOZztjSgNP/6XL+Ut5+q9UgSTv6xMtKkcQC5aJxCOkJy9u6RamPLdF00WQgwibxx2tu0e43bKUjTgzMig==
+
+"@standardnotes/snjs@^2.0.7":
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/@standardnotes/snjs/-/snjs-2.0.7.tgz#7a5fe2e6f183e1e2c695b6b7284a4ee6ae2ca893"
+  integrity sha512-S9h+ryQ225ekvCDwX4wFk7duic+j6644indtSLCiODo1SMflk8EQa7Q6Ier5lvBdUZJNxvZsN51iAgmIbT5BCQ==
+  dependencies:
+    "@standardnotes/sncrypto-common" "^1.2.9"
+
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.12"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.1.12.tgz#4d8e9e51eb265552a7e4f1ff2219ab6133bdfb2d"
@@ -4856,10 +4868,6 @@ snapdragon@^0.8.1:
     source-map "^0.5.6"
     source-map-resolve "^0.5.0"
     use "^3.1.0"
-
-"snjs@github:standardnotes/snjs#9e212add83688f65267c9300d7b9d2b1e5772a27":
-  version "1.0.5"
-  resolved "https://codeload.github.com/standardnotes/snjs/tar.gz/9e212add83688f65267c9300d7b9d2b1e5772a27"
 
 source-list-map@^2.0.1:
   version "2.0.1"

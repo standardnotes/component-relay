@@ -9,7 +9,8 @@
     "@typescript-eslint/no-explicit-any": "off",
     "no-multi-spaces": "warn",
     "keyword-spacing": "warn",
-    "curly": "error"
+    "curly": "error",
+    "quotes": ["warn", "double"]
   },
   "ignorePatterns": ["webpack.*"]
 }

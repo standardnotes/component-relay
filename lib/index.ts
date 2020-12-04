@@ -1,4 +1,4 @@
-import ComponentManager from './componentManager';
+import ComponentManager from "./componentManager";
 
 declare global {
   interface Window { ComponentManager: unknown }

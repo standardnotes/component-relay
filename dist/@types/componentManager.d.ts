@@ -1,8 +1,8 @@
-import { ComponentAction, ContentType, SNItem } from 'snjs';
+import { ComponentAction, ContentType, SNItem } from "@standardnotes/snjs";
 declare type ComponentManagerOptions = {
     coallesedSaving?: boolean;
     coallesedSavingDelay?: number;
-    loggingEnabled?: boolean;
+    debug?: boolean;
 };
 declare type PermissionObject = {
     name: ComponentAction;
@@ -12,10 +12,11 @@ declare type ComponentManagerConstructorParams = {
     options?: ComponentManagerOptions;
     onReady?: () => void;
 };
-declare class ComponentManager {
+export default class ComponentManager {
+    private contentWindow;
     private initialPermissions?;
     private onReadyCallback?;
-    private component?;
+    private component;
     private sentMessages?;
     private messageQueue?;
     private lastStreamedItem?;
@@ -24,8 +25,8 @@ declare class ComponentManager {
     private pendingSaveParams?;
     private coallesedSaving;
     private coallesedSavingDelay;
-    constructor(parameters?: ComponentManagerConstructorParams);
-    deinit(): void;
+    constructor(contentWindow: Window, parameters?: ComponentManagerConstructorParams);
+    private processParameters;
     private registerMessageHandler;
     private handleMessage;
     private onReady;
@@ -89,4 +90,4 @@ declare class ComponentManager {
     private jsonObjectForItem;
     getItemAppDataValue(item: SNItem, key: string): any;
 }
-export default ComponentManager;
+export {};

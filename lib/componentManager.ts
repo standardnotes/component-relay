@@ -1,6 +1,6 @@
-import Logger from './logger';
-import Utils from './utils';
-import { ComponentAction, ContentType, Environment, Platform, SNItem } from '@standardnotes/snjs';
+import Utils from "./utils";
+import Logger from "./logger";
+import { ComponentAction, ContentType, Environment, Platform, SNItem } from "@standardnotes/snjs";
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250;
 
@@ -35,7 +35,7 @@ type MessagePayload = {
 type ComponentManagerOptions = {
   coallesedSaving?: boolean,
   coallesedSavingDelay?: number,
-  loggingEnabled?: boolean
+  debug?: boolean
 }
 
 type PermissionObject = {
@@ -48,14 +48,10 @@ type ComponentManagerConstructorParams = {
   onReady?: () => void
 }
 
-const initialComponentState: Component = {
-  activeThemes: []
-}
-
-class ComponentManager {
+export default class ComponentManager {
   private initialPermissions?: PermissionObject[];
   private onReadyCallback?: () => void;
-  private component?: Component = initialComponentState;
+  private component: Component = { activeThemes: [] };
   private sentMessages?: MessagePayload[] = [];
   private messageQueue?: MessagePayload[] = [];
   private lastStreamedItem?: SNItem;
@@ -65,42 +61,31 @@ class ComponentManager {
   private coallesedSaving = false;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
 
-  constructor(parameters?: ComponentManagerConstructorParams) {
-    if (parameters?.initialPermissions && parameters.initialPermissions.length > 0) {
-      this.initialPermissions = parameters.initialPermissions;
+  constructor(private contentWindow: Window, params?: ComponentManagerConstructorParams) {
+    if (!contentWindow) {
+      throw "contentWindow must be a valid Window object.";
     }
-
-    if (parameters?.options?.coallesedSaving) {
-      this.coallesedSaving = parameters.options.coallesedSaving;
+    if (params) {
+      this.processParameters(params);
     }
-
-    if (parameters?.options?.coallesedSavingDelay) {
-      this.coallesedSavingDelay = parameters.options.coallesedSavingDelay;
-    }
-
-    if (parameters?.options?.loggingEnabled) {
-      Logger.enabled = parameters.options.loggingEnabled;
-    }
-
-    if (parameters?.onReady) {
-      this.onReadyCallback = parameters.onReady;
-    }
-
     this.registerMessageHandler();
   }
 
-  public deinit() {
-    this.initialPermissions = undefined;
-    this.onReadyCallback = undefined;
-    this.component = undefined;
-    this.sentMessages = [];
-    this.messageQueue = [];
-    this.lastStreamedItem = undefined;
-    this.pendingSaveItems = [];
-    this.pendingSaveTimeout = undefined;
-    this.pendingSaveParams = undefined;
-    this.coallesedSaving = false;
-    this.coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
+  private processParameters(params: ComponentManagerConstructorParams) {
+    const { initialPermissions, options, onReady } = params;
+
+    if (initialPermissions && initialPermissions.length > 0) {
+      this.initialPermissions = initialPermissions;
+    }
+    if (options?.coallesedSaving) {
+      this.coallesedSaving = options.coallesedSaving;
+    }
+    if (options?.coallesedSavingDelay) {
+      this.coallesedSavingDelay = options.coallesedSavingDelay;
+    }
+    if (onReady) {
+      this.onReadyCallback = onReady;
+    }
   }
 
   private registerMessageHandler() {
@@ -125,9 +110,9 @@ class ComponentManager {
        * The first message will be the most reliable one, so we won't change it after any subsequent events,
        * in case you receive an event from another window.
        */
-      if (!this.component!.origin) {
-        this.component!.origin = event.origin;
-      } else if (event.origin !== this.component!.origin) {
+      if (!this.component.origin) {
+        this.component.origin = event.origin;
+      } else if (event.origin !== this.component.origin) {
         // If event origin doesn't match first-run value, return.
         return;
       }
@@ -154,11 +139,11 @@ class ComponentManager {
      * Also, even with the new version of react-native-webview, Android may still require document.addEventListener (while iOS still only requires window.addEventListener)
      * https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
      */
-    document.addEventListener("message", (event) => {
+    this.contentWindow.document.addEventListener("message", function (event) {
       messageHandler(event as MessageEvent);
     }, false);
 
-    window.addEventListener("message", (event) => {
+    this.contentWindow.addEventListener("message", function (event) {
       messageHandler(event);
     }, false);
 
@@ -167,13 +152,13 @@ class ComponentManager {
 
   private handleMessage(payload: MessagePayload) {
     if (payload.action === ComponentAction.ComponentRegistered) {
-      this.component!.sessionKey = payload.sessionKey;
-      this.component!.data = payload.componentData;
+      this.component.sessionKey = payload.sessionKey;
+      this.component.data = payload.componentData;
 
       this.onReady(payload.data);
       Logger.info("Component successfully registered with payload:", payload);
     } else if (payload.action === ComponentAction.ActivateThemes) {
-      if (this.component!.acceptsThemes) {
+      if (this.component.acceptsThemes) {
         this.activateThemes(payload.data.themes);
       }
     } else if (payload.original) {
@@ -184,7 +169,7 @@ class ComponentManager {
 
       if (!originalMessage) {
         // Connection must have been reset. We should alert the user.
-        alert("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.")
+        Logger.error("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.");
       }
 
       if (originalMessage.callback) {
@@ -194,10 +179,10 @@ class ComponentManager {
   }
 
   private onReady(data: Component) {
-    this.component!.environment = data.environment;
-    this.component!.platform = data.platform;
-    this.component!.uuid = data.uuid;
-    this.component!.isMobile = this.component!.environment === Environment.Mobile;
+    this.component.environment = data.environment;
+    this.component.platform = data.platform;
+    this.component.uuid = data.uuid;
+    this.component.isMobile = this.component.environment === Environment.Mobile;
 
     if (this.initialPermissions && this.initialPermissions.length > 0) {
       this.requestPermissions(this.initialPermissions);
@@ -222,32 +207,32 @@ class ComponentManager {
     if (!this.component) {
       return;
     }
-    return this.component!.uuid;
+    return this.component.uuid;
   }
 
   public isRunningInDesktopApplication() {
-    return this.component!.environment === Environment.Desktop;
+    return this.component.environment === Environment.Desktop;
   }
 
   public getComponentDataValueForKey(key: string) {
-    if (!this.component!.data) {
+    if (!this.component.data) {
       return;
     }
-    return this.component!.data![key];
+    return this.component.data![key];
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
-    this.component!.data![key] = value;
-    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component!.data });
+    this.component.data![key] = value;
+    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data });
   }
 
   public clearComponentData() {
-    this.component!.data = {};
-    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component!.data });
+    this.component.data = {};
+    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data });
   }
 
   private postMessage(action: ComponentAction, data: Record<string, any>, callback?: (...params: any) => void) {
-    if (!this.component!.sessionKey) {
+    if (!this.component.sessionKey) {
       this.messageQueue!.push({
         action: action,
         data: data,
@@ -261,7 +246,7 @@ class ComponentManager {
       action: action,
       data: data,
       messageId: this.generateUUID(),
-      sessionKey: this.component!.sessionKey,
+      sessionKey: this.component.sessionKey,
       api: MessagePayloadApi.Component
     };
 
@@ -270,15 +255,15 @@ class ComponentManager {
     this.sentMessages!.push(sentMessage);
 
     // Mobile (React Native) requires a string for the postMessage API.
-    if (this.component!.isMobile) {
+    if (this.component.isMobile) {
       const mobileMessage = JSON.stringify(message);
       Logger.info("Posting message:", mobileMessage);
-      window.parent.postMessage(mobileMessage, this.component!.origin!);
+      this.contentWindow.parent.postMessage(mobileMessage, this.component.origin!);
       return;
     }
 
     Logger.info("Posting message:", message);
-    window.parent.postMessage(message, this.component!.origin!);
+    this.contentWindow.parent.postMessage(message, this.component.origin!);
   }
 
   private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {
@@ -290,7 +275,7 @@ class ComponentManager {
   private activateThemes(incomingUrls: string[] = []) {
     Logger.info("Incoming themes:", incomingUrls);
 
-    if (this.component!.activeThemes!.sort().toString() == incomingUrls.sort().toString()) {
+    if (this.component.activeThemes!.sort().toString() == incomingUrls.sort().toString()) {
       // Incoming theme URLs are same as active, do nothing.
       return;
     }
@@ -298,7 +283,7 @@ class ComponentManager {
     let themesToActivate = incomingUrls;
     const themesToDeactivate = [];
 
-    for (const activeUrl of this.component!.activeThemes!) {
+    for (const activeUrl of this.component.activeThemes!) {
       if (!incomingUrls.includes(activeUrl)) {
         // Active not present in incoming, deactivate it.
         themesToDeactivate.push(activeUrl);
@@ -317,26 +302,26 @@ class ComponentManager {
       this.deactivateTheme(themeUrl);
     }
 
-    this.component!.activeThemes = incomingUrls;
+    this.component.activeThemes = incomingUrls;
 
     for (const themeUrl of themesToActivate) {
       if (!themeUrl) {
         continue;
       }
 
-      const link = document.createElement("link");
+      const link = this.contentWindow.document.createElement("link");
       link.id = btoa(themeUrl);
       link.href = themeUrl;
       link.type = "text/css";
       link.rel = "stylesheet";
       link.media = "screen,print";
       link.className = "custom-theme";
-      document.getElementsByTagName("head")[0].appendChild(link);
+      this.contentWindow.document.getElementsByTagName("head")[0].appendChild(link);
     }
   }
 
   private themeElementForUrl(themeUrl: string) {
-    const elements = Array.from(document.getElementsByClassName("custom-theme")).slice();
+    const elements = Array.from(this.contentWindow.document.getElementsByClassName("custom-theme")).slice();
     return elements.find((element) => {
       // We used to search here by `href`, but on desktop, with local file:// urls, that didn't work for some reason.
       return element.id == btoa(themeUrl);
@@ -566,5 +551,3 @@ class ComponentManager {
     return (data) ? data[key] : null;
   }
 }
-
-export default ComponentManager;

@@ -1,60 +1,47 @@
+import { DOMWindow, JSDOM } from 'jsdom';
+import { Environment } from '@standardnotes/snjs';
+import { htmlTemplate, postMessage } from './utils';
+import { componentRegisteredMessage } from './componentMessages';
 import ComponentManager from './../lib/componentManager';
 
-const postMessage = async (message: Object, targetOrigin: string) => {
-  window.postMessage(message, targetOrigin);
-
-  /**
-   * window.postMesasge() implementation is wrapped with setTimeout.
-   * See https://github.com/jsdom/jsdom/issues/2245#issuecomment-392556153
-   */
-  await new Promise(resolve => setTimeout(resolve, 10));
-};
-
-const componentRegisteredMessage = {
-  action: 'component-registered',
-  sessionKey: 'session-key',
-  componentData: {
-    foo: "bar"
-  },
-  data: {
-    uuid: "component-uuid",
-    environment: "web",
-    platform: "linux",
-    isMobile: false,
-    themes: [],
-    original: {}
-  },
-  api: "component",
-};
-
-const registeredComponentAction = async () => {
-  await postMessage(componentRegisteredMessage, '*');
-};
-
 describe("ComponentManager", () => {
-  let componentManager: ComponentManager;
-  let onReady: jest.Mock;
+  const onReady = jest.fn();
 
-  beforeEach(() => {
-    onReady = jest.fn();
-    componentManager = new ComponentManager({
-      onReady,
+  /** The parent window (Standard Notes App) */
+  let parentWindow: DOMWindow;
+  /** The child window. This is where the extension lives. */
+  let childWindow: Window;
+  let componentManager: ComponentManager;
+
+  const registeredComponentAction = async (environment?: Environment) => {
+    const message = componentRegisteredMessage;
+    if (environment) message.data.environment = environment;
+    await postMessage(childWindow, componentRegisteredMessage, '*');
+  };
+
+  beforeEach(async () => {
+    parentWindow = new JSDOM(htmlTemplate).window;
+
+    const childIframe = parentWindow.document.createElement('iframe');
+    parentWindow.document.body.appendChild(childIframe);
+    childWindow = childIframe.contentWindow;
+
+    componentManager = new ComponentManager(childWindow, {
+      onReady
     });
   });
 
   afterEach(() => {
-    /**
-     * TODO: need a way to reliably reset JSDOM environment after each test.
-     * This is because Jest does not clean the JSDOM document after each test run.
-     * It only clears the DOM after all tests inside an entire file are completed.
-     */
+    const childIframe = parentWindow.document.getElementsByTagName('iframe')[0];
+    parentWindow.document.body.removeChild(childIframe);
+    parentWindow.close();
   });
 
   it('should not be undefined', () => {
     expect(componentManager).not.toBeUndefined();
   });
 
-  it('should not run onReady callback when component has not been registered', async () => {
+  it('should not run onReady callback when component has not been registered', () => {
     expect(onReady).toBeCalledTimes(0);
   });
 
@@ -63,10 +50,7 @@ describe("ComponentManager", () => {
     expect(onReady).toBeCalledTimes(1);
   });
 
-  /**
-   * This test will fail because JSDOM is not reset after each test. Looking a solution for this ATM.
-   */
-  test('getSelfComponentUUID() before the component is registered should be undefined', async () => {
+  test('getSelfComponentUUID() before the component is registered should be undefined', () => {
     const uuid = componentManager.getSelfComponentUUID();
     expect(uuid).toBeUndefined();
   });
@@ -88,5 +72,23 @@ describe("ComponentManager", () => {
     await registeredComponentAction();
     const foo = componentManager.getComponentDataValueForKey("foo");
     expect(foo).toBe(componentRegisteredMessage.componentData.foo);
+  });
+
+  test('isRunningInDesktopApplication() should return false if the environment is web', async () => {
+    await registeredComponentAction(Environment.Web);
+    const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
+    expect(isRunningInDesktop).toBe(false);
+  });
+
+  test('isRunningInDesktopApplication() should return false if the environment is mobile', async () => {
+    await registeredComponentAction(Environment.Mobile);
+    const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
+    expect(isRunningInDesktop).toBe(false);
+  });
+
+  test('isRunningInDesktopApplication() should return true if the environment is desktop', async () => {
+    await registeredComponentAction(Environment.Desktop);
+    const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
+    expect(isRunningInDesktop).toBe(true);
   });
 });

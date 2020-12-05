@@ -1,15 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export default class Logger {
-  public static enabled = false;
+const noop = () => undefined;
 
-  static info(...message: any) {
-    if (!this.enabled) {
-      return;
-    }
-    console.log(...message);
+export default class Logger {
+  static enabled = false;
+
+  private static get isSupported() {
+    return (window.console || console) ? true : false;
   }
 
-  static error(...message: any) {
-    console.error(...message);
+  static get info () {
+    if (!Logger.isSupported || !this.enabled) {
+      return noop;
+    }
+    return console.log.bind(console);
+  }
+
+  static get error () {
+    return console.error.bind(console);
   }
 }

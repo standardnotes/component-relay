@@ -86,6 +86,7 @@ export default class ComponentManager {
     if (onReady) {
       this.onReadyCallback = onReady;
     }
+    Logger.enabled = options?.debug ?? false;
   }
 
   private registerMessageHandler() {

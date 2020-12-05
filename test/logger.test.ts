@@ -1,38 +1,37 @@
 import Logger from './../lib/logger';
 
 describe("Logger", () => {
-  beforeAll(() => {
-    console.log = jest.fn();
-    console.error = jest.fn();
-  });
+  const consoleLog = jest.spyOn(console, 'log');
+  const consoleError = jest.spyOn(console, 'error');
 
-  it('should output messages to console anything by default', () => {
+  it('should not output messages to console if not enabled', () => {
+    Logger.enabled = false;
     Logger.info('A simple message.');
     expect(Logger.enabled).toBe(false);
-    expect(console.log).not.toBeCalled();
+    expect(consoleLog).not.toBeCalled();
   });
 
   it('should output messages to console if "enabled" is true', () => {
     Logger.enabled = true;
     Logger.info('A simple message.');
     expect(Logger.enabled).toBe(true);
-    expect(console.log).toBeCalledTimes(1);
-    expect(console.log).toBeCalledWith('A simple message.');
+    expect(consoleLog).toBeCalledTimes(1);
+    expect(consoleLog).toBeCalledWith('A simple message.');
   });
 
   it('should output errors to console if "enabled" is false', () => {
     Logger.enabled = false;
     Logger.error('An error occured.');
     expect(Logger.enabled).toBe(false);
-    expect(console.error).toBeCalledTimes(1);
-    expect(console.error).toBeCalledWith('An error occured.');
+    expect(consoleError).toBeCalledTimes(1);
+    expect(consoleError).toBeCalledWith('An error occured.');
   });
 
   it('should output errors to console if "enabled" is true', () => {
     Logger.enabled = true;
     Logger.error('An error occured.');
     expect(Logger.enabled).toBe(true);
-    expect(console.error).toBeCalledTimes(1);
-    expect(console.error).toBeCalledWith('An error occured.');
+    expect(consoleError).toBeCalledTimes(1);
+    expect(consoleError).toBeCalledWith('An error occured.');
   });
 });

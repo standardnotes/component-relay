@@ -10,10 +10,10 @@ export default class Utils {
       const buffer = new Uint32Array(4);
       crypto.getRandomValues(buffer);
       let index = -1;
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
         index++;
         const r = (buffer[index>>3] >> ((index%8)*4))&15;
-        const v = character === 'x' ? r : (r&0x3|0x8);
+        const v = character === "x" ? r : (r&0x3|0x8);
         return v.toString(16);
       });
     }
@@ -24,10 +24,10 @@ export default class Utils {
       date += performance.now(); // Use high-precision timer if available.
     }
 
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
       const r = (date + Math.random() * 16) % 16 | 0;
       date = Math.floor(date / 16);
-      return (character === 'x' ? r : (r&0x3|0x8)).toString(16);
+      return (character === "x" ? r : (r&0x3|0x8)).toString(16);
     });
   }
 
@@ -38,7 +38,7 @@ export default class Utils {
     try {
       const result = JSON.parse(str);
       const type = Object.prototype.toString.call(result);
-      return type === '[object Object]' || type === '[object Array]';
+      return type === "[object Object]" || type === "[object Array]";
     } catch (e) {
       return false;
     }

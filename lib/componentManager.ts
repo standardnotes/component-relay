@@ -63,7 +63,7 @@ export default class ComponentManager {
 
   constructor(private contentWindow: Window, params?: ComponentManagerConstructorParams) {
     if (!contentWindow) {
-      throw "contentWindow must be a valid Window object.";
+      throw new Error("contentWindow must be a valid Window object.");
     }
     if (params) {
       this.processParameters(params);

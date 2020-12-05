@@ -1,5 +1,5 @@
 import { DOMWindow, JSDOM } from 'jsdom';
-import { Environment } from '@standardnotes/snjs';
+import { ComponentAction, ContentType, Environment } from '@standardnotes/snjs';
 import { htmlTemplate, postMessage } from './utils';
 import { componentRegisteredMessage } from './componentMessages';
 import ComponentManager from './../lib/componentManager';
@@ -19,10 +19,16 @@ describe("ComponentManager", () => {
     await postMessage(childWindow, componentRegisteredMessage, '*');
   };
 
+  const parentUrl = 'http://localhost/parent';
+  const childUrl = 'http://localhost/child';
+
   beforeEach(async () => {
-    parentWindow = new JSDOM(htmlTemplate).window;
+    parentWindow = new JSDOM(htmlTemplate, {
+      url: parentUrl
+    }).window;
 
     const childIframe = parentWindow.document.createElement('iframe');
+    childIframe.setAttribute("src", childUrl);
     parentWindow.document.body.appendChild(childIframe);
     childWindow = childIframe.contentWindow;
 
@@ -35,6 +41,10 @@ describe("ComponentManager", () => {
     const childIframe = parentWindow.document.getElementsByTagName('iframe')[0];
     parentWindow.document.body.removeChild(childIframe);
     parentWindow.close();
+  });
+
+  it('should throw error if contentWindow is undefined', () => {
+    expect(() => new ComponentManager(undefined)).toThrow('contentWindow must be a valid Window object.');
   });
 
   it('should not be undefined', () => {
@@ -90,5 +100,24 @@ describe("ComponentManager", () => {
     await registeredComponentAction(Environment.Desktop);
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(true);
+  });
+
+  it('should request permissions when ready', async () => {
+    const params = {
+      initialPermissions: [
+        { name: ComponentAction.StreamItems }
+      ]
+    };
+    const componentManager = new ComponentManager(childWindow, params);
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    await registeredComponentAction(Environment.Web);
+    expect(parentPostMessage).toHaveBeenCalledTimes(1);
+    expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
+      action: ComponentAction.RequestPermissions,
+      data: params.initialPermissions,
+      messageId: expect.any(String),
+      sessionKey: componentRegisteredMessage.sessionKey,
+      api: "component"
+    }), childUrl);
   });
 });

@@ -1,4 +1,4 @@
-import Utils from "./utils";
+import { generateUuid, isValidJsonString } from "./utils";
 import Logger from "./logger";
 import { ComponentAction, ContentType, Environment, Platform, SNItem } from "@standardnotes/snjs";
 
@@ -120,7 +120,7 @@ export default class ComponentManager {
 
       // Mobile environment sends data as JSON string.
       const { data } = event;
-      const parsedData = Utils.isValidJsonString(data) ? JSON.parse(data) : data;
+      const parsedData = isValidJsonString(data) ? JSON.parse(data) : data;
 
       if (!parsedData) {
         Logger.error("Invalid data received. Skipping...");
@@ -183,7 +183,6 @@ export default class ComponentManager {
     this.component.environment = data.environment;
     this.component.platform = data.platform;
     this.component.uuid = data.uuid;
-    this.component.isMobile = this.component.environment === Environment.Mobile;
 
     if (this.initialPermissions && this.initialPermissions.length > 0) {
       this.requestPermissions(this.initialPermissions);
@@ -205,14 +204,15 @@ export default class ComponentManager {
   }
 
   public getSelfComponentUUID() {
-    if (!this.component) {
-      return;
-    }
     return this.component.uuid;
   }
 
   public isRunningInDesktopApplication() {
     return this.component.environment === Environment.Desktop;
+  }
+
+  public isRunningInMobileApplication() {
+    return this.component.environment === Environment.Mobile;
   }
 
   public getComponentDataValueForKey(key: string) {
@@ -223,6 +223,9 @@ export default class ComponentManager {
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
+    if (!key || (key && key.length === 0)) {
+      throw new Error("The key for the data value should be a valid string.");
+    }
     this.component.data![key] = value;
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data });
   }
@@ -256,7 +259,7 @@ export default class ComponentManager {
     this.sentMessages!.push(sentMessage);
 
     // Mobile (React Native) requires a string for the postMessage API.
-    if (this.component.isMobile) {
+    if (this.isRunningInMobileApplication()) {
       const mobileMessage = JSON.stringify(message);
       Logger.info("Posting message:", mobileMessage);
       this.contentWindow.parent.postMessage(mobileMessage, this.component.origin!);
@@ -338,7 +341,7 @@ export default class ComponentManager {
   }
 
   private generateUUID() {
-    return Utils.generateUuid();
+    return generateUuid();
   }
 
   /** Components actions */

@@ -15,6 +15,9 @@ module.exports = {
     "<rootDir>/lib",
     "<rootDir>/test"
   ],
+  setupFiles: [
+    "<rootDir>/test/setup/mockModules.js"
+  ],
   testEnvironment: "jsdom",
   testMatch: [
     "**/?(*.)+(test).+(ts|js)"

@@ -15,6 +15,9 @@ describe("Utils", () => {
       result = isValidJsonString({});
       expect(result).toBe(false);
 
+      result = isValidJsonString([]);
+      expect(result).toBe(false);
+
       result = isValidJsonString(() => true);
       expect(result).toBe(false);
 

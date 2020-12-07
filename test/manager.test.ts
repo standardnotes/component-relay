@@ -1,5 +1,5 @@
 import { DOMWindow, JSDOM } from 'jsdom';
-import { ComponentAction, ContentType, Environment } from '@standardnotes/snjs';
+import { ComponentAction, Environment } from '@standardnotes/snjs';
 import { htmlTemplate, postMessage } from './utils';
 import { componentRegisteredMessage } from './componentMessages';
 import ComponentManager from './../lib/componentManager';
@@ -72,16 +72,70 @@ describe("ComponentManager", () => {
     expect(uuid).toBe(componentRegisteredMessage.data.uuid);
   });
 
+  test('getComponentDataValueForKey() before the component is registered should return undefined', async () => {
+    const value = componentManager.getComponentDataValueForKey("foo");
+    expect(value).toBeUndefined();
+  });
+
   test('getComponentDataValueForKey() with a key that does not exist should return undefined', async () => {
     await registeredComponentAction();
-    const bar = componentManager.getComponentDataValueForKey("bar");
-    expect(bar).toBeUndefined();
+    const value = componentManager.getComponentDataValueForKey("bar");
+    expect(value).toBeUndefined();
   });
 
   test('getComponentDataValueForKey() with an existing key should return value', async () => {
     await registeredComponentAction();
-    const foo = componentManager.getComponentDataValueForKey("foo");
-    expect(foo).toBe(componentRegisteredMessage.componentData.foo);
+    const value = componentManager.getComponentDataValueForKey("foo");
+    expect(value).toBe(componentRegisteredMessage.componentData.foo);
+  });
+
+  test('setComponentDataValueForKey() with an invalid key should throw an error', async () => {
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    await registeredComponentAction(Environment.Web);
+    expect(() => componentManager.setComponentDataValueForKey("", ""))
+      .toThrow('The key for the data value should be a valid string.');
+    expect(parentPostMessage).not.toBeCalled();
+  });
+
+  test('setComponentDataValueForKey() should set the value for the corresponding key', async () => {
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    await registeredComponentAction(Environment.Web);
+    const dataValue = `value-${Date.now()}`;
+    componentManager.setComponentDataValueForKey("testing", dataValue);
+    expect(parentPostMessage).toHaveBeenCalledTimes(1);
+    const expectedComponentData = {
+      componentData: {
+        testing: dataValue,
+        ...componentRegisteredMessage.componentData,
+      }
+    };
+    expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
+      action: ComponentAction.SetComponentData,
+      data: expectedComponentData,
+      messageId: "fake-uuid",
+      sessionKey: componentRegisteredMessage.sessionKey,
+      api: "component"
+    }), childUrl);
+    const value = componentManager.getComponentDataValueForKey("testing");
+    expect(value).toEqual(dataValue);
+  });
+
+  test('clearComponentData() should clear all component data', async () => {
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    await registeredComponentAction(Environment.Web);
+    componentManager.clearComponentData();
+    expect(parentPostMessage).toHaveBeenCalledTimes(1);
+    expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
+      action: ComponentAction.SetComponentData,
+      data: {
+        componentData: {}
+      },
+      messageId: "fake-uuid",
+      sessionKey: componentRegisteredMessage.sessionKey,
+      api: "component"
+    }), childUrl);
+    const value = componentManager.getComponentDataValueForKey("foo");
+    expect(value).toBeUndefined();
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is web', async () => {
@@ -102,22 +156,64 @@ describe("ComponentManager", () => {
     expect(isRunningInDesktop).toBe(true);
   });
 
+  test('isRunningInMobileApplication() should return false if the environment is web', async () => {
+    await registeredComponentAction(Environment.Web);
+    const isRunningInMobile = componentManager.isRunningInMobileApplication();
+    expect(isRunningInMobile).toBe(false);
+  });
+
+  test('isRunningInMobileApplication() should return false if the environment is desktop', async () => {
+    await registeredComponentAction(Environment.Desktop);
+    const isRunningInMobile = componentManager.isRunningInMobileApplication();
+    expect(isRunningInMobile).toBe(false);
+  });
+
+  test('isRunningInMobileApplication() should return true if the environment is mobile', async () => {
+    await registeredComponentAction(Environment.Mobile);
+    const isRunningInMobile = componentManager.isRunningInMobileApplication();
+    expect(isRunningInMobile).toBe(true);
+  });
+
   it('should request permissions when ready', async () => {
     const params = {
       initialPermissions: [
         { name: ComponentAction.StreamItems }
       ]
     };
-    const componentManager = new ComponentManager(childWindow, params);
+    componentManager = new ComponentManager(childWindow, params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registeredComponentAction(Environment.Web);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.RequestPermissions,
       data: params.initialPermissions,
-      messageId: expect.any(String),
+      messageId: "fake-uuid",
       sessionKey: componentRegisteredMessage.sessionKey,
       api: "component"
     }), childUrl);
+  });
+
+  test('postMessage payload should be stringified if on mobile', async () => {
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    await registeredComponentAction(Environment.Mobile);
+    componentManager.setComponentDataValueForKey("testing", "1234");
+    expect(parentPostMessage).toHaveBeenCalledTimes(1);
+    const expectedComponentData = {
+      componentData: {
+        ...componentRegisteredMessage.componentData,
+        testing: "1234",
+      }
+    };
+    const stringifiedData = JSON.stringify({
+      action: ComponentAction.SetComponentData,
+      data: expectedComponentData,
+      messageId: "fake-uuid",
+      sessionKey: componentRegisteredMessage.sessionKey,
+      api: "component",
+    });
+    expect(parentPostMessage).toHaveBeenCalledWith(
+      expect.stringContaining(stringifiedData),
+      childUrl
+    );
   });
 });

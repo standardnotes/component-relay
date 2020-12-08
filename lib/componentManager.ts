@@ -267,16 +267,17 @@ export default class ComponentManager {
     sentMessage.callback = callback;
     this.sentMessages!.push(sentMessage);
 
+    let postMessagePayload;
+
     // Mobile (React Native) requires a string for the postMessage API.
     if (this.isRunningInMobileApplication()) {
-      const mobileMessage = JSON.stringify(message);
-      Logger.info("Posting message:", mobileMessage);
-      this.contentWindow.parent.postMessage(mobileMessage, this.component.origin!);
-      return;
+      postMessagePayload = JSON.stringify(message);
+    } else {
+      postMessagePayload = message;
     }
 
-    Logger.info("Posting message:", message);
-    this.contentWindow.parent.postMessage(message, this.component.origin!);
+    Logger.info("Posting message:", postMessagePayload);
+    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!);
   }
 
   private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {

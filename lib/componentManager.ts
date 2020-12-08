@@ -152,30 +152,39 @@ export default class ComponentManager {
   }
 
   private handleMessage(payload: MessagePayload) {
-    if (payload.action === ComponentAction.ComponentRegistered) {
-      this.component.sessionKey = payload.sessionKey;
-      this.component.data = payload.componentData;
+    switch (payload.action) {
+      case ComponentAction.ComponentRegistered:
+        this.component.sessionKey = payload.sessionKey;
+        this.component.data = payload.componentData;
+        this.onReady(payload.data);
+        Logger.info("Component successfully registered with payload:", payload);
+        break;
 
-      this.onReady(payload.data);
-      Logger.info("Component successfully registered with payload:", payload);
-    } else if (payload.action === ComponentAction.ActivateThemes) {
-      if (this.component.acceptsThemes) {
-        this.activateThemes(payload.data.themes);
-      }
-    } else if (payload.original) {
-      // Get the callback from queue.
-      const originalMessage = this.sentMessages!.filter((message: MessagePayload) => {
-        return message.messageId === payload.original!.messageId;
-      })[0];
+      case ComponentAction.ActivateThemes:
+        if (this.component.acceptsThemes) {
+          this.activateThemes(payload.data.themes);
+        }
+        break;
 
-      if (!originalMessage) {
-        // Connection must have been reset. We should alert the user.
-        Logger.error("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.");
-      }
+      default:
+        if (!payload.original) {
+          return;
+        }
 
-      if (originalMessage.callback) {
-        originalMessage.callback(payload.data);
-      }
+        // Get the callback from queue.
+        const originalMessage = this.sentMessages!.filter((message: MessagePayload) => {
+          return message.messageId === payload.original!.messageId;
+        })[0];
+  
+        if (!originalMessage) {
+          // Connection must have been reset. We should alert the user.
+          Logger.error("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.");
+        }
+  
+        if (originalMessage.callback) {
+          originalMessage.callback(payload.data);
+        }
+        break;
     }
   }
 

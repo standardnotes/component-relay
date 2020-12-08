@@ -42,7 +42,7 @@ type PermissionObject = {
   name: ComponentAction
 }
 
-type ComponentManagerConstructorParams = {
+type ComponentManagerParams = {
   initialPermissions?: PermissionObject[]
   options?: ComponentManagerOptions,
   onReady?: () => void
@@ -61,7 +61,7 @@ export default class ComponentManager {
   private coallesedSaving = false;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
 
-  constructor(private contentWindow: Window, params?: ComponentManagerConstructorParams) {
+  constructor(private contentWindow: Window, params?: ComponentManagerParams) {
     if (!contentWindow) {
       throw new Error("contentWindow must be a valid Window object.");
     }
@@ -71,7 +71,7 @@ export default class ComponentManager {
     this.registerMessageHandler();
   }
 
-  private processParameters(params: ComponentManagerConstructorParams) {
+  private processParameters(params: ComponentManagerParams) {
     const { initialPermissions, options, onReady } = params;
 
     if (initialPermissions && initialPermissions.length > 0) {

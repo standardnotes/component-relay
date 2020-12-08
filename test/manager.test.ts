@@ -3,6 +3,7 @@ import { ComponentAction, Environment } from '@standardnotes/snjs';
 import { htmlTemplate, postMessage } from './utils';
 import { componentRegisteredMessage } from './componentMessages';
 import ComponentManager from './../lib/componentManager';
+import { URL } from 'url';
 
 describe("ComponentManager", () => {
   const onReady = jest.fn();
@@ -115,7 +116,7 @@ describe("ComponentManager", () => {
       messageId: "fake-uuid",
       sessionKey: componentRegisteredMessage.sessionKey,
       api: "component"
-    }), childUrl);
+    }), expect.any(String));
     const value = componentManager.getComponentDataValueForKey("testing");
     expect(value).toEqual(dataValue);
   });
@@ -133,7 +134,7 @@ describe("ComponentManager", () => {
       messageId: "fake-uuid",
       sessionKey: componentRegisteredMessage.sessionKey,
       api: "component"
-    }), childUrl);
+    }), expect.any(String));
     const value = componentManager.getComponentDataValueForKey("foo");
     expect(value).toBeUndefined();
   });
@@ -190,7 +191,7 @@ describe("ComponentManager", () => {
       messageId: "fake-uuid",
       sessionKey: componentRegisteredMessage.sessionKey,
       api: "component"
-    }), childUrl);
+    }), expect.any(String));
   });
 
   test('postMessage payload should be stringified if on mobile', async () => {
@@ -213,7 +214,7 @@ describe("ComponentManager", () => {
     });
     expect(parentPostMessage).toHaveBeenCalledWith(
       expect.stringContaining(stringifiedData),
-      childUrl
+      expect.any(String) // TODO: jsdom should report the proper URL and not an empty string
     );
   });
 });

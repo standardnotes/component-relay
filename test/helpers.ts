@@ -15,5 +15,9 @@ export const postMessage = async (targetWindow: DOMWindow | Window, message: Obj
    * window.postMesasge() implementation is wrapped with setTimeout.
    * See https://github.com/jsdom/jsdom/issues/2245#issuecomment-392556153
    */
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await sleep(0.1);
+};
+
+export const sleep = async (seconds: number) => {
+  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
 };

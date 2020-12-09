@@ -16,7 +16,8 @@ module.exports = {
     "<rootDir>/test"
   ],
   setupFiles: [
-    "<rootDir>/test/setup/mockModules.js"
+    "<rootDir>/test/setup/mockModules.js",
+    "<rootDir>/test/setup/fakeHttpServer.js",
   ],
   testEnvironment: "jsdom",
   testMatch: [

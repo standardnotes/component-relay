@@ -13,7 +13,25 @@ export const componentRegisteredMessage = {
     uuid: "component-uuid",
     environment: Environment.Web,
     platform: Platform.LinuxWeb,
-    themes: [],
+    activeThemeUrls: [],
+    original: {}
+  },
+  api: "component",
+};
+
+/**
+ * The message that is sent to activate themes.
+ */
+export const componentActivateThemesMessage = {
+  action: 'themes',
+  sessionKey: 'session-key',
+  data: {
+    uuid: "component-uuid",
+    environment: Environment.Web,
+    platform: Platform.LinuxWeb,
+    themes: [
+      "http://localhost:8080"
+    ],
     original: {}
   },
   api: "component",

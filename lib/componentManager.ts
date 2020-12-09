@@ -35,7 +35,8 @@ type MessagePayload = {
 type ComponentManagerOptions = {
   coallesedSaving?: boolean,
   coallesedSavingDelay?: number,
-  debug?: boolean
+  debug?: boolean,
+  acceptsThemes?: boolean
 }
 
 type PermissionObject = {
@@ -51,7 +52,7 @@ type ComponentManagerParams = {
 export default class ComponentManager {
   private initialPermissions?: PermissionObject[];
   private onReadyCallback?: () => void;
-  private component: Component = { activeThemes: [] };
+  private component: Component = { activeThemes: [], acceptsThemes: true };
   private sentMessages?: MessagePayload[] = [];
   private messageQueue?: MessagePayload[] = [];
   private lastStreamedItem?: SNItem;
@@ -82,6 +83,9 @@ export default class ComponentManager {
     }
     if (options?.coallesedSavingDelay) {
       this.coallesedSavingDelay = options.coallesedSavingDelay;
+    }
+    if (options?.acceptsThemes) {
+      this.component.acceptsThemes = options?.acceptsThemes ?? true;
     }
     if (onReady) {
       this.onReadyCallback = onReady;
@@ -161,9 +165,7 @@ export default class ComponentManager {
         break;
 
       case ComponentAction.ActivateThemes:
-        if (this.component.acceptsThemes) {
-          this.activateThemes(payload.data.themes);
-        }
+        this.activateThemes(payload.data.themes);
         break;
 
       default:
@@ -232,6 +234,9 @@ export default class ComponentManager {
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
+    if (!this.component.data) {
+      throw new Error("The component has not been initialized.");
+    }
     if (!key || (key && key.length === 0)) {
       throw new Error("The key for the data value should be a valid string.");
     }
@@ -287,6 +292,10 @@ export default class ComponentManager {
   }
 
   private activateThemes(incomingUrls: string[] = []) {
+    if (!this.component.acceptsThemes) {
+      return;
+    }
+
     Logger.info("Incoming themes:", incomingUrls);
 
     if (this.component.activeThemes!.sort().toString() == incomingUrls.sort().toString()) {
@@ -344,7 +353,7 @@ export default class ComponentManager {
 
   private deactivateTheme(themeUrl: string) {
     const element = this.themeElementForUrl(themeUrl);
-    if (!element) {
+    if (element) {
       element!.setAttribute("disabled", "true");
       element!.parentNode!.removeChild(element!);
     }

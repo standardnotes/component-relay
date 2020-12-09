@@ -1,9 +1,8 @@
 import { DOMWindow, JSDOM } from 'jsdom';
 import { ComponentAction, Environment } from '@standardnotes/snjs';
-import { htmlTemplate, postMessage } from './utils';
-import { componentRegisteredMessage } from './componentMessages';
+import { postMessage, sleep } from './helpers';
+import { componentRegisteredMessage, componentActivateThemesMessage } from './componentMessages';
 import ComponentManager from './../lib/componentManager';
-import { URL } from 'url';
 
 describe("ComponentManager", () => {
   const onReady = jest.fn();
@@ -14,27 +13,37 @@ describe("ComponentManager", () => {
   let childWindow: Window;
   let componentManager: ComponentManager;
 
-  const registeredComponentAction = async (environment?: Environment) => {
+  const registeredComponentAction = async (environment?: Environment, themeUrls?: string[], sendSessionKey: boolean = true) => {
     const message = componentRegisteredMessage;
     if (environment) message.data.environment = environment;
-    await postMessage(childWindow, componentRegisteredMessage, '*');
+    if (themeUrls) message.data.activeThemeUrls = themeUrls;
+    if (!sendSessionKey) message.sessionKey = undefined;
+    await postMessage(childWindow, message, '*');
   };
 
-  const parentUrl = 'http://localhost/parent';
-  const childUrl = 'http://localhost/child';
+  const activateThemeComponentAction = async (environment?: Environment, themeUrls?: string[]) => {
+    const message = componentActivateThemesMessage;
+    if (environment) message.data.environment = environment;
+    if (themeUrls) message.data.themes = themeUrls;
+    await postMessage(childWindow, message, '*');
+  };
 
   beforeEach(async () => {
-    parentWindow = new JSDOM(htmlTemplate, {
-      url: parentUrl
-    }).window;
+    const parent = await JSDOM.fromURL('http://app.standardnotes.test/parent', {
+      resources: "usable"
+    });
+    parentWindow = parent.window;
 
     const childIframe = parentWindow.document.createElement('iframe');
-    childIframe.setAttribute("src", childUrl);
+    childIframe.setAttribute("src", "http://app.standardnotes.test/extensions/demo");
     parentWindow.document.body.appendChild(childIframe);
     childWindow = childIframe.contentWindow;
 
     componentManager = new ComponentManager(childWindow, {
-      onReady
+      onReady,
+      options: {
+        acceptsThemes: true
+      }
     });
   });
 
@@ -88,6 +97,13 @@ describe("ComponentManager", () => {
     await registeredComponentAction();
     const value = componentManager.getComponentDataValueForKey("foo");
     expect(value).toBe(componentRegisteredMessage.componentData.foo);
+  });
+
+  test('setComponentDataValueForKey() should throw an error if component is not initialized', async () => {
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    expect(() => componentManager.setComponentDataValueForKey("", ""))
+      .toThrow('The component has not been initialized.');
+    expect(parentPostMessage).not.toBeCalled();
   });
 
   test('setComponentDataValueForKey() with an invalid key should throw an error', async () => {
@@ -216,5 +232,56 @@ describe("ComponentManager", () => {
       expect.stringContaining(stringifiedData),
       expect.any(String) // TODO: jsdom should report the proper URL and not an empty string
     );
+  });
+
+  it('should activate themes when ready, by inserting elements to <head>', async () => {
+    /* Wait some time so that the iframe gets to load content. */
+    await sleep(1);
+
+    const themeUrls = [
+      "http://app.standardnotes.test/themes/default"
+    ];
+    await registeredComponentAction(Environment.Web, themeUrls);
+    const customThemes = childWindow.document.head.getElementsByClassName('custom-theme');
+    expect(customThemes.length).toEqual(1);
+
+    const themeLink = customThemes[0] as HTMLLinkElement;
+    expect(themeLink.id).toEqual(btoa(themeUrls[0]));
+    expect(themeLink.href).toEqual(new URL(themeUrls[0]).href);
+    expect(themeLink.type).toEqual('text/css');
+    expect(themeLink.rel).toEqual('stylesheet');
+    expect(themeLink.media).toEqual('screen,print');
+  });
+
+  it('should disable current themes and activate new ones when sending the theme action', async () => {
+    // Wait some time so that the iframe gets to load content.
+    await sleep(1);
+
+    const initialThemeUrls = [
+      "http://app.standardnotes.test/themes/default"
+    ];
+    await registeredComponentAction(Environment.Web, initialThemeUrls);
+
+    const newThemeUrls = [
+      "http://app.standardnotes.test/themes/dark"
+    ];
+    await activateThemeComponentAction(Environment.Web, newThemeUrls);
+
+    const customThemes = childWindow.document.head.getElementsByClassName('custom-theme');
+    expect(customThemes.length).toEqual(1);
+
+    const themeLink = customThemes[0] as HTMLLinkElement;
+    expect(themeLink.id).toEqual(btoa(newThemeUrls[0]));
+    expect(themeLink.href).toEqual(new URL(newThemeUrls[0]).href);
+    expect(themeLink.type).toEqual('text/css');
+    expect(themeLink.rel).toEqual('stylesheet');
+    expect(themeLink.media).toEqual('screen,print');
+  });
+
+  it('should queue message if sessionKey is not set', async () => {
+    await registeredComponentAction(Environment.Web, [], false);
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+    componentManager.setComponentDataValueForKey("testing", "1234");
+    expect(parentPostMessage).not.toHaveBeenCalled();
   });
 });

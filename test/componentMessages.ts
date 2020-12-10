@@ -3,7 +3,7 @@ import { Environment, Platform } from "@standardnotes/snjs";
 /**
  * The message that is first sent to register the component.
  */
-export const componentRegisteredMessage = {
+const componentRegisteredMessage = {
   action: 'component-registered',
   sessionKey: 'session-key',
   componentData: {
@@ -22,7 +22,7 @@ export const componentRegisteredMessage = {
 /**
  * The message that is sent to activate themes.
  */
-export const componentActivateThemesMessage = {
+const componentActivateThemesMessage = {
   action: 'themes',
   sessionKey: 'session-key',
   data: {
@@ -30,9 +30,14 @@ export const componentActivateThemesMessage = {
     environment: Environment.Web,
     platform: Platform.LinuxWeb,
     themes: [
-      "http://localhost:8080"
+      "http://app.standardnotes.test/themes/default"
     ],
     original: {}
   },
   api: "component",
 };
+
+export default [
+  componentActivateThemesMessage,
+  componentRegisteredMessage
+];

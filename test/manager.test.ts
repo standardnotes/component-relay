@@ -1,7 +1,6 @@
 import { DOMWindow, JSDOM } from 'jsdom';
 import { ComponentAction, Environment } from '@standardnotes/snjs';
-import { postMessage, sleep } from './helpers';
-import { componentRegisteredMessage, componentActivateThemesMessage } from './componentMessages';
+import { postMessage, sleep, getComponentActionMessage } from './helpers';
 import ComponentManager from './../lib/componentManager';
 
 describe("ComponentManager", () => {
@@ -14,18 +13,20 @@ describe("ComponentManager", () => {
   let componentManager: ComponentManager;
 
   const registeredComponentAction = async (environment?: Environment, themeUrls?: string[], sendSessionKey: boolean = true) => {
-    const message = componentRegisteredMessage;
+    const message = getComponentActionMessage(ComponentAction.ComponentRegistered) as any;
     if (environment) message.data.environment = environment;
     if (themeUrls) message.data.activeThemeUrls = themeUrls;
     if (!sendSessionKey) message.sessionKey = undefined;
     await postMessage(childWindow, message, '*');
+    return message;
   };
 
   const activateThemeComponentAction = async (environment?: Environment, themeUrls?: string[]) => {
-    const message = componentActivateThemesMessage;
+    const message = getComponentActionMessage(ComponentAction.ActivateThemes) as any;
     if (environment) message.data.environment = environment;
     if (themeUrls) message.data.themes = themeUrls;
     await postMessage(childWindow, message, '*');
+    return message;
   };
 
   beforeEach(async () => {
@@ -76,10 +77,10 @@ describe("ComponentManager", () => {
   });
 
   test('getSelfComponentUUID() after the component is registered should not be undefined', async () => {
-    await registeredComponentAction();
+    const expectedMessage = await registeredComponentAction();
     const uuid = componentManager.getSelfComponentUUID();
     expect(uuid).not.toBeUndefined();
-    expect(uuid).toBe(componentRegisteredMessage.data.uuid);
+    expect(uuid).toBe(expectedMessage.data.uuid);
   });
 
   test('getComponentDataValueForKey() before the component is registered should return undefined', async () => {
@@ -94,9 +95,9 @@ describe("ComponentManager", () => {
   });
 
   test('getComponentDataValueForKey() with an existing key should return value', async () => {
-    await registeredComponentAction();
+    const expectedMessage = await registeredComponentAction();
     const value = componentManager.getComponentDataValueForKey("foo");
-    expect(value).toBe(componentRegisteredMessage.componentData.foo);
+    expect(value).toBe(expectedMessage.componentData.foo);
   });
 
   test('setComponentDataValueForKey() should throw an error if component is not initialized', async () => {
@@ -116,21 +117,21 @@ describe("ComponentManager", () => {
 
   test('setComponentDataValueForKey() should set the value for the corresponding key', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    await registeredComponentAction(Environment.Web);
+    const expectedMessage = await registeredComponentAction(Environment.Web);
     const dataValue = `value-${Date.now()}`;
     componentManager.setComponentDataValueForKey("testing", dataValue);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     const expectedComponentData = {
       componentData: {
         testing: dataValue,
-        ...componentRegisteredMessage.componentData,
+        ...expectedMessage.componentData,
       }
     };
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.SetComponentData,
       data: expectedComponentData,
       messageId: "fake-uuid",
-      sessionKey: componentRegisteredMessage.sessionKey,
+      sessionKey: expectedMessage.sessionKey,
       api: "component"
     }), expect.any(String));
     const value = componentManager.getComponentDataValueForKey("testing");
@@ -139,7 +140,7 @@ describe("ComponentManager", () => {
 
   test('clearComponentData() should clear all component data', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    await registeredComponentAction(Environment.Web);
+    const expectedMessage = await registeredComponentAction(Environment.Web);
     componentManager.clearComponentData();
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -148,7 +149,7 @@ describe("ComponentManager", () => {
         componentData: {}
       },
       messageId: "fake-uuid",
-      sessionKey: componentRegisteredMessage.sessionKey,
+      sessionKey: expectedMessage.sessionKey,
       api: "component"
     }), expect.any(String));
     const value = componentManager.getComponentDataValueForKey("foo");
@@ -199,25 +200,25 @@ describe("ComponentManager", () => {
     };
     componentManager = new ComponentManager(childWindow, params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    await registeredComponentAction(Environment.Web);
+    const expectedMessage = await registeredComponentAction(Environment.Web);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.RequestPermissions,
       data: params.initialPermissions,
       messageId: "fake-uuid",
-      sessionKey: componentRegisteredMessage.sessionKey,
+      sessionKey: expectedMessage.sessionKey,
       api: "component"
     }), expect.any(String));
   });
 
   test('postMessage payload should be stringified if on mobile', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    await registeredComponentAction(Environment.Mobile);
+    const expectedMessage = await registeredComponentAction(Environment.Mobile);
     componentManager.setComponentDataValueForKey("testing", "1234");
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     const expectedComponentData = {
       componentData: {
-        ...componentRegisteredMessage.componentData,
+        ...expectedMessage.componentData,
         testing: "1234",
       }
     };
@@ -225,7 +226,7 @@ describe("ComponentManager", () => {
       action: ComponentAction.SetComponentData,
       data: expectedComponentData,
       messageId: "fake-uuid",
-      sessionKey: componentRegisteredMessage.sessionKey,
+      sessionKey: expectedMessage.sessionKey,
       api: "component",
     });
     expect(parentPostMessage).toHaveBeenCalledWith(

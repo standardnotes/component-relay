@@ -1,6 +1,6 @@
 import { DOMWindow, JSDOM } from 'jsdom';
 import { ComponentAction, Environment } from '@standardnotes/snjs';
-import { postMessage, sleep, getComponentActionMessage } from './helpers';
+import { sleep, performComponentAction } from './helpers';
 import ComponentManager from './../lib/componentManager';
 
 describe("ComponentManager", () => {
@@ -11,23 +11,6 @@ describe("ComponentManager", () => {
   /** The child window. This is where the extension lives. */
   let childWindow: Window;
   let componentManager: ComponentManager;
-
-  const registeredComponentAction = async (environment?: Environment, themeUrls?: string[], sendSessionKey: boolean = true) => {
-    const message = getComponentActionMessage(ComponentAction.ComponentRegistered) as any;
-    if (environment) message.data.environment = environment;
-    if (themeUrls) message.data.activeThemeUrls = themeUrls;
-    if (!sendSessionKey) message.sessionKey = undefined;
-    await postMessage(childWindow, message, '*');
-    return message;
-  };
-
-  const activateThemeComponentAction = async (environment?: Environment, themeUrls?: string[]) => {
-    const message = getComponentActionMessage(ComponentAction.ActivateThemes) as any;
-    if (environment) message.data.environment = environment;
-    if (themeUrls) message.data.themes = themeUrls;
-    await postMessage(childWindow, message, '*');
-    return message;
-  };
 
   beforeEach(async () => {
     const parent = await JSDOM.fromURL('http://app.standardnotes.test/parent', {
@@ -67,7 +50,7 @@ describe("ComponentManager", () => {
   });
 
   it('should run onReady callback when component is registered', async () => {
-    await registeredComponentAction();
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     expect(onReady).toBeCalledTimes(1);
   });
 
@@ -77,7 +60,7 @@ describe("ComponentManager", () => {
   });
 
   test('getSelfComponentUUID() after the component is registered should not be undefined', async () => {
-    const expectedMessage = await registeredComponentAction();
+    const expectedMessage = await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     const uuid = componentManager.getSelfComponentUUID();
     expect(uuid).not.toBeUndefined();
     expect(uuid).toBe(expectedMessage.data.uuid);
@@ -89,13 +72,13 @@ describe("ComponentManager", () => {
   });
 
   test('getComponentDataValueForKey() with a key that does not exist should return undefined', async () => {
-    await registeredComponentAction();
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     const value = componentManager.getComponentDataValueForKey("bar");
     expect(value).toBeUndefined();
   });
 
   test('getComponentDataValueForKey() with an existing key should return value', async () => {
-    const expectedMessage = await registeredComponentAction();
+    const expectedMessage = await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     const value = componentManager.getComponentDataValueForKey("foo");
     expect(value).toBe(expectedMessage.componentData.foo);
   });
@@ -109,7 +92,7 @@ describe("ComponentManager", () => {
 
   test('setComponentDataValueForKey() with an invalid key should throw an error', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    await registeredComponentAction(Environment.Web);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     expect(() => componentManager.setComponentDataValueForKey("", ""))
       .toThrow('The key for the data value should be a valid string.');
     expect(parentPostMessage).not.toBeCalled();
@@ -117,7 +100,7 @@ describe("ComponentManager", () => {
 
   test('setComponentDataValueForKey() should set the value for the corresponding key', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    const expectedMessage = await registeredComponentAction(Environment.Web);
+    const expectedMessage = await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     const dataValue = `value-${Date.now()}`;
     componentManager.setComponentDataValueForKey("testing", dataValue);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
@@ -140,7 +123,7 @@ describe("ComponentManager", () => {
 
   test('clearComponentData() should clear all component data', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    const expectedMessage = await registeredComponentAction(Environment.Web);
+    const expectedMessage = await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     componentManager.clearComponentData();
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -157,37 +140,49 @@ describe("ComponentManager", () => {
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is web', async () => {
-    await registeredComponentAction(Environment.Web);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Web
+    });
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is mobile', async () => {
-    await registeredComponentAction(Environment.Mobile);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Mobile
+    });
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
   });
 
   test('isRunningInDesktopApplication() should return true if the environment is desktop', async () => {
-    await registeredComponentAction(Environment.Desktop);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Desktop
+    });
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(true);
   });
 
   test('isRunningInMobileApplication() should return false if the environment is web', async () => {
-    await registeredComponentAction(Environment.Web);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Web
+    });
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(false);
   });
 
   test('isRunningInMobileApplication() should return false if the environment is desktop', async () => {
-    await registeredComponentAction(Environment.Desktop);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Desktop
+    });
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(false);
   });
 
   test('isRunningInMobileApplication() should return true if the environment is mobile', async () => {
-    await registeredComponentAction(Environment.Mobile);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Mobile
+    });
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(true);
   });
@@ -200,20 +195,22 @@ describe("ComponentManager", () => {
     };
     componentManager = new ComponentManager(childWindow, params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    const expectedMessage = await registeredComponentAction(Environment.Web);
+    const expectedMessage = await performComponentAction(childWindow, ComponentAction.ComponentRegistered);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.RequestPermissions,
       data: params.initialPermissions,
       messageId: "fake-uuid",
       sessionKey: expectedMessage.sessionKey,
-      api: "component"
+      api: "component",
     }), expect.any(String));
   });
 
   test('postMessage payload should be stringified if on mobile', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    const expectedMessage = await registeredComponentAction(Environment.Mobile);
+    const expectedMessage = await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      environment: Environment.Mobile
+    });
     componentManager.setComponentDataValueForKey("testing", "1234");
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     const expectedComponentData = {
@@ -242,7 +239,9 @@ describe("ComponentManager", () => {
     const themeUrls = [
       "http://app.standardnotes.test/themes/default"
     ];
-    await registeredComponentAction(Environment.Web, themeUrls);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      themeUrls
+    });
     const customThemes = childWindow.document.head.getElementsByClassName('custom-theme');
     expect(customThemes.length).toEqual(1);
 
@@ -261,12 +260,16 @@ describe("ComponentManager", () => {
     const initialThemeUrls = [
       "http://app.standardnotes.test/themes/default"
     ];
-    await registeredComponentAction(Environment.Web, initialThemeUrls);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      themeUrls: initialThemeUrls
+    });
 
     const newThemeUrls = [
       "http://app.standardnotes.test/themes/dark"
     ];
-    await activateThemeComponentAction(Environment.Web, newThemeUrls);
+    await performComponentAction(childWindow, ComponentAction.ActivateThemes, {
+      themeUrls: newThemeUrls
+    });
 
     const customThemes = childWindow.document.head.getElementsByClassName('custom-theme');
     expect(customThemes.length).toEqual(1);
@@ -280,7 +283,9 @@ describe("ComponentManager", () => {
   });
 
   it('should queue message if sessionKey is not set', async () => {
-    await registeredComponentAction(Environment.Web, [], false);
+    await performComponentAction(childWindow, ComponentAction.ComponentRegistered, {
+      sendSessionKey: false
+    });
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     componentManager.setComponentDataValueForKey("testing", "1234");
     expect(parentPostMessage).not.toHaveBeenCalled();

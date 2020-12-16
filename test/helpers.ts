@@ -1,32 +1,54 @@
-import { ComponentAction, Environment } from '@standardnotes/snjs';
-import { DOMWindow } from "jsdom";
-import componentMessages from './componentMessages';
+import { ContentType } from '@standardnotes/snjs';
+import { generateUuid } from './../lib/utils';
 
 export const htmlTemplate = `<!doctype html>
   <html>
-    <head></head>
+    <head>
+      <meta charset="utf-8">
+    </head>
     <body>
       <div id="root"></div>
     </body>
   </html>`;
 
-export const sleep = async (seconds: number) => {
-  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+export const testExtensionPackage = {
+  identifier: "test.standardnotes.my-test-extension",
+  name: "My Test Extension",
+  content_type: "SN|Component",
+  area: "editor-editor",
+  version: "1.0.0",
+  url: "http://app.standardnotes.test/extensions/my-test-extension"
 };
 
-export const postMessage = async (targetWindow: DOMWindow | Window, message: Object, targetOrigin: string) => {
-  targetWindow.postMessage(message, targetOrigin);
-
-  /**
-   * window.postMesasge() implementation is wrapped with setTimeout.
-   * See https://github.com/jsdom/jsdom/issues/2245#issuecomment-392556153
-   */
-  await sleep(0.01);
+export const testThemeDefaultPackage = {
+  identifier: "test.standardnotes.default-theme",
+  name: "Default Theme",
+  content_type: "SN|Theme",
+  area: "themes",
+  version: "1.0.0",
+  url: "http://app.standardnotes.test/themes/default"
 };
 
-const getComponentActionMessage = (action: ComponentAction) => {
-  const message = componentMessages.find((message) => message.action === action);
-  return copyObject(message);
+export const testThemeDarkPackage = {
+  identifier: "test.standardnotes.dark-theme",
+  name: "Dark Theme",
+  content_type: "SN|Theme",
+  area: "themes",
+  version: "1.0.0",
+  url: "http://app.standardnotes.test/themes/dark"
+};
+
+export const getTestNoteItem = ({ title = 'Hello', text = 'World', dirty = true } = {}) => {
+  return {
+    uuid: generateUuid(),
+    content_type: ContentType.Note,
+    dirty,
+    content: {
+      title,
+      text
+    },
+    references: []
+  };
 };
 
 const copyObject = (object: any) => {
@@ -34,30 +56,29 @@ const copyObject = (object: any) => {
   return JSON.parse(objectStr);
 };
 
-const getThemesKeyForAction = (action: ComponentAction) => {
-  switch (action) {
-    case ComponentAction.ComponentRegistered:
-      return "activeThemeUrls";
-    case ComponentAction.ActivateThemes:
-    default:
-      return "themes";
-  }
+export const getRawTestComponentItem = (componentPackage: any) => {
+  const today = new Date();
+  componentPackage = copyObject(componentPackage);
+  return {
+    content_type: componentPackage.content_type,
+    content: {
+      uuid: generateUuid(),
+      identifier: componentPackage.identifier,
+      componentData: {
+        foo: "bar"
+      },
+      name: componentPackage.name,
+      hosted_url: componentPackage.url,
+      url: componentPackage.url,
+      local_url: null,
+      area: componentPackage.area,
+      package_info: componentPackage,
+      valid_until: new Date(today.setFullYear(today.getFullYear() + 5)),
+      references: []
+    }
+  };
 };
 
-export const performComponentAction = async (
-  targetWindow: DOMWindow | Window,
-  action: ComponentAction,
-  options?: { environment?: Environment, themeUrls?: string[], sendSessionKey?: boolean }
-) => {
-  const message = getComponentActionMessage(action);
-  if (options) {
-    const { environment, themeUrls, sendSessionKey } = options;
-    if (environment) message.data.environment = environment;
-    if (sendSessionKey !== undefined) message.sessionKey = undefined;
-    if (themeUrls) {
-      const themeKey = getThemesKeyForAction(action);
-      message.data[themeKey] = themeUrls;
-    }
-  }
-  return postMessage(targetWindow, message, '*').then(() => message);
+export const sleep = async (seconds: number) => {
+  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
 };

@@ -1,6 +1,11 @@
+import {
+  ComponentAction,
+  ContentType,
+  Environment,
+  SNItem
+} from "@standardnotes/snjs";
 import { generateUuid, isValidJsonString } from "./utils";
 import Logger from "./logger";
-import { ComponentAction, ContentType, Environment, Platform, SNItem } from "@standardnotes/snjs";
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250;
 
@@ -13,8 +18,8 @@ type Component = {
   origin?: string;
   data?: Record<string, any>;
   sessionKey?: string;
-  environment?: Environment;
-  platform?: Platform;
+  environment?: string;
+  platform?: string;
   isMobile?: boolean;
   acceptsThemes?: boolean;
   activeThemes?: string[];
@@ -218,19 +223,31 @@ export default class ComponentManager {
     return this.component.uuid;
   }
 
+  /**
+   * TODO: this function should be exported from @standardnotes/snjs
+   */
+  private environmentToString(environment: Environment) {
+    const map = {
+      [Environment.Web]: "web",
+      [Environment.Desktop]: "desktop",
+      [Environment.Mobile]: "mobile",
+    };
+    return map[environment];
+  }
+
   public isRunningInDesktopApplication() {
-    return this.component.environment === Environment.Desktop;
+    return this.component.environment === this.environmentToString(Environment.Desktop);
   }
 
   public isRunningInMobileApplication() {
-    return this.component.environment === Environment.Mobile;
+    return this.component.environment === this.environmentToString(Environment.Mobile);
   }
 
   public getComponentDataValueForKey(key: string) {
     if (!this.component.data) {
       return;
     }
-    return this.component.data![key];
+    return this.component.data[key];
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
@@ -240,7 +257,10 @@ export default class ComponentManager {
     if (!key || (key && key.length === 0)) {
       throw new Error("The key for the data value should be a valid string.");
     }
-    this.component.data![key] = value;
+    this.component.data = {
+      ...this.component.data,
+      [key]: value,
+    };
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data });
   }
 
@@ -361,6 +381,14 @@ export default class ComponentManager {
 
   private generateUUID() {
     return generateUuid();
+  }
+
+  public get platform() {
+    return this.component.platform;
+  }
+
+  public get environment() {
+    return this.component.environment;
   }
 
   /** Components actions */

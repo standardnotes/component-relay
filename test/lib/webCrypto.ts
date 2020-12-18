@@ -10,9 +10,9 @@ import { SodiumPlus, CryptographyKey } from 'sodium-plus';
 import { generateUuid } from '../../lib/utils';
 
 /**
- * A dummy implementation of SNPureCrypto. Required to create a new SNApplication instance.
+ * An SNPureCrypto implementation. Required to create a new SNApplication instance.
  */
-export default class DummyWebCrypto implements SNPureCrypto {
+export default class WebCrypto implements SNPureCrypto {
   deinit(): void {}
 
   public timingSafeEqual(a: string, b: string) {

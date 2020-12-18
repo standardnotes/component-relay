@@ -1,15 +1,15 @@
-import { DeviceInterface } from '@standardnotes/snjs';
-import DummyLocalStorage from './dummyLocalStorage';
+import { DeviceInterface as SNDeviceInterface } from '@standardnotes/snjs';
+import LocalStorage from './localStorage';
 
 const KEYCHAIN_STORAGE_KEY = 'keychain';
 
 let storage = {};
-const localStorage = new DummyLocalStorage(storage);
+const localStorage = new LocalStorage(storage);
 
 /**
  * The DeviceInterface implemation to handle storage and keychain operations.
  */
-export default class DummyDeviceInterface extends DeviceInterface {
+export default class DeviceInterface extends SNDeviceInterface {
   async getRawStorageValue(key) {
     return localStorage.getItem(key);
   }

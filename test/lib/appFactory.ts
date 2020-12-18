@@ -1,6 +1,6 @@
 import { SNApplication, Environment, Platform, SNLog, SNComponentManager } from '@standardnotes/snjs';
-import DummyDeviceInterface from './dummyDeviceInterface';
-import DummyWebCrypto from './dummyWebCrypto';
+import DeviceInterface from './deviceInterface';
+import WebCrypto from './webCrypto';
 import { WebComponentManager, MobileComponentManager } from './componentManager';
 
 const getSwappedClasses = (environment: Environment) => {
@@ -17,7 +17,7 @@ const getSwappedClasses = (environment: Environment) => {
 };
 
 export const createApplication = async (identifier: string, environment: Environment, platform: Platform) => {
-  const deviceInterface = new DummyDeviceInterface(
+  const deviceInterface = new DeviceInterface(
     setTimeout.bind(window),
     setInterval.bind(window)
   );
@@ -31,7 +31,7 @@ export const createApplication = async (identifier: string, environment: Environ
     environment,
     platform,
     deviceInterface,
-    new DummyWebCrypto(),
+    new WebCrypto(),
     {
       confirm: async () => true,
       alert: async () => {},

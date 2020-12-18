@@ -1,7 +1,7 @@
 /**
  * A simple localStorage implementation using in-memory storage.
  */
-export default class DummyLocalStorage {
+export default class LocalStorage {
   constructor(private storageObject) { }
 
   getItem (key: string) {

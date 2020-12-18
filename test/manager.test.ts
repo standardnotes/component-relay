@@ -1,11 +1,13 @@
 import {
   ComponentAction,
   ContentType,
+  DeinitSource,
   Environment,
-  PayloadContent,
   Platform,
   SNApplication,
   SNComponent,
+  SNItem,
+  SNNote,
   SNTheme
 } from '@standardnotes/snjs';
 import {
@@ -13,19 +15,18 @@ import {
   getRawTestComponentItem,
   testExtensionPackage,
   testThemeDefaultPackage,
-  testThemeDarkPackage
+  testThemeDarkPackage,
+  getTestNoteItem,
+  htmlTemplate
 } from './helpers';
 import ComponentManager from './../lib/componentManager';
 import { createApplication } from './lib/appFactory';
-import { DOMWindow, JSDOM } from 'jsdom';
 
 const rawTestComponentItem = getRawTestComponentItem(testExtensionPackage);
 
 describe("ComponentManager", () => {
   const onReady = jest.fn();
 
-  /** The parent window (Standard Notes App) */
-  let parentWindow: DOMWindow;
   /** The child window. This is where the extension lives. */
   let childWindow: Window;
   let componentManager: ComponentManager;
@@ -53,21 +54,19 @@ describe("ComponentManager", () => {
   };
 
   beforeEach(async () => {
-    parentWindow = await JSDOM.fromURL('http://app.standardnotes.test/parent', {
-      resources: "usable"
-    }).then((result) => result.window);
-    // @ts-ignore
-    global.window = parentWindow;
-    const childIframe = parentWindow.document.createElement('iframe');
-    childIframe.setAttribute("src", "http://app.standardnotes.test/extensions/my-test-extension");
-    parentWindow.document.body.appendChild(childIframe);
+    const childIframe = window.document.createElement('iframe');
+    window.document.body.appendChild(childIframe);
+    window.document.querySelector('iframe').srcdoc = htmlTemplate;
     childWindow = childIframe.contentWindow;
-    testSNApp = createApplication('test-application', Environment.Web, Platform.LinuxWeb);
+
+    testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
+
     testComponent = await testSNApp.createManagedItem(
       rawTestComponentItem.content_type as ContentType,
       rawTestComponentItem.content,
       false
     ) as SNComponent;
+
     componentManager = new ComponentManager(childWindow, {
       onReady,
       options: {
@@ -77,8 +76,8 @@ describe("ComponentManager", () => {
   });
 
   afterEach(() => {
-    const childIframe = parentWindow.document.getElementsByTagName('iframe')[0];
-    parentWindow.document.body.removeChild(childIframe);
+    const childIframe = window.document.getElementsByTagName('iframe')[0];
+    window.document.body.removeChild(childIframe);
     componentManager = undefined;
     testComponent = undefined;
   });
@@ -186,42 +185,42 @@ describe("ComponentManager", () => {
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is web', async () => {
-    testSNApp = createApplication('test-application', Environment.Web, Platform.LinuxWeb);
+    testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is mobile', async () => {
-    testSNApp = createApplication('test-application', Environment.Mobile, Platform.Android);
+    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Android);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
   });
 
   test('isRunningInDesktopApplication() should return true if the environment is desktop', async () => {
-    testSNApp = createApplication('test-application', Environment.Desktop, Platform.LinuxDesktop);
+    testSNApp = await createApplication('test-application', Environment.Desktop, Platform.LinuxDesktop);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(true);
   });
 
   test('isRunningInMobileApplication() should return false if the environment is web', async () => {
-    testSNApp = createApplication('test-application', Environment.Web, Platform.LinuxWeb);
+    testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(false);
   });
 
   test('isRunningInMobileApplication() should return false if the environment is desktop', async () => {
-    testSNApp = createApplication('test-application', Environment.Desktop, Platform.LinuxDesktop);
+    testSNApp = await createApplication('test-application', Environment.Desktop, Platform.LinuxDesktop);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(false);
   });
 
   test('isRunningInMobileApplication() should return true if the environment is mobile', async () => {
-    testSNApp = createApplication('test-application', Environment.Mobile, Platform.Android);
+    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Android);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(true);
@@ -230,7 +229,7 @@ describe("ComponentManager", () => {
   it('should request permissions when ready', async () => {
     const params = {
       initialPermissions: [
-        { name: ComponentAction.StreamItems }
+        { name: ComponentAction.StreamContextItem }
       ]
     };
     componentManager = new ComponentManager(childWindow, params);
@@ -239,7 +238,7 @@ describe("ComponentManager", () => {
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.RequestPermissions,
-      data: params.initialPermissions,
+      data: { permissions: params.initialPermissions },
       messageId: "fake-uuid",
       sessionKey: "fake-uuid",
       api: "component",
@@ -248,7 +247,7 @@ describe("ComponentManager", () => {
 
   test('postMessage payload should be stringified if on mobile', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    testSNApp = createApplication('test-application', Environment.Mobile, Platform.Android);
+    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Android);
     await registerComponent(testSNApp, childWindow, testComponent);
     componentManager.setComponentDataValueForKey("testing", "1234");
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
@@ -363,6 +362,44 @@ describe("ComponentManager", () => {
     expect(parentPostMessage).not.toHaveBeenCalled();
 
     // Restoring the mocked function.
+    Utils.generateUuid = originalGenerateUuid;
+  });
+
+  test.skip('streamItems()', async (done) => {
+    const Utils = require('./../lib/utils');
+    const originalGenerateUuid = Utils.generateUuid;
+    const ActualUtils = jest.requireActual('./../lib/utils');
+    Utils.generateUuid = ActualUtils.generateUuid;
+
+    const params = {
+      initialPermissions: [
+        {
+          name: ComponentAction.StreamItems,
+          content_types: [ContentType.Note]
+        }
+      ]
+    };
+    componentManager = new ComponentManager(childWindow, params);
+    await registerComponent(testSNApp, childWindow, testComponent);
+
+    const testNoteItem = getTestNoteItem();
+    const contentTypes = [
+      testNoteItem.content_type
+    ];
+
+    const savedTestNote = await testSNApp.createManagedItem(
+      testNoteItem.content_type as ContentType,
+      testNoteItem,
+      false
+    ) as SNNote;
+
+    componentManager.streamItems(contentTypes, (items: SNItem[]) => {
+      expect(items).not.toBeUndefined();
+      expect(items.length).toBeGreaterThanOrEqual(0);
+      expect(items[0].uuid).toBe(savedTestNote.uuid);
+      done();
+    });
+
     Utils.generateUuid = originalGenerateUuid;
   });
 });

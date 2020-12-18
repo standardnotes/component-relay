@@ -45,7 +45,8 @@ type ComponentManagerOptions = {
 }
 
 type PermissionObject = {
-  name: ComponentAction
+  name: ComponentAction,
+  content_types?: ContentType[]
 }
 
 type ComponentManagerParams = {
@@ -186,6 +187,7 @@ export default class ComponentManager {
         if (!originalMessage) {
           // Connection must have been reset. We should alert the user.
           Logger.error("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.");
+          return;
         }
   
         if (originalMessage.callback) {
@@ -306,7 +308,7 @@ export default class ComponentManager {
   }
 
   private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {
-    this.postMessage(ComponentAction.RequestPermissions, permissions, () => {
+    this.postMessage(ComponentAction.RequestPermissions, { permissions }, () => {
       callback && callback();
     });
   }

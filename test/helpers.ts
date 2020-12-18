@@ -17,7 +17,7 @@ export const testExtensionPackage = {
   content_type: "SN|Component",
   area: "editor-editor",
   version: "1.0.0",
-  url: "http://app.standardnotes.test/extensions/my-test-extension"
+  url: "http://localhost/extensions/my-test-extension"
 };
 
 export const testThemeDefaultPackage = {
@@ -26,7 +26,7 @@ export const testThemeDefaultPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://app.standardnotes.test/themes/default"
+  url: "http://localhost/themes/default"
 };
 
 export const testThemeDarkPackage = {
@@ -35,7 +35,7 @@ export const testThemeDarkPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://app.standardnotes.test/themes/dark"
+  url: "http://localhost/themes/dark"
 };
 
 export const getTestNoteItem = ({ title = 'Hello', text = 'World', dirty = true } = {}) => {

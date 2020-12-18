@@ -1,23 +1,22 @@
 import { SNApplication, Environment, Platform, SNLog, SNComponentManager } from '@standardnotes/snjs';
 import DummyDeviceInterface from './dummyDeviceInterface';
 import DummyWebCrypto from './dummyWebCrypto';
-import MobileComponentManager from './mobileComponentManager';
+import { WebComponentManager, MobileComponentManager } from './componentManager';
 
 const getSwappedClasses = (environment: Environment) => {
+  const classMap = {
+    swap: SNComponentManager,
+    with: WebComponentManager
+  };
   switch (environment) {
     case Environment.Mobile:
-      return [
-        {
-          swap: SNComponentManager,
-          with: MobileComponentManager,
-        },
-      ];
-    default:
-      return undefined;
+      classMap.with = MobileComponentManager;
+      break;
   }
+  return [classMap];
 };
 
-export const createApplication = (identifier: string, environment: Environment, platform: Platform) => {
+export const createApplication = async (identifier: string, environment: Environment, platform: Platform) => {
   const deviceInterface = new DummyDeviceInterface(
     setTimeout.bind(window),
     setInterval.bind(window)
@@ -43,5 +42,11 @@ export const createApplication = (identifier: string, environment: Environment, 
     undefined,
     'http://syncing.localhost'
   );
+  await application.prepareForLaunch({
+    receiveChallenge: (_challenge) => {
+      throw Error('Factory application shouldn\'t have challenges');
+    }
+  });
+  await application.launch(true);
   return application;
 };

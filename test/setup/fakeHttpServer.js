@@ -1,9 +1,9 @@
 import nock from 'nock';
 import { htmlTemplate } from '../helpers';
 
-nock('http://app.standardnotes.test')
+nock('http://localhost')
   .persist()
-  .get(/(parent|extensions)(.*)/)
+  .get(/extensions(.*)/)
   .reply(200, htmlTemplate, { 'Content-Type': 'text/html; charset=UTF-8', })
   .get(/themes(.*)/)
   .reply(200, "");

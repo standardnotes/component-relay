@@ -1,26 +1,10 @@
 import { DeviceInterface } from '@standardnotes/snjs';
+import DummyLocalStorage from './dummyLocalStorage';
 
 const KEYCHAIN_STORAGE_KEY = 'keychain';
 
-/**
- * A simple localStorage implementation using in-memory storage.
- */
 let storage = {};
-
-const localStorage = {
-  getItem: (key: string) => {
-    return storage[key];
-  },
-  setItem: (key: string, value: any) => {
-    storage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete storage[key];
-  },
-  clear: () => {
-    storage = {}
-  }
-};
+const localStorage = new DummyLocalStorage(storage);
 
 /**
  * The DeviceInterface implemation to handle storage and keychain operations.

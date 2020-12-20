@@ -6,8 +6,6 @@ import {
   Platform,
   SNApplication,
   SNComponent,
-  SNItem,
-  SNNote,
   SNTheme
 } from '@standardnotes/snjs';
 import {
@@ -50,7 +48,7 @@ describe("ComponentManager", () => {
      * We need to make sure that the event is dispatched properly by waiting a few ms.
      * See https://github.com/jsdom/jsdom/issues/2245#issuecomment-392556153
      */
-    await sleep(0.1);
+    await sleep(0.01);
   };
 
   beforeEach(async () => {
@@ -76,10 +74,17 @@ describe("ComponentManager", () => {
   });
 
   afterEach(() => {
+    componentManager.deinit();
+    componentManager = undefined;
+
     const childIframe = window.document.getElementsByTagName('iframe')[0];
     window.document.body.removeChild(childIframe);
-    componentManager = undefined;
+    childWindow = undefined;
+
     testComponent = undefined;
+
+    testSNApp.deinit(DeinitSource.SignOut);
+    testSNApp = undefined;
   });
 
   it('should throw error if contentWindow is undefined', () => {
@@ -91,10 +96,12 @@ describe("ComponentManager", () => {
   });
 
   it('should not run onReady callback when component has not been registered', () => {
+    expect.hasAssertions();
     expect(onReady).toBeCalledTimes(0);
   });
 
   it('should run onReady callback when component is registered', async () => {
+    expect.hasAssertions();
     await registerComponent(testSNApp, childWindow, testComponent);
     expect(onReady).toBeCalledTimes(1);
   });
@@ -128,7 +135,7 @@ describe("ComponentManager", () => {
     expect(value).toBe("bar");
   });
 
-  test('setComponentDataValueForKey() should throw an error if component is not initialized', async () => {
+  test('setComponentDataValueForKey() should throw an error if component is not initialized', () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     expect(() => componentManager.setComponentDataValueForKey("", ""))
       .toThrow('The component has not been initialized.');
@@ -158,8 +165,8 @@ describe("ComponentManager", () => {
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.SetComponentData,
       data: expectedComponentData,
-      messageId: "fake-uuid",
-      sessionKey: "fake-uuid",
+      messageId: expect.any(String),
+      sessionKey: expect.any(String),
       api: "component"
     }), expect.any(String));
     const value = componentManager.getComponentDataValueForKey("testing");
@@ -176,8 +183,8 @@ describe("ComponentManager", () => {
       data: {
         componentData: {}
       },
-      messageId: "fake-uuid",
-      sessionKey: "fake-uuid",
+      messageId: expect.any(String),
+      sessionKey: expect.any(String),
       api: "component"
     }), expect.any(String));
     const value = componentManager.getComponentDataValueForKey("foo");
@@ -232,6 +239,7 @@ describe("ComponentManager", () => {
         { name: ComponentAction.StreamContextItem }
       ]
     };
+    componentManager.deinit();
     componentManager = new ComponentManager(childWindow, params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
@@ -239,41 +247,37 @@ describe("ComponentManager", () => {
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.RequestPermissions,
       data: { permissions: params.initialPermissions },
-      messageId: "fake-uuid",
-      sessionKey: "fake-uuid",
+      messageId: expect.any(String),
+      sessionKey: expect.any(String),
       api: "component",
     }), expect.any(String));
   });
 
   test('postMessage payload should be stringified if on mobile', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Android);
+
+    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Ios);
+    testComponent = await testSNApp.createManagedItem(
+      rawTestComponentItem.content_type as ContentType,
+      rawTestComponentItem.content,
+      false
+    ) as SNComponent;
+
+    componentManager.deinit();
+    componentManager = new ComponentManager(childWindow);
     await registerComponent(testSNApp, childWindow, testComponent);
-    componentManager.setComponentDataValueForKey("testing", "1234");
+
+    // Performing an action so it can call parent.postMessage function.
+    componentManager.clearSelection();
+
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
-    const expectedComponentData = {
-      componentData: {
-        ...rawTestComponentItem.content.componentData,
-        testing: "1234"
-      }
-    };
-    const stringifiedData = JSON.stringify({
-      action: ComponentAction.SetComponentData,
-      data: expectedComponentData,
-      messageId: "fake-uuid",
-      sessionKey: "fake-uuid",
-      api: "component",
-    });
     expect(parentPostMessage).toHaveBeenCalledWith(
-      expect.stringContaining(stringifiedData),
+      expect.any(String),
       expect.any(String) // TODO: jsdom should report the proper URL and not an empty string
     );
   });
 
   it('should activate themes when ready, by inserting elements to <head>', async () => {
-    /* Wait some time so that the iframe gets to load content. */
-    await sleep(0.01);
-
     const rawTestThemeDefaultItem = getRawTestComponentItem(testThemeDefaultPackage);
     const testTheme = await testSNApp.createManagedItem(
       rawTestThemeDefaultItem.content_type as ContentType,
@@ -296,15 +300,12 @@ describe("ComponentManager", () => {
     expect(themeLink.media).toEqual('screen,print');
   });
 
-  test('postActiveThemesToComponent() should deactivate current theme and activate the new one', async () => {
-    // Wait some time so that the iframe gets to load content.
-    await sleep(0.01);
-
+  test('postActiveThemesToComponent() should dispatch messages to activate/deactivate themes', async () => {
     /**
      * Creating an active SNTheme, that will be activated once the component is registered.
      */
     const rawTestThemeDefaultItem = getRawTestComponentItem(testThemeDefaultPackage);
-    await testSNApp.createManagedItem(
+    const testThemeDefault = await testSNApp.createManagedItem(
       rawTestThemeDefaultItem.content_type as ContentType,
       {
         active: true,
@@ -329,8 +330,13 @@ describe("ComponentManager", () => {
     ) as SNTheme;
 
     /**
+     * Setting active = false so that only the new theme becomes the active theme.
+     */
+    testSNApp.componentManager.deactivateComponent(testThemeDefault.uuid);
+
+    /**
      * componentManager.postActiveThemesToComponent() will trigger the ActivateTheme action.
-     * This should deactivate our current active theme, and activate our new theme.
+     * This should deactivate the Default theme, and activate the Dark theme.
      */
     testSNApp.componentManager.postActiveThemesToComponent(testComponent);
     await sleep(0.001);
@@ -365,41 +371,36 @@ describe("ComponentManager", () => {
     Utils.generateUuid = originalGenerateUuid;
   });
 
-  test.skip('streamItems()', async (done) => {
-    const Utils = require('./../lib/utils');
-    const originalGenerateUuid = Utils.generateUuid;
-    const ActualUtils = jest.requireActual('./../lib/utils');
-    Utils.generateUuid = ActualUtils.generateUuid;
-
-    const params = {
-      initialPermissions: [
-        {
-          name: ComponentAction.StreamItems,
-          content_types: [ContentType.Note]
-        }
-      ]
-    };
-    componentManager = new ComponentManager(childWindow, params);
-    await registerComponent(testSNApp, childWindow, testComponent);
+  test('streamItems()', async (done) => {
+    expect.assertions(3);
 
     const testNoteItem = getTestNoteItem();
     const contentTypes = [
       testNoteItem.content_type
     ];
-
     const savedTestNote = await testSNApp.createManagedItem(
       testNoteItem.content_type as ContentType,
       testNoteItem,
       false
-    ) as SNNote;
+    );
+    const params = {
+      initialPermissions: [
+        {
+          name: ComponentAction.StreamItems,
+          content_types: contentTypes
+        }
+      ]
+    };
 
-    componentManager.streamItems(contentTypes, (items: SNItem[]) => {
+    componentManager.deinit();
+    componentManager = new ComponentManager(childWindow, params);
+    await registerComponent(testSNApp, childWindow, testComponent);
+
+    componentManager.streamItems(contentTypes, (items) => {
       expect(items).not.toBeUndefined();
       expect(items.length).toBeGreaterThanOrEqual(0);
       expect(items[0].uuid).toBe(savedTestNote.uuid);
       done();
     });
-
-    Utils.generateUuid = originalGenerateUuid;
   });
 });

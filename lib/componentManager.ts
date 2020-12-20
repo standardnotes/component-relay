@@ -23,7 +23,6 @@ type Component = {
   isMobile?: boolean;
   acceptsThemes?: boolean;
   activeThemes?: string[];
-  activeThemeUrls?: string[];
 }
 
 type MessagePayload = {
@@ -59,14 +58,15 @@ export default class ComponentManager {
   private initialPermissions?: PermissionObject[];
   private onReadyCallback?: () => void;
   private component: Component = { activeThemes: [], acceptsThemes: true };
-  private sentMessages?: MessagePayload[] = [];
-  private messageQueue?: MessagePayload[] = [];
+  private sentMessages: MessagePayload[] = [];
+  private messageQueue: MessagePayload[] = [];
   private lastStreamedItem?: SNItem;
   private pendingSaveItems?: SNItem[];
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
   private coallesedSaving = false;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
+  private messageHandler?: (event: any) => void;
 
   constructor(private contentWindow: Window, params?: ComponentManagerParams) {
     if (!contentWindow) {
@@ -99,8 +99,24 @@ export default class ComponentManager {
     Logger.enabled = options?.debug ?? false;
   }
 
+  public deinit() {
+    this.onReadyCallback = undefined;
+    this.component = {};
+    this.messageQueue = [];
+    this.sentMessages = [];
+    this.lastStreamedItem = undefined;
+    this.pendingSaveItems = undefined;
+    this.pendingSaveTimeout = undefined;
+    this.pendingSaveParams = undefined;
+
+    if (this.messageHandler) {
+      this.contentWindow.document.removeEventListener("message", this.messageHandler);
+      this.contentWindow.removeEventListener("message", this.messageHandler);
+    }
+  }
+
   private registerMessageHandler() {
-    const messageHandler = (event: MessageEvent) => {
+    this.messageHandler = (event: MessageEvent) => {
       Logger.info("Components API Message received:", event.data);
 
       /**
@@ -150,13 +166,8 @@ export default class ComponentManager {
      * Also, even with the new version of react-native-webview, Android may still require document.addEventListener (while iOS still only requires window.addEventListener)
      * https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
      */
-    this.contentWindow.document.addEventListener("message", function (event) {
-      messageHandler(event as MessageEvent);
-    }, false);
-
-    this.contentWindow.addEventListener("message", function (event) {
-      messageHandler(event);
-    }, false);
+    this.contentWindow.document.addEventListener("message", this.messageHandler, false);
+    this.contentWindow.addEventListener("message", this.messageHandler, false);
 
     Logger.info("Waiting for messages...");
   }
@@ -197,7 +208,7 @@ export default class ComponentManager {
     }
   }
 
-  private onReady(data: Component) {
+  private onReady(data: Record<string, any>) {
     this.component.environment = data.environment;
     this.component.platform = data.platform;
     this.component.uuid = data.uuid;

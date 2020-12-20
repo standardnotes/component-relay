@@ -11,6 +11,7 @@ module.exports = {
     "html"
   ],
   resetMocks: true,
+  restoreMocks: true,
   roots: [
     "<rootDir>/lib",
     "<rootDir>/test"

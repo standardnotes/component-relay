@@ -1,8 +1,13 @@
 import Logger from './../lib/logger';
 
 describe("Logger", () => {
-  const consoleLog = jest.spyOn(console, 'log');
-  const consoleError = jest.spyOn(console, 'error');
+  let consoleLog;
+  let consoleError;
+
+  beforeEach(() => {
+    consoleLog = jest.spyOn(console, 'log');
+    consoleError = jest.spyOn(console, 'error');
+  });
 
   it('should not output messages to console if not enabled', () => {
     Logger.enabled = false;

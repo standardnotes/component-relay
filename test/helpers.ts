@@ -11,13 +11,22 @@ export const htmlTemplate = `<!doctype html>
     </body>
   </html>`;
 
-export const testExtensionPackage = {
+export const testExtensionEditorPackage = {
   identifier: "test.standardnotes.my-test-extension",
   name: "My Test Extension",
   content_type: "SN|Component",
   area: "editor-editor",
   version: "1.0.0",
   url: "http://localhost/extensions/my-test-extension"
+};
+
+export const testExtensionForTagsPackage = {
+  identifier: "test.standardnotes.my-test-tags-extension",
+  name: "My Test Tags Extension",
+  content_type: "SN|Component",
+  area: "note-tags",
+  version: "1.0.0",
+  url: "http://localhost/extensions/my-test-tags-extension"
 };
 
 export const testThemeDefaultPackage = {

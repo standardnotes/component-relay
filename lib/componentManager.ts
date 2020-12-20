@@ -436,13 +436,10 @@ export default class ComponentManager {
   }
 
   /**
-   * Selects an item which content_type must be "Tag".
+   * Selects an item which typically needs to be a tag.
    * @param item the item to select.
    */
   public selectItem(item: SNItem) {
-    if (item.content_type !== ContentType.Tag) {
-      return;
-    }
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) });
   }
 

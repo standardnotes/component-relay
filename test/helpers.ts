@@ -1,4 +1,12 @@
-import { ContentType } from '@standardnotes/snjs';
+import {
+  ComponentArea,
+  ContentType,
+  SNApplication,
+  SNComponent,
+  SNItem,
+  SNNote,
+  SNTag
+} from '@standardnotes/snjs';
 import { generateUuid } from './../lib/utils';
 
 export const htmlTemplate = `<!doctype html>
@@ -90,4 +98,82 @@ export const getRawTestComponentItem = (componentPackage: any) => {
 
 export const sleep = async (seconds: number) => {
   await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+};
+
+export const SHORT_DELAY_TIME = 0.01;
+
+export const registerComponent = async (
+  application: SNApplication,
+  targetWindow: Window,
+  component: SNComponent
+) => {
+  application.componentManager.registerComponentWindow(
+    component,
+    targetWindow
+  );
+
+  /**
+   * componentManager.registerComponentWindow() calls targetWindow.parent.postMesasge()
+   * We need to make sure that the event is dispatched properly by waiting a few ms.
+   * See https://github.com/jsdom/jsdom/issues/2245#issuecomment-392556153
+   */
+  await sleep(SHORT_DELAY_TIME);
+};
+
+export const createNoteItem = async (
+  application: SNApplication,
+  overrides = {}
+) => {
+  const testNoteItem = getTestNoteItem(overrides);
+  return await application.createManagedItem(
+    testNoteItem.content_type as ContentType,
+    testNoteItem,
+    false
+  ) as SNNote;
+};
+
+export const createTagItem = async (
+  application: SNApplication,
+  title: string
+) => {
+  return await application.createManagedItem(
+    ContentType.Tag,
+    {
+      title,
+      references: []
+    },
+    false
+  ) as SNTag;
+};
+
+export const createComponentItem = async (
+  application: SNApplication,
+  componentPackage: any,
+  overrides = {}
+) => {
+  const rawTestComponentItem = getRawTestComponentItem(componentPackage);
+  return await application.createManagedItem(
+    rawTestComponentItem.content_type as ContentType,
+    {
+      ...overrides,
+      ...rawTestComponentItem.content
+    },
+    false
+  ) as SNComponent;
+};
+
+export const registerComponentHandler = (
+  application: SNApplication,
+  areas: ComponentArea[],
+  itemInContext?: SNItem,
+  customActionHandler?: (data: any) => {},
+) => {
+  application.componentManager.registerHandler({
+    identifier: 'generic-view-' + Math.random(),
+    areas,
+    actionHandler: (currentComponent, action, data) => {
+      customActionHandler && customActionHandler(data);
+    },
+    contextRequestHandler: () => itemInContext
+  });
 };

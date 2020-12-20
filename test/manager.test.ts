@@ -7,28 +7,24 @@ import {
   Platform,
   SNApplication,
   SNComponent,
-  SNItem,
-  SNNote,
-  SNTag,
   SNTheme
 } from '@standardnotes/snjs';
 import {
   sleep,
-  getRawTestComponentItem,
   testExtensionEditorPackage,
   testExtensionForTagsPackage,
   testThemeDefaultPackage,
   testThemeDarkPackage,
-  getTestNoteItem,
-  htmlTemplate
+  htmlTemplate,
+  createComponentItem,
+  registerComponent,
+  createNoteItem,
+  registerComponentHandler,
+  SHORT_DELAY_TIME,
+  createTagItem
 } from './helpers';
 import ComponentManager from './../lib/componentManager';
 import { createApplication } from './lib/appFactory';
-
-/**
- * A short amount of time to wait for messages to propagate via the postMessage API.
- */
-const SHORT_DELAY_TIME = 0.01;
 
 describe("ComponentManager", () => {
   const onReady = jest.fn();
@@ -40,82 +36,6 @@ describe("ComponentManager", () => {
   let testSNApp: SNApplication;
   /** The test component. */
   let testComponent: SNComponent;
-
-  const registerComponent = async (
-    application: SNApplication,
-    targetWindow: Window,
-    component: SNComponent
-  ) => {
-    application.componentManager.registerComponentWindow(
-      component,
-      targetWindow
-    );
-
-    /**
-     * componentManager.registerComponentWindow() calls targetWindow.parent.postMesasge()
-     * We need to make sure that the event is dispatched properly by waiting a few ms.
-     * See https://github.com/jsdom/jsdom/issues/2245#issuecomment-392556153
-     */
-    await sleep(SHORT_DELAY_TIME);
-  };
-
-  const createNoteItem = async (
-    application: SNApplication,
-    overrides = {}
-  ) => {
-    const testNoteItem = getTestNoteItem(overrides);
-    return await application.createManagedItem(
-      testNoteItem.content_type as ContentType,
-      testNoteItem,
-      false
-    ) as SNNote;
-  };
-
-  const createTagItem = async (
-    application: SNApplication,
-    title: string
-  ) => {
-    return await application.createManagedItem(
-      ContentType.Tag,
-      {
-        title,
-        references: []
-      },
-      false
-    ) as SNTag;
-  };
-
-  const createComponentItem = async (
-    application: SNApplication,
-    componentPackage: any,
-    overrides = {}
-  ) => {
-    const rawTestComponentItem = getRawTestComponentItem(componentPackage);
-    return await application.createManagedItem(
-      rawTestComponentItem.content_type as ContentType,
-      {
-        ...overrides,
-        ...rawTestComponentItem.content
-      },
-      false
-    ) as SNComponent;
-  };
-
-  const registerComponentHandler = (
-    application: SNApplication,
-    areas: ComponentArea[],
-    itemInContext?: SNItem,
-    customActionHandler?: (data: any) => {},
-  ) => {
-    application.componentManager.registerHandler({
-      identifier: 'generic-view-' + Math.random(),
-      areas,
-      actionHandler: (currentComponent, action, data) => {
-        customActionHandler && customActionHandler(data);
-      },
-      contextRequestHandler: () => itemInContext
-    });
-  };
 
   beforeEach(async () => {
     const childIframe = window.document.createElement('iframe');

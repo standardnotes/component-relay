@@ -3,38 +3,43 @@ import LocalStorage from './localStorage';
 
 const KEYCHAIN_STORAGE_KEY = 'keychain';
 
-let storage = {};
-const localStorage = new LocalStorage(storage);
-
 /**
  * The DeviceInterface implemation to handle storage and keychain operations.
  */
 export default class DeviceInterface extends SNDeviceInterface {
+  private storage = {};
+  private localStorage: LocalStorage;
+
+  constructor(timeout: any, interval: any) {
+    super(timeout, interval);
+    this.localStorage = new LocalStorage(this.storage);
+  }
+
   async getRawStorageValue(key) {
-    return localStorage.getItem(key);
+    return this.localStorage.getItem(key);
   }
 
   async getAllRawStorageKeyValues() {
     const results = [];
-    for (const key of Object.keys(storage)) {
+    for (const key of Object.keys(this.storage)) {
       results.push({
         key: key,
-        value: storage[key]
+        value: this.storage[key]
       });
     }
     return results;
   }
 
   async setRawStorageValue(key, value) {
-    localStorage.setItem(key, value);
+    this.localStorage.setItem(key, value);
   }
 
   async removeRawStorageValue(key) {
-    localStorage.removeItem(key);
+    this.localStorage.removeItem(key);
   }
 
   async removeAllRawStorageValues() {
-    localStorage.clear();
+    this.localStorage.clear();
   }
 
   async openDatabase(_identifier) {
@@ -55,16 +60,16 @@ export default class DeviceInterface extends SNDeviceInterface {
 
   async getAllRawDatabasePayloads(identifier) {
     const models = [];
-    for (const key in storage) {
+    for (const key in this.storage) {
       if (key.startsWith(this._getDatabaseKeyPrefix(identifier))) {
-        models.push(JSON.parse(storage[key]));
+        models.push(JSON.parse(this.storage[key]));
       }
     }
     return models;
   }
 
   async saveRawDatabasePayload(payload, identifier) {
-    localStorage.setItem(
+    this.localStorage.setItem(
       this._keyForPayloadId(payload.uuid, identifier),
       JSON.stringify(payload)
     );
@@ -77,13 +82,13 @@ export default class DeviceInterface extends SNDeviceInterface {
   }
 
   async removeRawDatabasePayloadWithId(id, identifier) {
-    localStorage.removeItem(this._keyForPayloadId(id, identifier));
+    this.localStorage.removeItem(this._keyForPayloadId(id, identifier));
   }
 
   async removeAllRawDatabasePayloads(identifier) {
-    for (const key in storage) {
+    for (const key in this.storage) {
       if (key.startsWith(this._getDatabaseKeyPrefix(identifier))) {
-        delete storage[key];
+        delete this.storage[key];
       }
     }
   }
@@ -101,7 +106,7 @@ export default class DeviceInterface extends SNDeviceInterface {
     if (!keychain) {
       keychain = {};
     }
-    localStorage.setItem(KEYCHAIN_STORAGE_KEY, JSON.stringify({
+    this.localStorage.setItem(KEYCHAIN_STORAGE_KEY, JSON.stringify({
       ...keychain,
       [identifier]: value,
     }));
@@ -113,21 +118,21 @@ export default class DeviceInterface extends SNDeviceInterface {
       return;
     }
     delete keychain[identifier];
-    localStorage.setItem(KEYCHAIN_STORAGE_KEY, JSON.stringify(keychain));
+    this.localStorage.setItem(KEYCHAIN_STORAGE_KEY, JSON.stringify(keychain));
   }
 
   /** Allows unit tests to set legacy keychain structure as it was <= 003 */
   async legacy_setRawKeychainValue(value) {
-    localStorage.setItem(KEYCHAIN_STORAGE_KEY, JSON.stringify(value));
+    this.localStorage.setItem(KEYCHAIN_STORAGE_KEY, JSON.stringify(value));
   }
 
   async getRawKeychainValue() {
-    const keychain = localStorage.getItem(KEYCHAIN_STORAGE_KEY);
+    const keychain = this.localStorage.getItem(KEYCHAIN_STORAGE_KEY);
     return JSON.parse(keychain);
   }
 
   async clearRawKeychainValue() {
-    localStorage.removeItem(KEYCHAIN_STORAGE_KEY);
+    this.localStorage.removeItem(KEYCHAIN_STORAGE_KEY);
   }
 
   async openUrl(url) {

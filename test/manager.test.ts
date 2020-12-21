@@ -7,7 +7,8 @@ import {
   Platform,
   SNApplication,
   SNComponent,
-  SNTheme
+  SNTheme,
+  platformFromString
 } from '@standardnotes/snjs';
 import {
   sleep,
@@ -21,7 +22,7 @@ import {
   createNoteItem,
   registerComponentHandler,
   SHORT_DELAY_TIME,
-  createTagItem
+  createTagItem,
 } from './helpers';
 import ComponentManager from './../lib/componentManager';
 import { createApplication } from './lib/appFactory';
@@ -114,6 +115,36 @@ describe("ComponentManager", () => {
     await registerComponent(testSNApp, childWindow, testComponent);
     const value = componentManager.getComponentDataValueForKey("foo");
     expect(value).toBe("bar");
+  });
+
+  it('should not return the platform and/or environment if component is not initialized', async () => {
+    const { platform, environment } = componentManager;
+    expect(platform).toBeUndefined();
+    expect(environment).toBeUndefined();
+  });
+
+  it('should return the string representation of the platform', async () => {
+    await registerComponent(testSNApp, childWindow, testComponent);
+    const { platform } = componentManager;
+    expect(typeof platform).toBe('string');
+    expect(platformFromString(platform)).toBe(testSNApp.platform);
+  });
+
+  it('should return the string representation of the environment', async () => {
+    await registerComponent(testSNApp, childWindow, testComponent);
+    const { environment } = componentManager;
+    expect(typeof environment).toBe('string');
+
+    // TODO: remove after https://github.com/standardnotes/snjs/pull/181 is merged.
+    const environmentFromString = (string: string) => {
+      const map = {
+        'web': Environment.Web,
+        'desktop': Environment.Desktop,
+        'mobile': Environment.Mobile,
+      };
+      return (map as any)[string];
+    };
+    expect(environmentFromString(environment)).toBe(testSNApp.environment);
   });
 
   test('setComponentDataValueForKey() should throw an error if component is not initialized', () => {
@@ -331,148 +362,213 @@ describe("ComponentManager", () => {
     Utils.generateUuid = originalGenerateUuid;
   });
 
-  test('streamItems()', async (done) => {
-    expect.hasAssertions();
-
-    const savedTestNote = await createNoteItem(testSNApp);
-    const contentTypes = [
-      ContentType.Note
-    ];
-
-    const params = {
-      initialPermissions: [
-        {
-          name: ComponentAction.StreamItems,
-          content_types: contentTypes
-        }
-      ]
-    };
-
-    componentManager.deinit();
-    componentManager = new ComponentManager(childWindow, params);
-    await registerComponent(testSNApp, childWindow, testComponent);
-
-    componentManager.streamItems(contentTypes, (items) => {
-      expect(items).not.toBeUndefined();
-      expect(items.length).toBeGreaterThanOrEqual(0);
-      expect(items[0].uuid).toBe(savedTestNote.uuid);
-      done();
+  describe('component actions', () => {
+    test('streamItems', async (done) => {
+      expect.hasAssertions();
+  
+      const savedTestNote = await createNoteItem(testSNApp);
+      const contentTypes = [
+        ContentType.Note
+      ];
+  
+      const params = {
+        initialPermissions: [
+          {
+            name: ComponentAction.StreamItems,
+            content_types: contentTypes
+          }
+        ]
+      };
+  
+      componentManager.deinit();
+      componentManager = new ComponentManager(childWindow, params);
+      await registerComponent(testSNApp, childWindow, testComponent);
+  
+      componentManager.streamItems(contentTypes, (items) => {
+        expect(items).not.toBeUndefined();
+        expect(items.length).toBeGreaterThanOrEqual(0);
+        expect(items[0].uuid).toBe(savedTestNote.uuid);
+        done();
+      });
     });
-  });
-
-  test('streamContextItem()', async () => {
-    expect.assertions(8);
-
-    const simpleNote = await createNoteItem(testSNApp, {
-      title: 'A simple note',
-      text: 'This is a note created for testing purposes.'
+  
+    test('streamContextItem', async () => {
+      expect.assertions(8);
+  
+      const simpleNote = await createNoteItem(testSNApp, {
+        title: 'A simple note',
+        text: 'This is a note created for testing purposes.'
+      });
+      const awesomeNote = await createNoteItem(testSNApp, {
+        title: 'Awesome note!',
+        text: 'This is not just any note, it\'s an awesome note!'
+      });
+  
+      const params = {
+        initialPermissions: [
+          {
+            name: ComponentAction.StreamContextItem
+          }
+        ]
+      };
+  
+      componentManager.deinit();
+      componentManager = new ComponentManager(childWindow, params);
+      await registerComponent(testSNApp, childWindow, testComponent);
+  
+      let itemInContext;
+  
+      componentManager.streamContextItem((item) => {
+        itemInContext = item;
+      });
+  
+      /**
+       * Registering a handler to the Editor component area.
+       * This is necesary in order to get the item in context.
+       * We can later call the `componentManager.contextItemDidChangeInArea()` function.
+       */
+      registerComponentHandler(testSNApp, [ComponentArea.Editor], simpleNote);
+      testSNApp.componentManager.contextItemDidChangeInArea(ComponentArea.Editor);
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(itemInContext).not.toBeUndefined();
+      expect(itemInContext.uuid).toBe(simpleNote.uuid);
+      expect(itemInContext.content.title).toBe(simpleNote.title);
+      expect(itemInContext.content.text).toBe(simpleNote.text);
+  
+      registerComponentHandler(testSNApp, [ComponentArea.Editor], awesomeNote);
+      testSNApp.componentManager.contextItemDidChangeInArea(ComponentArea.Editor);
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(itemInContext).not.toBeUndefined();
+      expect(itemInContext.uuid).toBe(awesomeNote.uuid);
+      expect(itemInContext.content.title).toBe(awesomeNote.title);
+      expect(itemInContext.content.text).toBe(awesomeNote.text);
     });
-    const awesomeNote = await createNoteItem(testSNApp, {
-      title: 'Awesome note!',
-      text: 'This is not just any note, it\'s an awesome note!'
-    });
-
-    const params = {
-      initialPermissions: [
-        {
-          name: ComponentAction.StreamContextItem
-        }
-      ]
-    };
-
-    componentManager.deinit();
-    componentManager = new ComponentManager(childWindow, params);
-    await registerComponent(testSNApp, childWindow, testComponent);
-
-    let itemInContext;
-
-    componentManager.streamContextItem((item) => {
-      itemInContext = item;
-    });
-
-    /**
-     * Registering a handler to the Editor component area.
-     * This is necesary in order to get the item in context.
-     * We can later call the `componentManager.contextItemDidChangeInArea()` function.
-     */
-    
-    registerComponentHandler(testSNApp, [ComponentArea.Editor], simpleNote);
-    testSNApp.componentManager.contextItemDidChangeInArea(ComponentArea.Editor);
-
-    await sleep(SHORT_DELAY_TIME);
-
-    expect(itemInContext).not.toBeUndefined();
-    expect(itemInContext.uuid).toBe(simpleNote.uuid);
-    expect(itemInContext.content.title).toBe(simpleNote.title);
-    expect(itemInContext.content.text).toBe(simpleNote.text);
-
-    registerComponentHandler(testSNApp, [ComponentArea.Editor], awesomeNote);
-    testSNApp.componentManager.contextItemDidChangeInArea(ComponentArea.Editor);
-
-    await sleep(SHORT_DELAY_TIME);
-
-    expect(itemInContext).not.toBeUndefined();
-    expect(itemInContext.uuid).toBe(awesomeNote.uuid);
-    expect(itemInContext.content.title).toBe(awesomeNote.title);
-    expect(itemInContext.content.text).toBe(awesomeNote.text);
-  });
-
-  test('selectItem()', async () => {
-    expect.hasAssertions();
-
-    const testTagsComponent = await createComponentItem(testSNApp, testExtensionForTagsPackage);
-
-    const testTag1 = await createTagItem(testSNApp, "Test 1");
-    const testTag2 = await createTagItem(testSNApp, "Test 2");
-
-    const params = {
-      initialPermissions: [
-        {
-          name: ComponentAction.SelectItem
-        }
-      ]
-    };
-
-    componentManager.deinit();
-    componentManager = new ComponentManager(childWindow, params);
-    await registerComponent(testSNApp, childWindow, testTagsComponent);
-
-    /**
-     * A mock function to check that the action handler is called.
-     * We will then check that the return value contains the Tag's UUID and Title.
-     */
-    const onSelectTag = jest.fn().mockImplementation((data) => data);
-
-    registerComponentHandler(testSNApp, [ComponentArea.NoteTags], testTag1, onSelectTag);
-    componentManager.selectItem(testTag1);
-
-    await sleep(SHORT_DELAY_TIME);
-
-    expect(onSelectTag).toReturnWith(
-      expect.objectContaining({
-        item: expect.objectContaining({
-          payload: expect.objectContaining({
-            uuid: testTag1.uuid,
-          }),
-          title: testTag1.title
+  
+    test('selectItem', async () => {
+      expect.hasAssertions();
+  
+      const testTagsComponent = await createComponentItem(testSNApp, testExtensionForTagsPackage);
+  
+      const testTag1 = await createTagItem(testSNApp, "Test 1");
+      const testTag2 = await createTagItem(testSNApp, "Test 2");
+  
+      await registerComponent(testSNApp, childWindow, testTagsComponent);
+  
+      /**
+       * A mock function to check that the action handler is called.
+       * We will then check that the return value contains the Tag's UUID and Title.
+       */
+      const onSelectTag = jest.fn().mockImplementation((data) => data);
+  
+      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], testTag1, onSelectTag);
+      componentManager.selectItem(testTag1);
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(onSelectTag).toReturnWith(
+        expect.objectContaining({
+          item: expect.objectContaining({
+            payload: expect.objectContaining({
+              uuid: testTag1.uuid,
+            }),
+            title: testTag1.title
+          })
         })
-      })
-    );
-
-    registerComponentHandler(testSNApp, [ComponentArea.NoteTags], testTag2, onSelectTag);
-    componentManager.selectItem(testTag2);
-
-    await sleep(SHORT_DELAY_TIME);
-
-    expect(onSelectTag).toReturnWith(
-      expect.objectContaining({
-        item: expect.objectContaining({
-          payload: expect.objectContaining({
-            uuid: testTag2.uuid,
-          }),
-          title: testTag2.title
+      );
+  
+      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], testTag2, onSelectTag);
+      componentManager.selectItem(testTag2);
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(onSelectTag).toReturnWith(
+        expect.objectContaining({
+          item: expect.objectContaining({
+            payload: expect.objectContaining({
+              uuid: testTag2.uuid,
+            }),
+            title: testTag2.title
+          })
         })
-      })
-    );
+      );
+    });
+  
+    test('clearSelection', async () => {
+      expect.hasAssertions();
+  
+      const testTagsComponent = await createComponentItem(testSNApp, testExtensionForTagsPackage);
+      await registerComponent(testSNApp, childWindow, testTagsComponent);
+  
+      const onClearSelection = jest.fn().mockImplementation((data) => data);
+  
+      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onClearSelection);
+      componentManager.clearSelection();
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(onClearSelection).toHaveBeenCalledWith({
+        content_type: ContentType.Tag
+      });
+    });
+  
+    test('createItem', async () => {
+      expect.hasAssertions();
+  
+      const contentTypes = [
+        ContentType.Note
+      ];
+      const params = {
+        initialPermissions: [
+          {
+            name: ComponentAction.CreateItem,
+            content_types: contentTypes
+          }
+        ]
+      };
+  
+      componentManager.deinit();
+      componentManager = new ComponentManager(childWindow, params);
+      await registerComponent(testSNApp, childWindow, testComponent);
+  
+      let createdItem;
+  
+      const noteItem = {
+        content_type: ContentType.Note,
+        content: {
+          title: 'My note',
+          text: 'This is an ordinary Note item that will created from an extension.'
+        }
+      };
+  
+      const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+  
+      componentManager.createItem(noteItem, (item) => {
+        createdItem = item;
+      });
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(createdItem).not.toBeUndefined();
+      expect(createdItem.content.title).toBe(noteItem.content.title);
+      expect(createdItem.content.text).toBe(noteItem.content.text);
+  
+      const allNoteItems = testSNApp.allItems().filter((item) => {
+        return item.content_type === ContentType.Note
+      });
+  
+      // Only one Note item should have been created.
+      expect(allNoteItems.length).toBe(1);
+  
+      /**
+       * childWindow.parent.postMessage should be called twice:
+       * - For the ComponentAction.CreateItem action
+       * - For the ComponentAction.AssociateItem action (inside the createItem() callback)
+       */
+      expect(parentPostMessage).toBeCalledTimes(2);
+    });
   });
 });

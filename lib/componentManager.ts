@@ -4,7 +4,7 @@ import {
   Environment,
   SNItem
 } from "@standardnotes/snjs";
-import { generateUuid, isValidJsonString } from "./utils";
+import { environmentToString, generateUuid, isValidJsonString } from "./utils";
 import Logger from "./logger";
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250;
@@ -52,6 +52,11 @@ type ComponentManagerParams = {
   initialPermissions?: PermissionObject[]
   options?: ComponentManagerOptions,
   onReady?: () => void
+}
+
+type ItemPayload = {
+  content_type: ContentType,
+  content: Record<string, any>
 }
 
 export default class ComponentManager {
@@ -236,24 +241,12 @@ export default class ComponentManager {
     return this.component.uuid;
   }
 
-  /**
-   * TODO: this function should be exported from @standardnotes/snjs
-   */
-  private environmentToString(environment: Environment) {
-    const map = {
-      [Environment.Web]: "web",
-      [Environment.Desktop]: "desktop",
-      [Environment.Mobile]: "mobile",
-    };
-    return map[environment];
-  }
-
   public isRunningInDesktopApplication() {
-    return this.component.environment === this.environmentToString(Environment.Desktop);
+    return this.component.environment === environmentToString(Environment.Desktop);
   }
 
   public isRunningInMobileApplication() {
-    return this.component.environment === this.environmentToString(Environment.Mobile);
+    return this.component.environment === environmentToString(Environment.Mobile);
   }
 
   public getComponentDataValueForKey(key: string) {
@@ -450,7 +443,7 @@ export default class ComponentManager {
     this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag });
   }
 
-  public createItem(item: SNItem, callback: (data: any) => void) {
+  public createItem(item: ItemPayload, callback: (data: any) => void) {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
       let { item } = data;
       /**
@@ -465,7 +458,7 @@ export default class ComponentManager {
     });
   }
 
-  public createItems(items: SNItem[], callback: (data: any) => void) {
+  public createItems(items: ItemPayload[], callback: (data: any) => void) {
     const mapped = items.map((item) => this.jsonObjectForItem(item));
     this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
       callback && callback(data.items);

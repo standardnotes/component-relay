@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { isValidJsonString, generateUuid } from './../lib/utils';
+import { Environment } from '@standardnotes/snjs';
+import { isValidJsonString, generateUuid, environmentToString } from './../lib/utils';
 import crypto from 'crypto';
 
 const uuidFormat = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
@@ -82,6 +83,58 @@ describe("Utils", () => {
       arrToStr = JSON.stringify([{ test: 1234, foo: "bar", testing: true }])
       result = isValidJsonString(arrToStr);
       expect(result).toBe(true);
+    });
+  });
+
+  describe('environmentToString', () => {
+    test('an invalid value should return undefined', () => {
+      let result = environmentToString(10000000);
+      expect(result).toBeUndefined();
+
+      result = environmentToString(-1);
+      expect(result).toBeUndefined();
+
+      result = environmentToString(null);
+      expect(result).toBeUndefined();
+
+      result = environmentToString(undefined);
+      expect(result).toBeUndefined();
+
+      result = environmentToString('');
+      expect(result).toBeUndefined();
+
+      result = environmentToString(0.01);
+      expect(result).toBeUndefined();
+
+      result = environmentToString({});
+      expect(result).toBeUndefined();
+
+      result = environmentToString([]);
+      expect(result).toBeUndefined();
+
+      result = environmentToString(true);
+      expect(result).toBeUndefined();
+
+      result = environmentToString(false);
+      expect(result).toBeUndefined();
+
+      result = environmentToString(() => true);
+      expect(result).toBeUndefined();
+    });
+
+    test('Environment.Web should return "web"', () => {
+      const result = environmentToString(Environment.Web);
+      expect(result).toBe("web");
+    });
+
+    test('Environment.Desktop should return "desktop"', () => {
+      const result = environmentToString(Environment.Desktop);
+      expect(result).toBe("desktop");
+    });
+
+    test('Environment.Mobile should return "mobile"', () => {
+      const result = environmentToString(Environment.Mobile);
+      expect(result).toBe("mobile");
     });
   });
 });

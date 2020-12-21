@@ -62,7 +62,8 @@ export const getTestNoteItem = ({ title = 'Hello', text = 'World', dirty = true 
     dirty,
     content: {
       title,
-      text
+      text,
+      references: []
     },
     references: []
   };
@@ -100,6 +101,9 @@ export const sleep = async (seconds: number) => {
   await new Promise(resolve => setTimeout(resolve, seconds * 1000));
 };
 
+/**
+ * A short amount of time to wait for messages to propagate via the postMessage API.
+ */
 export const SHORT_DELAY_TIME = 0.01;
 
 export const registerComponent = async (

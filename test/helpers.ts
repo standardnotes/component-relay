@@ -126,13 +126,14 @@ export const registerComponent = async (
 
 export const createNoteItem = async (
   application: SNApplication,
-  overrides = {}
+  overrides = {},
+  needsSync = false
 ) => {
   const testNoteItem = getTestNoteItem(overrides);
   return await application.createManagedItem(
     testNoteItem.content_type as ContentType,
     testNoteItem,
-    false
+    needsSync
   ) as SNNote;
 };
 

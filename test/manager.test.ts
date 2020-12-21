@@ -8,7 +8,9 @@ import {
   SNApplication,
   SNComponent,
   SNTheme,
-  platformFromString
+  platformFromString,
+  NoteMutator,
+  SNNote
 } from '@standardnotes/snjs';
 import {
   sleep,
@@ -533,9 +535,7 @@ describe("ComponentManager", () => {
       componentManager.deinit();
       componentManager = new ComponentManager(childWindow, params);
       await registerComponent(testSNApp, childWindow, testComponent);
-  
-      let createdItem;
-  
+
       const noteItem = {
         content_type: ContentType.Note,
         content: {
@@ -545,6 +545,8 @@ describe("ComponentManager", () => {
       };
   
       const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+
+      let createdItem;
   
       componentManager.createItem(noteItem, (item) => {
         createdItem = item;
@@ -556,12 +558,12 @@ describe("ComponentManager", () => {
       expect(createdItem.content.title).toBe(noteItem.content.title);
       expect(createdItem.content.text).toBe(noteItem.content.text);
   
-      const allNoteItems = testSNApp.allItems().filter((item) => {
+      const allNotesItems = testSNApp.allItems().filter((item) => {
         return item.content_type === ContentType.Note
       });
   
       // Only one Note item should have been created.
-      expect(allNoteItems.length).toBe(1);
+      expect(allNotesItems.length).toBe(1);
   
       /**
        * childWindow.parent.postMessage should be called twice:
@@ -570,5 +572,271 @@ describe("ComponentManager", () => {
        */
       expect(parentPostMessage).toBeCalledTimes(2);
     });
+
+    test('createItems', async () => {
+      expect.hasAssertions();
+  
+      const contentTypes = [
+        ContentType.Note
+      ];
+      const params = {
+        initialPermissions: [
+          {
+            name: ComponentAction.CreateItems,
+            content_types: contentTypes
+          }
+        ]
+      };
+  
+      componentManager.deinit();
+      componentManager = new ComponentManager(childWindow, params);
+      await registerComponent(testSNApp, childWindow, testComponent);
+
+      const noteItems = [
+        {
+          content_type: ContentType.Note,
+          content: {
+            title: 'My note #1',
+            text: 'This is my first note.'
+          }
+        },
+        {
+          content_type: ContentType.Note,
+          content: {
+            title: 'My note #2',
+            text: 'This is my second note.'
+          }
+        }
+      ];
+  
+      const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+  
+      let createdItems;
+
+      componentManager.createItems(noteItems, (item) => {
+        createdItems = item;
+      });
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(createdItems).not.toBeUndefined();
+      expect(createdItems.length).toBe(noteItems.length);
+
+      const firstCreatedNote = createdItems[0];
+      expect(firstCreatedNote.content.title).toBe(noteItems[0].content.title);
+      expect(firstCreatedNote.content.text).toBe(noteItems[0].content.text);
+
+      const secondCreatedNote = createdItems[1];
+      expect(secondCreatedNote.content.title).toBe(noteItems[1].content.title);
+      expect(secondCreatedNote.content.text).toBe(noteItems[1].content.text);
+  
+      const allNotesItems = testSNApp.allItems().filter((item) => {
+        return item.content_type === ContentType.Note
+      });
+
+      // Only two Note items should have been created.
+      expect(allNotesItems.length).toBe(noteItems.length);
+  
+      /**
+       * childWindow.parent.postMessage should be called once:
+       * - For the ComponentAction.CreateItems action
+       */
+      expect(parentPostMessage).toBeCalledTimes(1);
+    });
+
+    test('associateItem', async () => {
+      expect.hasAssertions();
+
+      const simpleNote = await createNoteItem(testSNApp, {
+        title: 'A simple note',
+        text: 'This is a note created for testing purposes.'
+      });
+
+      const testTagsComponent = await createComponentItem(testSNApp, testExtensionForTagsPackage);
+      await registerComponent(testSNApp, childWindow, testTagsComponent);
+  
+      const onAssociateItem = jest.fn().mockImplementation((data) => data);
+  
+      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onAssociateItem);
+      componentManager.associateItem({
+        uuid: simpleNote.uuid
+      });
+
+      await sleep(SHORT_DELAY_TIME);
+
+      expect(onAssociateItem).toHaveBeenCalledWith(expect.objectContaining({
+        item: expect.objectContaining({
+          uuid: simpleNote.uuid
+        })
+      }));
+    });
+
+    test('deassociateItem', async () => {
+      expect.hasAssertions();
+
+      const simpleNote = await createNoteItem(testSNApp, {
+        title: 'A simple note',
+        text: 'This is a note created for testing purposes.'
+      });
+  
+      const testTagsComponent = await createComponentItem(testSNApp, testExtensionForTagsPackage);
+      await registerComponent(testSNApp, childWindow, testTagsComponent);
+  
+      const onDeassociateItem = jest.fn().mockImplementation((data) => data);
+  
+      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onDeassociateItem);
+      componentManager.deassociateItem({
+        uuid: simpleNote.uuid
+      });
+
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(onDeassociateItem).toHaveBeenCalledWith(expect.objectContaining({
+        item: expect.objectContaining({
+          uuid: simpleNote.uuid
+        })
+      }));
+    });
+
+    test('deleteItem and deleteItems', async () => {
+      expect.hasAssertions();
+  
+      const contentTypes = [
+        ContentType.Note
+      ];
+      const params = {
+        initialPermissions: [
+          {
+            name: ComponentAction.DeleteItems,
+            content_types: contentTypes
+          },
+          {
+            name: ComponentAction.CreateItem,
+            content_types: contentTypes
+          }
+        ]
+      };
+  
+      componentManager.deinit();
+      componentManager = new ComponentManager(childWindow, params);
+      await registerComponent(testSNApp, childWindow, testComponent);
+
+      const createItemPayload = {
+        content_type: ContentType.Note,
+        content: {
+          title: 'Note title',
+          text: 'This note should be deleted.'
+        }
+      };
+
+      let createdNote;
+
+      /**
+       * We can only delete an Item that was created through a component.
+       * In this case, we want to create the item, and later delete it via
+       * componentManager.deleteItem()
+       */
+      componentManager.createItem(createItemPayload, (data) => {
+        createdNote = data;
+      });
+
+      await sleep(SHORT_DELAY_TIME);
+
+      const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+
+      let result;
+
+      /**
+       * deleteItems is the main function, that takes an array of items to be deleted.
+       * deleteItem calls deleteItems internally, by passing an array with a single item.
+       */
+      componentManager.deleteItem(createdNote, (data) => {
+        result = data;
+      });
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(result).not.toBeUndefined();
+      expect(result).toStrictEqual({ deleted: true });
+
+      const deletedNote = testSNApp.findItem(createdNote.uuid);
+      expect(deletedNote).toBeUndefined();
+  
+      const allNotesItems = testSNApp.allItems().filter((item) => {
+        return item.content_type === ContentType.Note
+      });
+
+      // The created note should be deleted.
+      expect(allNotesItems.length).toBe(0);
+  
+      /**
+       * childWindow.parent.postMessage should be called once:
+       * - For the ComponentAction.DeleteItems action
+       */
+      expect(parentPostMessage).toBeCalledTimes(1);
+    });
+
+    test('sendCustomEvent', async () => {
+      expect.hasAssertions();
+  
+      const testTagsComponent = await createComponentItem(testSNApp, testExtensionForTagsPackage);
+      await registerComponent(testSNApp, childWindow, testTagsComponent);
+  
+      const onClearSelection = jest.fn().mockImplementation((data) => data);
+      const customEventData = {
+        content_type: ContentType.Tag
+      };
+  
+      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onClearSelection);
+
+      // We'll perform the clearSelection action, but using the sendCustomEvent function instead.
+      componentManager.sendCustomEvent(
+        ComponentAction.ClearSelection,
+        customEventData
+      );
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(onClearSelection).toHaveBeenCalledWith(customEventData);
+    });
+
+    test('setSize', async () => {
+      expect.hasAssertions();
+
+      await registerComponent(testSNApp, childWindow, testComponent);
+  
+      const onSetSize = jest.fn().mockImplementation((data) => data);
+  
+      registerComponentHandler(testSNApp, [testComponent.area], undefined, onSetSize);
+      componentManager.setSize("content", "100px", "100px");
+  
+      await sleep(SHORT_DELAY_TIME);
+  
+      expect(onSetSize).toHaveBeenCalledTimes(1);
+      expect(onSetSize).toReturnWith(expect.objectContaining({
+        type: "content",
+        width: "100px",
+        height: "100px"
+      }));
+    });
+  });
+
+  test('getItemAppDataValue', async () => {
+    let simpleNote = await createNoteItem(testSNApp, {
+      title: 'A simple note',
+      text: 'This is a note created for testing purposes.'
+    });
+
+    let appDataValue = componentManager.getItemAppDataValue(simpleNote, "foo");
+    expect(appDataValue).toBeUndefined();
+
+    simpleNote = await testSNApp.changeAndSaveItem(simpleNote.uuid, (mutator: NoteMutator) => {
+      // @ts-ignore
+      mutator.setAppDataItem("foo", "bar");
+    }) as SNNote;
+
+    appDataValue = componentManager.getItemAppDataValue(simpleNote, "foo");
+    expect(appDataValue).not.toBeUndefined();
+    expect(appDataValue).toBe("bar");
   });
 });

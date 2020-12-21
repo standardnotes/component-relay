@@ -55,8 +55,9 @@ type ComponentManagerParams = {
 }
 
 type ItemPayload = {
-  content_type: ContentType,
-  content: Record<string, any>
+  content_type?: ContentType,
+  content?: Record<string, any>,
+  [key: string]: any
 }
 
 export default class ComponentManager {
@@ -465,11 +466,11 @@ export default class ComponentManager {
     });
   }
 
-  public associateItem(item: SNItem) {
+  public associateItem(item: ItemPayload) {
     this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) });
   }
 
-  public deassociateItem(item: SNItem) {
+  public deassociateItem(item: ItemPayload) {
     this.postMessage(ComponentAction.DeassociateItem, {item: this.jsonObjectForItem(item)} );
   }
 
@@ -488,7 +489,7 @@ export default class ComponentManager {
     });
   }
 
-  public sendCustomEvent(action: ComponentAction, data: any, callback: (data: any) => void) {
+  public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) {
     this.postMessage(action, data, (data: any) => {
       callback && callback(data);
     });
@@ -602,6 +603,6 @@ export default class ComponentManager {
     const appDomain = "org.standardnotes.sn";
     const { safeContent } = item.payload;
     const data = safeContent.appData && safeContent.appData[appDomain];
-    return (data) ? data[key] : null;
+    return data[key];
   }
 }

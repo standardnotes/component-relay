@@ -136,6 +136,6 @@ export default class DeviceInterface extends SNDeviceInterface {
   }
 
   async openUrl(url) {
-    console.log('Opening URL:', url);
+    window.open(url);
   }
 }

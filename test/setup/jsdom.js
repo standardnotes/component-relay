@@ -7,6 +7,7 @@ const { window } = new JSDOM(htmlTemplate, {
 
 global.window = window;
 global.window.confirm = () => true;
+global.window.open = (url) => url;
 global.document = window.document;
 global.navigator = {
   userAgent: 'node.js',

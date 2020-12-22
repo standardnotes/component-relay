@@ -6,7 +6,7 @@ const { window } = new JSDOM(htmlTemplate, {
 });
 
 global.window = window;
-global.window.confirm = () => true;
+global.window.confirm = (message) => false;
 global.window.open = (url) => url;
 global.document = window.document;
 global.navigator = {

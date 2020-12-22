@@ -22,7 +22,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.1",
     "@standardnotes/sncrypto-common": "^1.2.9",
-    "@standardnotes/snjs": "^2.0.25",
+    "@standardnotes/snjs": "^2.0.28",
     "@types/crypto-js": "^4.0.1",
     "@types/jest": "^26.0.15",
     "@types/jsdom": "^16.2.5",

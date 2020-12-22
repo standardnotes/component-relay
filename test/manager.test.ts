@@ -1,6 +1,5 @@
 import {
   ComponentAction,
-  ComponentArea,
   ContentType,
   DeinitSource,
   Environment,
@@ -10,7 +9,8 @@ import {
   SNTheme,
   platformFromString,
   NoteMutator,
-  SNNote
+  SNNote,
+  environmentFromString
 } from '@standardnotes/snjs';
 import {
   sleep,
@@ -136,16 +136,6 @@ describe("ComponentManager", () => {
     await registerComponent(testSNApp, childWindow, testComponent);
     const { environment } = componentManager;
     expect(typeof environment).toBe('string');
-
-    // TODO: remove after https://github.com/standardnotes/snjs/pull/181 is merged.
-    const environmentFromString = (string: string) => {
-      const map = {
-        'web': Environment.Web,
-        'desktop': Environment.Desktop,
-        'mobile': Environment.Mobile,
-      };
-      return (map as any)[string];
-    };
     expect(environmentFromString(environment)).toBe(testSNApp.environment);
   });
 

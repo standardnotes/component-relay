@@ -1161,10 +1161,10 @@
   resolved "https://registry.yarnpkg.com/@standardnotes/sncrypto-common/-/sncrypto-common-1.2.9.tgz#5212a959e4ec563584e42480bfd39ef129c3cbdf"
   integrity sha512-xJ5IUGOZztjSgNP/6XL+Ut5+q9UgSTv6xMtKkcQC5aJxCOkJy9u6RamPLdF00WQgwibxx2tu0e43bKUjTgzMig==
 
-"@standardnotes/snjs@^2.0.25":
-  version "2.0.25"
-  resolved "https://registry.yarnpkg.com/@standardnotes/snjs/-/snjs-2.0.25.tgz#510edb26703dab44d87c567c3710321ba2c2554e"
-  integrity sha512-fWxBu+HvNVuT+KXwQYS3+Ei0oWCt4CS5XYWHKMGDM2/TcT0pheCZdKdQ99E5/A4FHRxi1a9yCytQt3JVOHRunA==
+"@standardnotes/snjs@^2.0.29":
+  version "2.0.29"
+  resolved "https://registry.yarnpkg.com/@standardnotes/snjs/-/snjs-2.0.29.tgz#6c788d982bf06ceef8ed034822d7a4e2da201f28"
+  integrity sha512-8JiwVtnzrpoZBtneyr/bft+rni6Im+Ax1gRcSRYUNzzGd+yJTEfHjm6YFmuxFUlECt2JCbe82cz81wxcD9eEFQ==
   dependencies:
     "@standardnotes/sncrypto-common" "^1.2.9"
 
@@ -3924,7 +3924,7 @@ libsodium-wrappers@^0.7.8:
   dependencies:
     libsodium "0.7.8"
 
-libsodium@0.7.8, libsodium@^0.7.8:
+libsodium@0.7.8:
   version "0.7.8"
   resolved "https://registry.yarnpkg.com/libsodium/-/libsodium-0.7.8.tgz#fbd12247b7b1353f88d8de1cbc66bc1a07b2e008"
   integrity sha512-/Qc+APf0jbeWSaeEruH0L1/tbbT+sbf884ZL0/zV/0JXaDPBzYkKbyb/wmxMHgAHzm3t6gqe7bOOXAVwfqVikQ==

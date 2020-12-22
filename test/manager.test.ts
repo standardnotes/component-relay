@@ -365,6 +365,20 @@ describe("ComponentManager", () => {
   });
 
   describe('component actions', () => {
+    beforeAll(() => {
+      /**
+       * Components prompts for permissions via the presentPermissionsDialog function, which
+       * has been implemented to use window.confirm to approve these requests.
+       * We want to approve all of them during our ComponentActions tests.
+       */
+      window.confirm = (message) => true;
+    });
+
+    afterAll(() => {
+      // Restoring window.confirm implementation.
+      window.confirm = (message) => false;
+    });
+
     test('streamItems', async (done) => {
       expect.hasAssertions();
   
@@ -372,18 +386,7 @@ describe("ComponentManager", () => {
       const contentTypes = [
         ContentType.Note
       ];
-  
-      const params = {
-        initialPermissions: [
-          {
-            name: ComponentAction.StreamItems,
-            content_types: contentTypes
-          }
-        ]
-      };
-  
-      componentManager.deinit();
-      componentManager = new ComponentManager(childWindow, params);
+
       await registerComponent(testSNApp, childWindow, testComponent);
   
       componentManager.streamItems(contentTypes, (items) => {
@@ -405,17 +408,7 @@ describe("ComponentManager", () => {
         title: 'Awesome note!',
         text: 'This is not just any note, it\'s an awesome note!'
       });
-  
-      const params = {
-        initialPermissions: [
-          {
-            name: ComponentAction.StreamContextItem
-          }
-        ]
-      };
-  
-      componentManager.deinit();
-      componentManager = new ComponentManager(childWindow, params);
+
       await registerComponent(testSNApp, childWindow, testComponent);
   
       let itemInContext;
@@ -519,21 +512,6 @@ describe("ComponentManager", () => {
   
     test('createItem', async () => {
       expect.hasAssertions();
-  
-      const contentTypes = [
-        ContentType.Note
-      ];
-      const params = {
-        initialPermissions: [
-          {
-            name: ComponentAction.CreateItem,
-            content_types: contentTypes
-          }
-        ]
-      };
-  
-      componentManager.deinit();
-      componentManager = new ComponentManager(childWindow, params);
       await registerComponent(testSNApp, childWindow, testComponent);
 
       const noteItem = {
@@ -575,21 +553,6 @@ describe("ComponentManager", () => {
 
     test('createItems', async () => {
       expect.hasAssertions();
-  
-      const contentTypes = [
-        ContentType.Note
-      ];
-      const params = {
-        initialPermissions: [
-          {
-            name: ComponentAction.CreateItems,
-            content_types: contentTypes
-          }
-        ]
-      };
-  
-      componentManager.deinit();
-      componentManager = new ComponentManager(childWindow, params);
       await registerComponent(testSNApp, childWindow, testComponent);
 
       const noteItems = [
@@ -700,25 +663,6 @@ describe("ComponentManager", () => {
 
     test('deleteItem and deleteItems', async () => {
       expect.hasAssertions();
-  
-      const contentTypes = [
-        ContentType.Note
-      ];
-      const params = {
-        initialPermissions: [
-          {
-            name: ComponentAction.DeleteItems,
-            content_types: contentTypes
-          },
-          {
-            name: ComponentAction.CreateItem,
-            content_types: contentTypes
-          }
-        ]
-      };
-  
-      componentManager.deinit();
-      componentManager = new ComponentManager(childWindow, params);
       await registerComponent(testSNApp, childWindow, testComponent);
 
       const createItemPayload = {
@@ -800,9 +744,66 @@ describe("ComponentManager", () => {
       expect(onClearSelection).toHaveBeenCalledWith(customEventData);
     });
 
+    test('saveItem', async () => {
+      expect.hasAssertions();
+      await registerComponent(testSNApp, childWindow, testComponent);
+
+      const createItemPayload = {
+        content_type: ContentType.Note,
+        content: {
+          title: 'Note title',
+          text: 'This note should be updated.'
+        }
+      };
+
+      let createdNote;
+
+      /**
+       * We can only save an Item that was created through a component.
+       * In this case, we want to create the item, and later modify it then save it via
+       * componentManager.saveItem()
+       */
+      componentManager.createItem(createItemPayload, (data) => {
+        createdNote = data;
+      });
+
+      await sleep(SHORT_DELAY_TIME);
+
+      const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+
+      /**
+       * saveItems is the main function, that takes an array of items to be saved.
+       * saveItem calls saveItems internally, by passing an array with a single item.
+       */
+      createdNote.content.text = 'This note is ready!';
+
+      const onSaveItemCallback = jest.fn();
+      componentManager.saveItem(createdNote, onSaveItemCallback);
+  
+      await sleep(SHORT_DELAY_TIME);
+
+      const savedItem = testSNApp.findItem(createdNote.uuid) as SNNote;
+      expect(savedItem.text).toBe(createdNote.content.text);
+
+      // The passed callback should be called once.
+      expect(onSaveItemCallback).toBeCalledTimes(1);
+  
+      const allNotesItems = testSNApp.allItems().filter((item) => {
+        return item.content_type === ContentType.Note
+      });
+
+      // There should be a total of 1 Note item.
+      expect(allNotesItems.length).toBe(1);
+  
+      /**
+       * childWindow.parent.postMessage should be called once:
+       * - For the ComponentAction.DeleteItems action
+       */
+      expect(parentPostMessage).toBeCalledTimes(1);
+    });
+
     test('setSize', async () => {
       expect.hasAssertions();
-
       await registerComponent(testSNApp, childWindow, testComponent);
   
       const onSetSize = jest.fn().mockImplementation((data) => data);

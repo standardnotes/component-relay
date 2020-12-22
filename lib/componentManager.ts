@@ -448,7 +448,7 @@ export default class ComponentManager {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
       let { item } = data;
       /**
-       * A previous version of the SN app had an issue where the item in the reply to create-item
+       * A previous version of the SN app had an issue where the item in the reply to ComponentActions.CreateItems
        * would be nested inside "items" and not "item". So handle both cases here.
        */
       if (!item && data.items && data.items.length > 0) {
@@ -495,7 +495,7 @@ export default class ComponentManager {
     });
   }
 
-  public saveItem(item: SNItem, callback: (data: any) => void, skipDebouncer = false) {
+  public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) {
     this.saveItems([item], callback, skipDebouncer);
   }
 
@@ -506,7 +506,7 @@ export default class ComponentManager {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemWithPresave(item: SNItem, presave: any, callback: (data: any) => void) {
+  public saveItemWithPresave(item: SNItem, presave: any, callback: () => void) {
     this.saveItemsWithPresave([item], presave, callback);
   }
 
@@ -517,11 +517,11 @@ export default class ComponentManager {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemsWithPresave(items: SNItem[], presave: any, callback: (data: any) => void) {
+  public saveItemsWithPresave(items: SNItem[], presave: any, callback: () => void) {
     this.saveItems(items, callback, false, presave);
   }
 
-  private _performSavingOfItems({ items, presave, callback }: { items: SNItem[], presave: () => void, callback: () => void }) {
+  private _performSavingOfItems({ items, presave, callback }: { items: SNItem[], presave: () => void, callback?: () => void }) {
     /**
      * Presave block allows client to gain the benefit of performing something in the debounce cycle.
      */
@@ -544,7 +544,7 @@ export default class ComponentManager {
    * This should be used when saving items via other means besides keystrokes.
    * @param presave
    */
-  public saveItems(items: SNItem[], callback: (...data: any) => void, skipDebouncer = false, presave?: any) {
+  public saveItems(items: SNItem[], callback?: () => void, skipDebouncer = false, presave?: any) {
     /**
      * We need to make sure that when we clear a pending save timeout,
      * we carry over those pending items into the new save.
@@ -553,7 +553,7 @@ export default class ComponentManager {
       this.pendingSaveItems = [];
     }
 
-    if (this.coallesedSaving === true && !skipDebouncer) {
+    if (this.coallesedSaving && !skipDebouncer) {
       if (this.pendingSaveTimeout) {
         clearTimeout(this.pendingSaveTimeout);
       }

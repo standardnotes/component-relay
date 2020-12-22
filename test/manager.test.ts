@@ -429,8 +429,8 @@ describe("ComponentManager", () => {
        * This is necesary in order to get the item in context.
        * We can later call the `componentManager.contextItemDidChangeInArea()` function.
        */
-      registerComponentHandler(testSNApp, [ComponentArea.Editor], simpleNote);
-      testSNApp.componentManager.contextItemDidChangeInArea(ComponentArea.Editor);
+      registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+      testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
   
       await sleep(SHORT_DELAY_TIME);
   
@@ -439,8 +439,8 @@ describe("ComponentManager", () => {
       expect(itemInContext.content.title).toBe(simpleNote.title);
       expect(itemInContext.content.text).toBe(simpleNote.text);
   
-      registerComponentHandler(testSNApp, [ComponentArea.Editor], awesomeNote);
-      testSNApp.componentManager.contextItemDidChangeInArea(ComponentArea.Editor);
+      registerComponentHandler(testSNApp, [testComponent.area], awesomeNote);
+      testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
   
       await sleep(SHORT_DELAY_TIME);
   
@@ -466,7 +466,7 @@ describe("ComponentManager", () => {
        */
       const onSelectTag = jest.fn().mockImplementation((data) => data);
   
-      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], testTag1, onSelectTag);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], testTag1, onSelectTag);
       componentManager.selectItem(testTag1);
   
       await sleep(SHORT_DELAY_TIME);
@@ -482,7 +482,7 @@ describe("ComponentManager", () => {
         })
       );
   
-      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], testTag2, onSelectTag);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], testTag2, onSelectTag);
       componentManager.selectItem(testTag2);
   
       await sleep(SHORT_DELAY_TIME);
@@ -507,7 +507,7 @@ describe("ComponentManager", () => {
   
       const onClearSelection = jest.fn().mockImplementation((data) => data);
   
-      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onClearSelection);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onClearSelection);
       componentManager.clearSelection();
   
       await sleep(SHORT_DELAY_TIME);
@@ -657,7 +657,7 @@ describe("ComponentManager", () => {
   
       const onAssociateItem = jest.fn().mockImplementation((data) => data);
   
-      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onAssociateItem);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onAssociateItem);
       componentManager.associateItem({
         uuid: simpleNote.uuid
       });
@@ -684,7 +684,7 @@ describe("ComponentManager", () => {
   
       const onDeassociateItem = jest.fn().mockImplementation((data) => data);
   
-      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onDeassociateItem);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onDeassociateItem);
       componentManager.deassociateItem({
         uuid: simpleNote.uuid
       });
@@ -787,7 +787,7 @@ describe("ComponentManager", () => {
         content_type: ContentType.Tag
       };
   
-      registerComponentHandler(testSNApp, [ComponentArea.NoteTags], undefined, onClearSelection);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onClearSelection);
 
       // We'll perform the clearSelection action, but using the sendCustomEvent function instead.
       componentManager.sendCustomEvent(

@@ -225,7 +225,7 @@ describe("ComponentManager", () => {
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is mobile', async () => {
-    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Android);
+    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Ios);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
@@ -253,7 +253,7 @@ describe("ComponentManager", () => {
   });
 
   test('isRunningInMobileApplication() should return true if the environment is mobile', async () => {
-    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Android);
+    testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Ios);
     await registerComponent(testSNApp, childWindow, testComponent);
     const isRunningInMobile = componentManager.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(true);

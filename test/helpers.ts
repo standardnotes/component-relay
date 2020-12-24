@@ -25,7 +25,7 @@ export const testExtensionEditorPackage = {
   content_type: "SN|Component",
   area: "editor-editor",
   version: "1.0.0",
-  url: "http://localhost/extensions/my-test-extension"
+  url: "http://localhost"
 };
 
 export const testExtensionForTagsPackage = {
@@ -34,7 +34,7 @@ export const testExtensionForTagsPackage = {
   content_type: "SN|Component",
   area: "note-tags",
   version: "1.0.0",
-  url: "http://localhost/extensions/my-test-tags-extension"
+  url: "http://localhost"
 };
 
 export const testThemeDefaultPackage = {
@@ -43,7 +43,7 @@ export const testThemeDefaultPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://localhost/themes/default"
+  url: "http://localhost"
 };
 
 export const testThemeDarkPackage = {
@@ -52,7 +52,7 @@ export const testThemeDarkPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://localhost/themes/dark"
+  url: "http://localhost"
 };
 
 export const getTestNoteItem = ({ title = 'Hello', text = 'World', dirty = true } = {}) => {

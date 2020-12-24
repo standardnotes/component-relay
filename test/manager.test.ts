@@ -30,8 +30,6 @@ import ComponentManager from './../lib/componentManager';
 import { createApplication } from './lib/appFactory';
 
 describe("ComponentManager", () => {
-  const onReady = jest.fn();
-
   /** The child window. This is where the extension lives. */
   let childWindow: Window;
   let componentManager: ComponentManager;
@@ -50,9 +48,23 @@ describe("ComponentManager", () => {
     testComponent = await createComponentItem(testSNApp, testExtensionEditorPackage);
 
     componentManager = new ComponentManager(childWindow, {
-      onReady,
       options: {
         acceptsThemes: true
+      }
+    });
+
+    /**
+     * Workaround for https://github.com/jsdom/jsdom/issues/2745
+     * If event.origin is empty, replace it with http://localhost
+     */
+    childWindow.addEventListener("message", (event) => {
+      if (event.origin === '') {
+        event.stopImmediatePropagation();
+        const eventWithOrigin = new MessageEvent('message', {
+          data: event.data,
+          origin: 'http://localhost',
+        });
+        childWindow.dispatchEvent(eventWithOrigin);
       }
     });
   });
@@ -81,11 +93,21 @@ describe("ComponentManager", () => {
 
   it('should not run onReady callback when component has not been registered', () => {
     expect.hasAssertions();
+    const onReady = jest.fn();
+    componentManager.deinit();
+    componentManager = new ComponentManager(childWindow, {
+      onReady
+    });
     expect(onReady).toBeCalledTimes(0);
   });
 
   it('should run onReady callback when component is registered', async () => {
     expect.hasAssertions();
+    const onReady = jest.fn();
+    componentManager.deinit();
+    componentManager = new ComponentManager(childWindow, {
+      onReady
+    });
     await registerComponent(testSNApp, childWindow, testComponent);
     expect(onReady).toBeCalledTimes(1);
   });

@@ -1,0 +1,29 @@
+{
+  "include": ["lib/**/*"],
+  "exclude": ["node_modules", "test/**/*", "webpack.*.js"],
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "allowJs": true,
+    "declaration": true,
+    "declarationDir": "dist/@types",
+    "emitDeclarationOnly": true,
+    "newLine": "lf",
+    "outDir": "./dist",
+    "isolatedModules": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "types": ["node"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "typedocOptions": {
+    "inputFiles": ["./lib"],
+    "name": "SN Components API",
+    "includeVersion": true,
+    "mode": "modules",
+    "out": "docs"
+  }
+}

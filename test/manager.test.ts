@@ -364,16 +364,12 @@ describe("ComponentManager", () => {
      * function in our Utils module. We will mock the return value to be undefined.
      */
     const Utils = require('./../lib/utils');
-    const originalGenerateUuid = Utils.generateUuid;
-    Utils.generateUuid = jest.fn().mockReturnValue(undefined);
+    jest.spyOn(Utils, "generateUuid").mockReturnValue(undefined);
 
     await registerComponent(testSNApp, childWindow, testComponent);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     componentManager.setComponentDataValueForKey("testing", "1234");
     expect(parentPostMessage).not.toHaveBeenCalled();
-
-    // Restoring the mocked function.
-    Utils.generateUuid = originalGenerateUuid;
   });
 
   describe('component actions', () => {

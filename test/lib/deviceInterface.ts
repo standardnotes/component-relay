@@ -4,7 +4,7 @@ import LocalStorage from './localStorage';
 const KEYCHAIN_STORAGE_KEY = 'keychain';
 
 /**
- * The DeviceInterface implemation to handle storage and keychain operations.
+ * The DeviceInterface implementation to handle storage and keychain operations.
  */
 export default class DeviceInterface extends SNDeviceInterface {
   private storage = {};

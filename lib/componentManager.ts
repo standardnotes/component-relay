@@ -3,14 +3,14 @@ import {
   ContentType,
   Environment,
   SNItem
-} from "@standardnotes/snjs";
-import { environmentToString, generateUuid, isValidJsonString } from "./utils";
-import Logger from "./logger";
+} from '@standardnotes/snjs'
+import { environmentToString, generateUuid, isValidJsonString } from './utils'
+import Logger from './logger'
 
-const DEFAULT_COALLESED_SAVING_DELAY = 250;
+const DEFAULT_COALLESED_SAVING_DELAY = 250
 
 enum MessagePayloadApi {
-  Component = "component",
+  Component = 'component',
 }
 
 type Component = {
@@ -76,54 +76,54 @@ export default class ComponentManager {
 
   constructor(private contentWindow: Window, params?: ComponentManagerParams) {
     if (!contentWindow) {
-      throw new Error("contentWindow must be a valid Window object.");
+      throw new Error('contentWindow must be a valid Window object.')
     }
     if (params) {
-      this.processParameters(params);
+      this.processParameters(params)
     }
-    this.registerMessageHandler();
+    this.registerMessageHandler()
   }
 
   private processParameters(params: ComponentManagerParams) {
-    const { initialPermissions, options, onReady } = params;
+    const { initialPermissions, options, onReady } = params
 
     if (initialPermissions && initialPermissions.length > 0) {
-      this.initialPermissions = initialPermissions;
+      this.initialPermissions = initialPermissions
     }
     if (options?.coallesedSaving) {
-      this.coallesedSaving = options.coallesedSaving;
+      this.coallesedSaving = options.coallesedSaving
     }
     if (options?.coallesedSavingDelay) {
-      this.coallesedSavingDelay = options.coallesedSavingDelay;
+      this.coallesedSavingDelay = options.coallesedSavingDelay
     }
     if (options?.acceptsThemes) {
-      this.component.acceptsThemes = options?.acceptsThemes ?? true;
+      this.component.acceptsThemes = options?.acceptsThemes ?? true
     }
     if (onReady) {
-      this.onReadyCallback = onReady;
+      this.onReadyCallback = onReady
     }
-    Logger.enabled = options?.debug ?? false;
+    Logger.enabled = options?.debug ?? false
   }
 
   public deinit() {
-    this.onReadyCallback = undefined;
-    this.component = {};
-    this.messageQueue = [];
-    this.sentMessages = [];
-    this.lastStreamedItem = undefined;
-    this.pendingSaveItems = undefined;
-    this.pendingSaveTimeout = undefined;
-    this.pendingSaveParams = undefined;
+    this.onReadyCallback = undefined
+    this.component = {}
+    this.messageQueue = []
+    this.sentMessages = []
+    this.lastStreamedItem = undefined
+    this.pendingSaveItems = undefined
+    this.pendingSaveTimeout = undefined
+    this.pendingSaveParams = undefined
 
     if (this.messageHandler) {
-      this.contentWindow.document.removeEventListener("message", this.messageHandler);
-      this.contentWindow.removeEventListener("message", this.messageHandler);
+      this.contentWindow.document.removeEventListener('message', this.messageHandler)
+      this.contentWindow.removeEventListener('message', this.messageHandler)
     }
   }
 
   private registerMessageHandler() {
     this.messageHandler = (event: MessageEvent) => {
-      Logger.info("Components API Message received:", event.data);
+      Logger.info('Components API Message received:', event.data)
 
       /**
        * We don't have access to window.parent.origin due to cross-domain restrictions.
@@ -131,11 +131,11 @@ export default class ComponentManager {
        * Craft URL objects so that example.com === example.com/
        */
       if (document.referrer) {
-        const referrer = new URL(document.referrer).origin;
-        const eventOrigin = new URL(event.origin).origin;
+        const referrer = new URL(document.referrer).origin
+        const eventOrigin = new URL(event.origin).origin
 
         if (referrer !== eventOrigin) {
-          return;
+          return
         }
       }
 
@@ -144,22 +144,22 @@ export default class ComponentManager {
        * in case you receive an event from another window.
        */
       if (!this.component.origin) {
-        this.component.origin = event.origin;
+        this.component.origin = event.origin
       } else if (event.origin !== this.component.origin) {
         // If event origin doesn't match first-run value, return.
-        return;
+        return
       }
 
       // Mobile environment sends data as JSON string.
-      const { data } = event;
-      const parsedData = isValidJsonString(data) ? JSON.parse(data) : data;
+      const { data } = event
+      const parsedData = isValidJsonString(data) ? JSON.parse(data) : data
 
       if (!parsedData) {
-        Logger.error("Invalid data received. Skipping...");
-        return;
+        Logger.error('Invalid data received. Skipping...')
+        return
       }
 
-      this.handleMessage(parsedData);
+      this.handleMessage(parsedData)
     }
 
     /**
@@ -172,108 +172,108 @@ export default class ComponentManager {
      * Also, even with the new version of react-native-webview, Android may still require document.addEventListener (while iOS still only requires window.addEventListener)
      * https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
      */
-    this.contentWindow.document.addEventListener("message", this.messageHandler, false);
-    this.contentWindow.addEventListener("message", this.messageHandler, false);
+    this.contentWindow.document.addEventListener('message', this.messageHandler, false)
+    this.contentWindow.addEventListener('message', this.messageHandler, false)
 
-    Logger.info("Waiting for messages...");
+    Logger.info('Waiting for messages...')
   }
 
   private handleMessage(payload: MessagePayload) {
     switch (payload.action) {
       case ComponentAction.ComponentRegistered:
-        this.component.sessionKey = payload.sessionKey;
-        this.component.data = payload.componentData;
-        this.onReady(payload.data);
-        Logger.info("Component successfully registered with payload:", payload);
-        break;
+        this.component.sessionKey = payload.sessionKey
+        this.component.data = payload.componentData
+        this.onReady(payload.data)
+        Logger.info('Component successfully registered with payload:', payload)
+        break
 
       case ComponentAction.ActivateThemes:
-        this.activateThemes(payload.data.themes);
-        break;
+        this.activateThemes(payload.data.themes)
+        break
 
       default:
         if (!payload.original) {
-          return;
+          return
         }
 
         // Get the callback from queue.
         const originalMessage = this.sentMessages!.filter((message: MessagePayload) => {
-          return message.messageId === payload.original!.messageId;
-        })[0];
+          return message.messageId === payload.original!.messageId
+        })[0]
   
         if (!originalMessage) {
           // Connection must have been reset. We should alert the user.
-          Logger.error("This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.");
-          return;
+          Logger.error('This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.')
+          return
         }
   
         if (originalMessage.callback) {
-          originalMessage.callback(payload.data);
+          originalMessage.callback(payload.data)
         }
-        break;
+        break
     }
   }
 
   private onReady(data: Record<string, any>) {
-    this.component.environment = data.environment;
-    this.component.platform = data.platform;
-    this.component.uuid = data.uuid;
+    this.component.environment = data.environment
+    this.component.platform = data.platform
+    this.component.uuid = data.uuid
 
     if (this.initialPermissions && this.initialPermissions.length > 0) {
-      this.requestPermissions(this.initialPermissions);
+      this.requestPermissions(this.initialPermissions)
     }
 
     for (const message of this.messageQueue!) {
-      this.postMessage(message.action, message.data, message.callback);
+      this.postMessage(message.action, message.data, message.callback)
     }
 
-    this.messageQueue = [];
+    this.messageQueue = []
 
-    Logger.info("Data passed to onReady:", data);
+    Logger.info('Data passed to onReady:', data)
 
-    this.activateThemes(data.activeThemeUrls || []);
+    this.activateThemes(data.activeThemeUrls || [])
 
     if (this.onReadyCallback) {
-      this.onReadyCallback();
+      this.onReadyCallback()
     }
   }
 
   public getSelfComponentUUID() {
-    return this.component.uuid;
+    return this.component.uuid
   }
 
   public isRunningInDesktopApplication() {
-    return this.component.environment === environmentToString(Environment.Desktop);
+    return this.component.environment === environmentToString(Environment.Desktop)
   }
 
   public isRunningInMobileApplication() {
-    return this.component.environment === environmentToString(Environment.Mobile);
+    return this.component.environment === environmentToString(Environment.Mobile)
   }
 
   public getComponentDataValueForKey(key: string) {
     if (!this.component.data) {
-      return;
+      return
     }
-    return this.component.data[key];
+    return this.component.data[key]
   }
 
   public setComponentDataValueForKey(key: string, value: any) {
     if (!this.component.data) {
-      throw new Error("The component has not been initialized.");
+      throw new Error('The component has not been initialized.')
     }
     if (!key || (key && key.length === 0)) {
-      throw new Error("The key for the data value should be a valid string.");
+      throw new Error('The key for the data value should be a valid string.')
     }
     this.component.data = {
       ...this.component.data,
       [key]: value,
-    };
-    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data });
+    }
+    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
 
   public clearComponentData() {
-    this.component.data = {};
-    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data });
+    this.component.data = {}
+    this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
 
   private postMessage(action: ComponentAction, data: Record<string, any>, callback?: (...params: any) => void) {
@@ -283,8 +283,8 @@ export default class ComponentManager {
         data: data,
         api: MessagePayloadApi.Component,
         callback: callback
-      });
-      return;
+      })
+      return
     }
 
     const message = {
@@ -293,140 +293,140 @@ export default class ComponentManager {
       messageId: this.generateUUID(),
       sessionKey: this.component.sessionKey,
       api: MessagePayloadApi.Component
-    };
+    }
 
-    const sentMessage = JSON.parse(JSON.stringify(message));
-    sentMessage.callback = callback;
-    this.sentMessages!.push(sentMessage);
+    const sentMessage = JSON.parse(JSON.stringify(message))
+    sentMessage.callback = callback
+    this.sentMessages!.push(sentMessage)
 
-    let postMessagePayload;
+    let postMessagePayload
 
     // Mobile (React Native) requires a string for the postMessage API.
     if (this.isRunningInMobileApplication()) {
-      postMessagePayload = JSON.stringify(message);
+      postMessagePayload = JSON.stringify(message)
     } else {
-      postMessagePayload = message;
+      postMessagePayload = message
     }
 
-    Logger.info("Posting message:", postMessagePayload);
-    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!);
+    Logger.info('Posting message:', postMessagePayload)
+    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!)
   }
 
   private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {
     this.postMessage(ComponentAction.RequestPermissions, { permissions }, () => {
-      callback && callback();
-    });
+      callback && callback()
+    })
   }
 
   private activateThemes(incomingUrls: string[] = []) {
     if (!this.component.acceptsThemes) {
-      return;
+      return
     }
 
-    Logger.info("Incoming themes:", incomingUrls);
+    Logger.info('Incoming themes:', incomingUrls)
 
     if (this.component.activeThemes!.sort().toString() == incomingUrls.sort().toString()) {
       // Incoming theme URLs are same as active, do nothing.
-      return;
+      return
     }
 
-    let themesToActivate = incomingUrls;
-    const themesToDeactivate = [];
+    let themesToActivate = incomingUrls
+    const themesToDeactivate = []
 
     for (const activeUrl of this.component.activeThemes!) {
       if (!incomingUrls.includes(activeUrl)) {
         // Active not present in incoming, deactivate it.
-        themesToDeactivate.push(activeUrl);
+        themesToDeactivate.push(activeUrl)
       } else {
         // Already present in active themes, remove it from themesToActivate.
         themesToActivate = themesToActivate.filter((candidate) => {
-          return candidate !== activeUrl;
-        });
+          return candidate !== activeUrl
+        })
       }
     }
 
-    Logger.info("Deactivating themes:", themesToDeactivate);
-    Logger.info("Activating themes:", themesToActivate);
+    Logger.info('Deactivating themes:', themesToDeactivate)
+    Logger.info('Activating themes:', themesToActivate)
 
     for (const themeUrl of themesToDeactivate) {
-      this.deactivateTheme(themeUrl);
+      this.deactivateTheme(themeUrl)
     }
 
-    this.component.activeThemes = incomingUrls;
+    this.component.activeThemes = incomingUrls
 
     for (const themeUrl of themesToActivate) {
       if (!themeUrl) {
-        continue;
+        continue
       }
 
-      const link = this.contentWindow.document.createElement("link");
-      link.id = btoa(themeUrl);
-      link.href = themeUrl;
-      link.type = "text/css";
-      link.rel = "stylesheet";
-      link.media = "screen,print";
-      link.className = "custom-theme";
-      this.contentWindow.document.getElementsByTagName("head")[0].appendChild(link);
+      const link = this.contentWindow.document.createElement('link')
+      link.id = btoa(themeUrl)
+      link.href = themeUrl
+      link.type = 'text/css'
+      link.rel = 'stylesheet'
+      link.media = 'screen,print'
+      link.className = 'custom-theme'
+      this.contentWindow.document.getElementsByTagName('head')[0].appendChild(link)
     }
   }
 
   private themeElementForUrl(themeUrl: string) {
-    const elements = Array.from(this.contentWindow.document.getElementsByClassName("custom-theme")).slice();
+    const elements = Array.from(this.contentWindow.document.getElementsByClassName('custom-theme')).slice()
     return elements.find((element) => {
       // We used to search here by `href`, but on desktop, with local file:// urls, that didn't work for some reason.
-      return element.id == btoa(themeUrl);
-    });
+      return element.id == btoa(themeUrl)
+    })
   }
 
   private deactivateTheme(themeUrl: string) {
-    const element = this.themeElementForUrl(themeUrl);
+    const element = this.themeElementForUrl(themeUrl)
     if (element) {
-      element!.setAttribute("disabled", "true");
-      element!.parentNode!.removeChild(element!);
+      element!.setAttribute('disabled', 'true')
+      element!.parentNode!.removeChild(element!)
     }
   }
 
   private generateUUID() {
-    return generateUuid();
+    return generateUuid()
   }
 
   public get platform() {
-    return this.component.platform;
+    return this.component.platform
   }
 
   public get environment() {
-    return this.component.environment;
+    return this.component.environment
   }
 
   /** Components actions */
 
   public streamItems(contentTypes: ContentType[], callback: (data: any) => void) {
     this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
-      callback(data.items);
-    });
+      callback(data.items)
+    })
   }
 
   public streamContextItem(callback: (data: any) => void) {
     this.postMessage(ComponentAction.StreamContextItem, {}, (data) => {
-      const { item } = data;
+      const { item } = data
       /**
        * If this is a new context item than the context item the component was currently entertaining,
        * we want to immediately commit any pending saves, because if you send the new context item to the
        * component before it has commited its presave, it will end up first replacing the UI with new context item,
        * and when the debouncer executes to read the component UI, it will be reading the new UI for the previous item.
        */
-      const isNewItem = !this.lastStreamedItem || this.lastStreamedItem.uuid !== item.uuid;
+      const isNewItem = !this.lastStreamedItem || this.lastStreamedItem.uuid !== item.uuid
 
       if (isNewItem && this.pendingSaveTimeout) {
-        clearTimeout(this.pendingSaveTimeout);
-        this._performSavingOfItems(this.pendingSaveParams);
-        this.pendingSaveTimeout = undefined;
-        this.pendingSaveParams = undefined;
+        clearTimeout(this.pendingSaveTimeout)
+        this._performSavingOfItems(this.pendingSaveParams)
+        this.pendingSaveTimeout = undefined
+        this.pendingSaveParams = undefined
       }
 
-      this.lastStreamedItem = item;
-      callback(this.lastStreamedItem);
-    });
+      this.lastStreamedItem = item
+      callback(this.lastStreamedItem)
+    })
   }
 
   /**
@@ -434,69 +434,69 @@ export default class ComponentManager {
    * @param item the item to select.
    */
   public selectItem(item: SNItem) {
-    this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) });
+    this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) })
   }
 
   /**
    * Clears current selected tags.
    */
   public clearSelection() {
-    this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag });
+    this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag })
   }
 
   public createItem(item: ItemPayload, callback: (data: any) => void) {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
-      let { item } = data;
+      let { item } = data
       /**
        * A previous version of the SN app had an issue where the item in the reply to ComponentActions.CreateItems
        * would be nested inside "items" and not "item". So handle both cases here.
        */
       if (!item && data.items && data.items.length > 0) {
-        item = data.items[0];
+        item = data.items[0]
       }
-      this.associateItem(item);
-      callback && callback(item);
-    });
+      this.associateItem(item)
+      callback && callback(item)
+    })
   }
 
   public createItems(items: ItemPayload[], callback: (data: any) => void) {
-    const mapped = items.map((item) => this.jsonObjectForItem(item));
+    const mapped = items.map((item) => this.jsonObjectForItem(item))
     this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
-      callback && callback(data.items);
-    });
+      callback && callback(data.items)
+    })
   }
 
   public associateItem(item: ItemPayload) {
-    this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) });
+    this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) })
   }
 
   public deassociateItem(item: ItemPayload) {
-    this.postMessage(ComponentAction.DeassociateItem, {item: this.jsonObjectForItem(item)} );
+    this.postMessage(ComponentAction.DeassociateItem, { item: this.jsonObjectForItem(item) } )
   }
 
   public deleteItem(item: SNItem, callback: (data: any) => void) {
-    this.deleteItems([item], callback);
+    this.deleteItems([item], callback)
   }
 
   public deleteItems(items: SNItem[], callback: (data: any) => void) {
     const params = {
       items: items.map((item: SNItem) => {
-        return this.jsonObjectForItem(item);
+        return this.jsonObjectForItem(item)
       }),
-    };
+    }
     this.postMessage(ComponentAction.DeleteItems, params, (data) => {
-      callback && callback(data);
-    });
+      callback && callback(data)
+    })
   }
 
   public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) {
     this.postMessage(action, data, (data: any) => {
-      callback && callback(data);
-    });
+      callback && callback(data)
+    })
   }
 
   public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) {
-    this.saveItems([item], callback, skipDebouncer);
+    this.saveItems([item], callback, skipDebouncer)
   }
 
   /**
@@ -507,7 +507,7 @@ export default class ComponentManager {
    * @param callback
    */
   public saveItemWithPresave(item: SNItem, presave: any, callback: () => void) {
-    this.saveItemsWithPresave([item], presave, callback);
+    this.saveItemsWithPresave([item], presave, callback)
   }
 
   /**
@@ -518,23 +518,23 @@ export default class ComponentManager {
    * @param callback
    */
   public saveItemsWithPresave(items: SNItem[], presave: any, callback: () => void) {
-    this.saveItems(items, callback, false, presave);
+    this.saveItems(items, callback, false, presave)
   }
 
   private _performSavingOfItems({ items, presave, callback }: { items: SNItem[], presave: () => void, callback?: () => void }) {
     /**
      * Presave block allows client to gain the benefit of performing something in the debounce cycle.
      */
-    presave && presave();
+    presave && presave()
 
-    const mappedItems = [];
+    const mappedItems = []
     for (const item of items) {
-      mappedItems.push(this.jsonObjectForItem(item));
+      mappedItems.push(this.jsonObjectForItem(item))
     }
 
     this.postMessage(ComponentAction.SaveItems, { items: mappedItems }, () => {
-      callback && callback();
-    });
+      callback && callback()
+    })
   }
 
   /**
@@ -550,59 +550,59 @@ export default class ComponentManager {
      * we carry over those pending items into the new save.
      */
     if (!this.pendingSaveItems) {
-      this.pendingSaveItems = [];
+      this.pendingSaveItems = []
     }
 
     if (this.coallesedSaving && !skipDebouncer) {
       if (this.pendingSaveTimeout) {
-        clearTimeout(this.pendingSaveTimeout);
+        clearTimeout(this.pendingSaveTimeout)
       }
 
-      const incomingIds = items.map((item: SNItem) => item.uuid);
+      const incomingIds = items.map((item: SNItem) => item.uuid)
       /**
        * Replace any existing save items with incoming values.
        * Only keep items here who are not in incomingIds.
        */
       const preexistingItems = this.pendingSaveItems.filter((item) => {
-        return !incomingIds.includes(item.uuid);
-      });
+        return !incomingIds.includes(item.uuid)
+      })
 
       // Add new items, now that we've made sure it's cleared of incoming items.
-      this.pendingSaveItems = preexistingItems.concat(items);
+      this.pendingSaveItems = preexistingItems.concat(items)
 
       // We'll potentially need to commit early if stream-context-item message comes in.
       this.pendingSaveParams = {
         items: this.pendingSaveItems,
         presave: presave,
         callback: callback
-      };
+      }
 
       this.pendingSaveTimeout = setTimeout(() => {
-        this._performSavingOfItems(this.pendingSaveParams);
-        this.pendingSaveItems = [];
-        this.pendingSaveTimeout = undefined;
-        this.pendingSaveParams = null;
-      }, this.coallesedSavingDelay);
+        this._performSavingOfItems(this.pendingSaveParams)
+        this.pendingSaveItems = []
+        this.pendingSaveTimeout = undefined
+        this.pendingSaveParams = null
+      }, this.coallesedSavingDelay)
     } else {
-      this._performSavingOfItems({ items, presave, callback });
+      this._performSavingOfItems({ items, presave, callback })
     }
   }
 
   public setSize(type: string, width: string | number, height: string | number) {
-    this.postMessage(ComponentAction.SetSize, { type, width, height });
+    this.postMessage(ComponentAction.SetSize, { type, width, height })
   }
 
   private jsonObjectForItem(item: any) {
-    const copy = Object.assign({}, item);
-    copy.children = null;
-    copy.parent = null;
-    return copy;
+    const copy = Object.assign({}, item)
+    copy.children = null
+    copy.parent = null
+    return copy
   }
 
   public getItemAppDataValue(item: SNItem, key: string) {
-    const appDomain = "org.standardnotes.sn";
-    const { safeContent } = item.payload;
-    const data = safeContent.appData && safeContent.appData[appDomain];
-    return data[key];
+    const appDomain = 'org.standardnotes.sn'
+    const { safeContent } = item.payload
+    const data = safeContent.appData && safeContent.appData[appDomain]
+    return data[key]
   }
 }

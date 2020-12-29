@@ -10,10 +10,10 @@
   "scripts": {
     "build:docs": "typedoc",
     "build:types": "tsc",
-    "bundle": "yon run lint:fix && webpack --config webpack.prod.js && yon run build:types",
-    "coverage": "yon test --coverage --silent",
+    "bundle": "yarn run lint:fix && webpack --config webpack.prod.js && yarn run build:types",
+    "coverage": "yarn test --coverage --silent",
     "lint": "eslint lib --ext .ts",
-    "lint:fix": "yon run lint --fix",
+    "lint:fix": "yarn run lint --fix",
     "start": "webpack -w --config webpack.dev.js",
     "test": "jest"
   },
@@ -44,7 +44,6 @@
     "typescript": "^4.0.5",
     "webpack": "^5.4.0",
     "webpack-cli": "^4.2.0",
-    "webpack-merge": "^5.3.0",
-    "yarn-or-npm": "^3.0.1"
+    "webpack-merge": "^5.3.0"
   }
 }

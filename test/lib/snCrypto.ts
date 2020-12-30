@@ -5,23 +5,15 @@ import {
   timingSafeEqual,
   Utf8String,
 } from '@standardnotes/sncrypto-common';
-import CryptoJS from 'crypto-js';
-import sodium from 'libsodium-wrappers';
 import { generateUuid } from '../../lib/utils';
 
 /**
  * An SNPureCrypto implementation. Required to create a new SNApplication instance.
  */
 export default class SNCrypto implements SNPureCrypto {
-  private ready: Promise<void> | null;
+  constructor() {}
 
-  constructor() {
-    this.ready = sodium.ready;
-  }
-
-  public deinit() {
-    this.ready = null;
-  }
+  public deinit() {}
 
   public timingSafeEqual(a: string, b: string) {
     return timingSafeEqual(a, b);
@@ -33,17 +25,11 @@ export default class SNCrypto implements SNPureCrypto {
     iterations: number,
     length: number
   ): Promise<HexString | null> {
-    const key = CryptoJS.PBKDF2(password, salt, {
-      iterations,
-      keySize: length
-    });
-    return key.toString(CryptoJS.enc.Hex);
+    return password
   }
 
   public async generateRandomKey(bits: number): Promise<string> {
-    await this.ready;
-    const bytes = bits / 8;
-    return sodium.randombytes_buf(bytes, "hex");
+    return "arandomkey";
   }
 
   public async aes256CbcEncrypt(
@@ -51,10 +37,7 @@ export default class SNCrypto implements SNPureCrypto {
     iv: HexString,
     key: HexString
   ): Promise<Base64String> {
-    const encrypted = CryptoJS.AES.encrypt(plaintext, key, {
-      iv: CryptoJS.enc.Hex.parse(iv)
-    });
-    return encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+    return plaintext;
   }
 
   public async aes256CbcDecrypt(
@@ -62,36 +45,22 @@ export default class SNCrypto implements SNPureCrypto {
     iv: HexString,
     key: HexString
   ): Promise<Utf8String | null> {
-    try {
-      const decrypted = CryptoJS.AES.encrypt(ciphertext, key, {
-        iv: CryptoJS.enc.Hex.parse(iv)
-      });
-      return decrypted.ciphertext.toString(CryptoJS.enc.Utf8);
-    } catch (e) {
-      return null;
-    }
+    return ciphertext;
   }
 
   public async hmac256(
     message: Utf8String,
     key: HexString
   ): Promise<HexString | null> {
-    try {
-      const encrypted = CryptoJS.HmacSHA256(message, key);
-      return encrypted.toString(CryptoJS.enc.Hex);
-    } catch (e) {
-      return null;
-    }
+    return message;
   }
 
   public async sha256(text: string): Promise<string> {
-    const result = CryptoJS.SHA256(sodium.to_hex(text));
-    return result.toString(CryptoJS.enc.Hex);
+    return text;
   }
 
   public async unsafeSha1(text: string): Promise<string> {
-    const result = CryptoJS.SHA1(sodium.to_hex(text));
-    return result.toString(CryptoJS.enc.Hex);
+    return text;
   }
 
   public async argon2(
@@ -101,16 +70,7 @@ export default class SNCrypto implements SNPureCrypto {
     bytes: number,
     length: number
   ): Promise<HexString> {
-    await this.ready;
-    return sodium.crypto_pwhash(
-      length,
-      sodium.from_string(password),
-      sodium.from_hex(salt),
-      iterations,
-      bytes,
-      sodium.crypto_pwhash_ALG_DEFAULT,
-      'hex'
-    );
+    return password;
   }
 
   public async xchacha20Encrypt(
@@ -119,19 +79,7 @@ export default class SNCrypto implements SNPureCrypto {
     key: HexString,
     assocData: Utf8String
   ): Promise<Base64String> {
-    await this.ready;
-    try {
-      return sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
-        plaintext,
-        assocData,
-        null,
-        sodium.from_hex(nonce),
-        sodium.from_hex(key),
-        'base64'
-      );
-    } catch (e) {
-      return null;
-    }
+    return plaintext;
   }
 
   public async xchacha20Decrypt(
@@ -140,19 +88,7 @@ export default class SNCrypto implements SNPureCrypto {
     key: HexString,
     assocData: Utf8String
   ): Promise<string | null> {
-    await this.ready;
-    try {
-      return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-        null,
-        sodium.from_base64(ciphertext),
-        assocData,
-        sodium.from_hex(nonce),
-        sodium.from_hex(key),
-        'text'
-      );
-    } catch (e) {
-      return null;
-    }
+    return ciphertext;
   }
 
   public generateUUIDSync() {

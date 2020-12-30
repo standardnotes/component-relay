@@ -1,5 +1,5 @@
 import { DeviceInterface as SNDeviceInterface } from '@standardnotes/snjs';
-import LocalStorage from './localStorage';
+import { LocalStorage } from './localStorage';
 
 const KEYCHAIN_STORAGE_KEY = 'keychain';
 

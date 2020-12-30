@@ -25,7 +25,7 @@ export default class SNCrypto implements SNPureCrypto {
     iterations: number,
     length: number
   ): Promise<HexString | null> {
-    return password
+    return password;
   }
 
   public async generateRandomKey(bits: number): Promise<string> {

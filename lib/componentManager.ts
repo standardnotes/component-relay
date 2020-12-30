@@ -16,19 +16,19 @@ enum MessagePayloadApi {
 type Component = {
   uuid?: string;
   origin?: string;
-  data?: Record<string, any>;
+  data: any;
   sessionKey?: string;
   environment?: string;
   platform?: string;
   isMobile?: boolean;
-  acceptsThemes?: boolean;
-  activeThemes?: string[];
+  acceptsThemes: boolean;
+  activeThemes: string[];
 }
 
 type MessagePayload = {
   action: ComponentAction;
-  data: Record<string, any>;
-  componentData?: Record<string, any>;
+  data: any;
+  componentData?: any;
   messageId?: string;
   sessionKey?: string;
   api: MessagePayloadApi;
@@ -56,7 +56,7 @@ type ComponentManagerParams = {
 
 type ItemPayload = {
   content_type?: ContentType,
-  content?: Record<string, any>,
+  content?: any,
   [key: string]: any
 }
 
@@ -105,9 +105,9 @@ export default class ComponentManager {
     Logger.enabled = options?.debug ?? false
   }
 
-  public deinit() {
+  public deinit() : void {
     this.onReadyCallback = undefined
-    this.component = {}
+    this.component = { acceptsThemes: true, activeThemes: [] }
     this.messageQueue = []
     this.sentMessages = []
     this.lastStreamedItem = undefined
@@ -191,14 +191,14 @@ export default class ComponentManager {
         this.activateThemes(payload.data.themes)
         break
 
-      default:
+      default: {
         if (!payload.original) {
           return
         }
 
         // Get the callback from queue.
-        const originalMessage = this.sentMessages!.filter((message: MessagePayload) => {
-          return message.messageId === payload.original!.messageId
+        const originalMessage = this.sentMessages?.filter((message: MessagePayload) => {
+          return message.messageId === payload.original?.messageId
         })[0]
   
         if (!originalMessage) {
@@ -211,10 +211,11 @@ export default class ComponentManager {
           originalMessage.callback(payload.data)
         }
         break
+      }
     }
   }
 
-  private onReady(data: Record<string, any>) {
+  private onReady(data: any) {
     this.component.environment = data.environment
     this.component.platform = data.platform
     this.component.uuid = data.uuid
@@ -223,7 +224,7 @@ export default class ComponentManager {
       this.requestPermissions(this.initialPermissions)
     }
 
-    for (const message of this.messageQueue!) {
+    for (const message of this.messageQueue) {
       this.postMessage(message.action, message.data, message.callback)
     }
 
@@ -238,26 +239,26 @@ export default class ComponentManager {
     }
   }
 
-  public getSelfComponentUUID() {
+  public getSelfComponentUUID() : string | undefined {
     return this.component.uuid
   }
 
-  public isRunningInDesktopApplication() {
+  public isRunningInDesktopApplication() : boolean {
     return this.component.environment === environmentToString(Environment.Desktop)
   }
 
-  public isRunningInMobileApplication() {
+  public isRunningInMobileApplication() : boolean {
     return this.component.environment === environmentToString(Environment.Mobile)
   }
 
-  public getComponentDataValueForKey(key: string) {
+  public getComponentDataValueForKey(key: string) : any {
     if (!this.component.data) {
       return
     }
     return this.component.data[key]
   }
 
-  public setComponentDataValueForKey(key: string, value: any) {
+  public setComponentDataValueForKey(key: string, value: any) : void {
     if (!this.component.data) {
       throw new Error('The component has not been initialized.')
     }
@@ -271,14 +272,14 @@ export default class ComponentManager {
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
 
-  public clearComponentData() {
+  public clearComponentData() : void {
     this.component.data = {}
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
 
-  private postMessage(action: ComponentAction, data: Record<string, any>, callback?: (...params: any) => void) {
-    if (!this.component.sessionKey) {
-      this.messageQueue!.push({
+  private postMessage(action: ComponentAction, data: any, callback?: (...params: any) => void) {
+    if (!this.component.sessionKey || !this.component.origin) {
+      this.messageQueue.push({
         action: action,
         data: data,
         api: MessagePayloadApi.Component,
@@ -297,7 +298,7 @@ export default class ComponentManager {
 
     const sentMessage = JSON.parse(JSON.stringify(message))
     sentMessage.callback = callback
-    this.sentMessages!.push(sentMessage)
+    this.sentMessages.push(sentMessage)
 
     let postMessagePayload
 
@@ -309,7 +310,7 @@ export default class ComponentManager {
     }
 
     Logger.info('Posting message:', postMessagePayload)
-    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!)
+    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin)
   }
 
   private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {
@@ -325,7 +326,9 @@ export default class ComponentManager {
 
     Logger.info('Incoming themes:', incomingUrls)
 
-    if (this.component.activeThemes!.sort().toString() == incomingUrls.sort().toString()) {
+    const { activeThemes } = this.component
+
+    if (activeThemes && activeThemes.sort().toString() == incomingUrls.sort().toString()) {
       // Incoming theme URLs are same as active, do nothing.
       return
     }
@@ -333,7 +336,7 @@ export default class ComponentManager {
     let themesToActivate = incomingUrls
     const themesToDeactivate = []
 
-    for (const activeUrl of this.component.activeThemes!) {
+    for (const activeUrl of activeThemes) {
       if (!incomingUrls.includes(activeUrl)) {
         // Active not present in incoming, deactivate it.
         themesToDeactivate.push(activeUrl)
@@ -380,9 +383,9 @@ export default class ComponentManager {
 
   private deactivateTheme(themeUrl: string) {
     const element = this.themeElementForUrl(themeUrl)
-    if (element) {
-      element!.setAttribute('disabled', 'true')
-      element!.parentNode!.removeChild(element!)
+    if (element && element.parentNode) {
+      element.setAttribute('disabled', 'true')
+      element.parentNode.removeChild(element)
     }
   }
 
@@ -390,23 +393,23 @@ export default class ComponentManager {
     return generateUuid()
   }
 
-  public get platform() {
+  public get platform() : string | undefined {
     return this.component.platform
   }
 
-  public get environment() {
+  public get environment() : string | undefined {
     return this.component.environment
   }
 
   /** Components actions */
 
-  public streamItems(contentTypes: ContentType[], callback: (data: any) => void) {
+  public streamItems(contentTypes: ContentType[], callback: (data: any) => void) : void {
     this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
       callback(data.items)
     })
   }
 
-  public streamContextItem(callback: (data: any) => void) {
+  public streamContextItem(callback: (data: any) => void) : void {
     this.postMessage(ComponentAction.StreamContextItem, {}, (data) => {
       const { item } = data
       /**
@@ -433,18 +436,18 @@ export default class ComponentManager {
    * Selects an item which typically needs to be a tag.
    * @param item the item to select.
    */
-  public selectItem(item: SNItem) {
+  public selectItem(item: SNItem) : void {
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) })
   }
 
   /**
    * Clears current selected tags.
    */
-  public clearSelection() {
+  public clearSelection() : void {
     this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag })
   }
 
-  public createItem(item: ItemPayload, callback: (data: any) => void) {
+  public createItem(item: ItemPayload, callback: (data: any) => void) : void {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
       let { item } = data
       /**
@@ -459,26 +462,26 @@ export default class ComponentManager {
     })
   }
 
-  public createItems(items: ItemPayload[], callback: (data: any) => void) {
+  public createItems(items: ItemPayload[], callback: (data: any) => void) : void {
     const mapped = items.map((item) => this.jsonObjectForItem(item))
     this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
       callback && callback(data.items)
     })
   }
 
-  public associateItem(item: ItemPayload) {
+  public associateItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) })
   }
 
-  public deassociateItem(item: ItemPayload) {
+  public deassociateItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.DeassociateItem, { item: this.jsonObjectForItem(item) } )
   }
 
-  public deleteItem(item: SNItem, callback: (data: any) => void) {
+  public deleteItem(item: SNItem, callback: (data: any) => void) : void {
     this.deleteItems([item], callback)
   }
 
-  public deleteItems(items: SNItem[], callback: (data: any) => void) {
+  public deleteItems(items: SNItem[], callback: (data: any) => void) : void {
     const params = {
       items: items.map((item: SNItem) => {
         return this.jsonObjectForItem(item)
@@ -489,13 +492,13 @@ export default class ComponentManager {
     })
   }
 
-  public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) {
+  public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) : void {
     this.postMessage(action, data, (data: any) => {
       callback && callback(data)
     })
   }
 
-  public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) {
+  public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) : void {
     this.saveItems([item], callback, skipDebouncer)
   }
 
@@ -506,7 +509,7 @@ export default class ComponentManager {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemWithPresave(item: SNItem, presave: any, callback: () => void) {
+  public saveItemWithPresave(item: SNItem, presave: any, callback: () => void) : void {
     this.saveItemsWithPresave([item], presave, callback)
   }
 
@@ -517,7 +520,7 @@ export default class ComponentManager {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemsWithPresave(items: SNItem[], presave: any, callback: () => void) {
+  public saveItemsWithPresave(items: SNItem[], presave: any, callback: () => void) : void {
     this.saveItems(items, callback, false, presave)
   }
 
@@ -544,7 +547,7 @@ export default class ComponentManager {
    * This should be used when saving items via other means besides keystrokes.
    * @param presave
    */
-  public saveItems(items: SNItem[], callback?: () => void, skipDebouncer = false, presave?: any) {
+  public saveItems(items: SNItem[], callback?: () => void, skipDebouncer = false, presave?: any) : void {
     /**
      * We need to make sure that when we clear a pending save timeout,
      * we carry over those pending items into the new save.
@@ -588,7 +591,7 @@ export default class ComponentManager {
     }
   }
 
-  public setSize(type: string, width: string | number, height: string | number) {
+  public setSize(type: string, width: string | number, height: string | number) : void {
     this.postMessage(ComponentAction.SetSize, { type, width, height })
   }
 
@@ -599,7 +602,7 @@ export default class ComponentManager {
     return copy
   }
 
-  public getItemAppDataValue(item: SNItem, key: string) {
+  public getItemAppDataValue(item: SNItem, key: string) : Record<string, unknown> | undefined {
     const appDomain = 'org.standardnotes.sn'
     const { safeContent } = item.payload
     const data = safeContent.appData && safeContent.appData[appDomain]

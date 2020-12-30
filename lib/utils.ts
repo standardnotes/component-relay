@@ -5,11 +5,11 @@ declare global {
   interface Window { msCrypto: unknown; }
 }
 
-export const generateUuid = () => {
+export const generateUuid = () : string => {
   return uuidv4()
 }
 
-export const isValidJsonString = (str: any) => {
+export const isValidJsonString = (str: Record<string, unknown>) : boolean => {
   if (typeof str !== 'string') {
     return false
   }
@@ -22,7 +22,7 @@ export const isValidJsonString = (str: any) => {
   }
 }
 
-export const environmentToString = (environment: Environment) => {
+export const environmentToString = (environment: Environment) : string => {
   const map = {
     [Environment.Web]: 'web',
     [Environment.Desktop]: 'desktop',

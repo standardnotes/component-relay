@@ -46,7 +46,7 @@ export default class DeviceInterface extends SNDeviceInterface {
     return {};
   }
 
-  _getDatabaseKeyPrefix(identifier) {
+  getDatabaseKeyPrefix(identifier) {
     if (identifier) {
       return `${identifier}-item-`;
     } else {
@@ -54,14 +54,14 @@ export default class DeviceInterface extends SNDeviceInterface {
     }
   }
 
-  _keyForPayloadId(id, identifier) {
-    return `${this._getDatabaseKeyPrefix(identifier)}${id}`;
+  keyForPayloadId(id, identifier) {
+    return `${this.getDatabaseKeyPrefix(identifier)}${id}`;
   }
 
   async getAllRawDatabasePayloads(identifier) {
     const models = [];
     for (const key in this.storage) {
-      if (key.startsWith(this._getDatabaseKeyPrefix(identifier))) {
+      if (key.startsWith(this.getDatabaseKeyPrefix(identifier))) {
         models.push(JSON.parse(this.storage[key]));
       }
     }
@@ -70,7 +70,7 @@ export default class DeviceInterface extends SNDeviceInterface {
 
   async saveRawDatabasePayload(payload, identifier) {
     this.localStorage.setItem(
-      this._keyForPayloadId(payload.uuid, identifier),
+      this.keyForPayloadId(payload.uuid, identifier),
       JSON.stringify(payload)
     );
   }
@@ -82,12 +82,12 @@ export default class DeviceInterface extends SNDeviceInterface {
   }
 
   async removeRawDatabasePayloadWithId(id, identifier) {
-    this.localStorage.removeItem(this._keyForPayloadId(id, identifier));
+    this.localStorage.removeItem(this.keyForPayloadId(id, identifier));
   }
 
   async removeAllRawDatabasePayloads(identifier) {
     for (const key in this.storage) {
-      if (key.startsWith(this._getDatabaseKeyPrefix(identifier))) {
+      if (key.startsWith(this.getDatabaseKeyPrefix(identifier))) {
         delete this.storage[key];
       }
     }

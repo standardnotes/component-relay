@@ -1,5 +1,10 @@
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 module.exports = {
   entry: './lib/index.ts',
+  plugins: [
+    new BundleAnalyzerPlugin()
+  ],
   resolve: {
     extensions: ['.ts', '.js']
   },

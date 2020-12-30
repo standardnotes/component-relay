@@ -1,7 +1,10 @@
 // @ts-nocheck
 import { Environment } from '@standardnotes/snjs';
-import { isValidJsonString, generateUuid, environmentToString } from './../lib/utils';
-import crypto from 'crypto';
+import {
+  isValidJsonString,
+  generateUuid,
+  environmentToString
+} from './../lib/utils';
 
 const uuidFormat = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
 
@@ -14,15 +17,6 @@ describe("Utils", () => {
 
     it("should have a valid format", () => {
       const uuid = generateUuid();
-      expect(uuid).toEqual(expect.stringMatching(uuidFormat));
-    });
-
-    test("uuid generated using window.crypto should have the correct format and length", () => {
-      global.crypto = {
-        getRandomValues: (array) => crypto.randomBytes(array.length)
-      };
-      const uuid = generateUuid();
-      expect(uuid.length).toEqual(36);
       expect(uuid).toEqual(expect.stringMatching(uuidFormat));
     });
   });

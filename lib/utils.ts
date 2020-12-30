@@ -28,5 +28,5 @@ export const environmentToString = (environment: Environment) => {
     [Environment.Desktop]: 'desktop',
     [Environment.Mobile]: 'mobile',
   }
-  return map[environment]
+  return map[environment] ?? map[Environment.Web]
 }

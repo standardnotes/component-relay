@@ -81,39 +81,39 @@ describe("Utils", () => {
   });
 
   describe('environmentToString', () => {
-    test('an invalid value should return undefined', () => {
+    test('an invalid value should fallback to "web"', () => {
       let result = environmentToString(10000000);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(-1);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(null);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(undefined);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString('');
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(0.01);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString({});
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString([]);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(true);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(false);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
 
       result = environmentToString(() => true);
-      expect(result).toBeUndefined();
+      expect(result).toBe("web");
     });
 
     test('Environment.Web should return "web"', () => {

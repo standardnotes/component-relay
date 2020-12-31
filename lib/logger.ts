@@ -7,14 +7,14 @@ export default class Logger {
     return (window.console || console) ? true : false
   }
 
-  static get info () {
+  static get info () : any {
     if (!Logger.isSupported || !this.enabled) {
       return noop
     }
     return console.log.bind(console)
   }
 
-  static get error () {
+  static get error () : any {
     return console.error.bind(console)
   }
 }

@@ -1,5 +1,5 @@
 {
-  "include": ["lib/**/*"],
+  "include": ["lib/componentManager.ts"],
   "exclude": ["node_modules", "test/**/*", "webpack.*.js"],
   "compilerOptions": {
     "target": "esnext",
@@ -19,7 +19,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "typedocOptions": {
-    "inputFiles": ["./lib"],
+    "inputFiles": ["./lib/componentManager.ts"],
     "name": "SN Components API",
     "includeVersion": true,
     "mode": "modules",

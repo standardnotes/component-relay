@@ -1,10 +1,18 @@
 import {
   ComponentAction,
+  ComponentPermission,
   ContentType,
   Environment,
-  SNItem
-} from '@standardnotes/snjs'
-import { environmentToString, generateUuid, isValidJsonString } from './utils'
+  UuidString,
+  SNItem,
+  AppDataField,
+  RawPayload
+} from './snjsTypes'
+import {
+  environmentToString,
+  generateUuid,
+  isValidJsonString
+} from './utils'
 import Logger from './logger'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
@@ -16,7 +24,7 @@ enum MessagePayloadApi {
 type Component = {
   uuid?: string;
   origin?: string;
-  data: any;
+  data: ComponentData;
   sessionKey?: string;
   environment?: string;
   platform?: string;
@@ -25,12 +33,34 @@ type Component = {
   activeThemes: string[];
 }
 
+type ComponentData = {
+  [key: string]: any
+}
+
+export type MessageData = Partial<{
+  content_types: ContentType[]
+  item: RawPayload & { clientData: any }
+  items: (RawPayload & { clientData: any })[]
+  permissions: ComponentPermission[]
+  componentData: any
+  uuid: UuidString
+  environment: string
+  platform: string
+  activeThemeUrls: string[]
+  width: string | number
+  height: string | number
+  /** Related to setSize action */
+  type: 'container'
+  /** Related to themes action */
+  themes: string[]
+}>
+
 type MessagePayload = {
   action: ComponentAction;
-  data: any;
-  componentData?: any;
-  messageId?: string;
-  sessionKey?: string;
+  data: MessageData;
+  componentData?: ComponentData;
+  messageId?: UuidString;
+  sessionKey?: UuidString;
   api: MessagePayloadApi;
   original?: MessagePayload;
   callback?: (...params: any) => void;
@@ -43,13 +73,8 @@ type ComponentManagerOptions = {
   acceptsThemes?: boolean
 }
 
-type PermissionObject = {
-  name: ComponentAction,
-  content_types?: ContentType[]
-}
-
 type ComponentManagerParams = {
-  initialPermissions?: PermissionObject[]
+  initialPermissions?: ComponentPermission[]
   options?: ComponentManagerOptions,
   onReady?: () => void
 }
@@ -61,9 +86,9 @@ type ItemPayload = {
 }
 
 export default class ComponentManager {
-  private initialPermissions?: PermissionObject[];
+  private initialPermissions?: ComponentPermission[];
   private onReadyCallback?: () => void;
-  private component: Component = { activeThemes: [], acceptsThemes: true };
+  private component: Component = { data: {}, activeThemes: [], acceptsThemes: true };
   private sentMessages: MessagePayload[] = [];
   private messageQueue: MessagePayload[] = [];
   private lastStreamedItem?: SNItem;
@@ -107,7 +132,11 @@ export default class ComponentManager {
 
   public deinit() : void {
     this.onReadyCallback = undefined
-    this.component = { acceptsThemes: true, activeThemes: [] }
+    this.component = {
+      data: {},
+      acceptsThemes: true,
+      activeThemes: []
+    }
     this.messageQueue = []
     this.sentMessages = []
     this.lastStreamedItem = undefined
@@ -182,7 +211,9 @@ export default class ComponentManager {
     switch (payload.action) {
       case ComponentAction.ComponentRegistered:
         this.component.sessionKey = payload.sessionKey
-        this.component.data = payload.componentData
+        if (payload.componentData) {
+          this.component.data = payload.componentData
+        }
         this.onReady(payload.data)
         Logger.info('Component successfully registered with payload:', payload)
         break
@@ -215,7 +246,7 @@ export default class ComponentManager {
     }
   }
 
-  private onReady(data: any) {
+  private onReady(data: MessageData) {
     this.component.environment = data.environment
     this.component.platform = data.platform
     this.component.uuid = data.uuid
@@ -280,8 +311,8 @@ export default class ComponentManager {
   private postMessage(action: ComponentAction, data: any, callback?: (...params: any) => void) {
     if (!this.component.sessionKey || !this.component.origin) {
       this.messageQueue.push({
-        action: action,
-        data: data,
+        action,
+        data,
         api: MessagePayloadApi.Component,
         callback: callback
       })
@@ -289,8 +320,8 @@ export default class ComponentManager {
     }
 
     const message = {
-      action: action,
-      data: data,
+      action,
+      data,
       messageId: this.generateUUID(),
       sessionKey: this.component.sessionKey,
       api: MessagePayloadApi.Component
@@ -313,7 +344,7 @@ export default class ComponentManager {
     this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin)
   }
 
-  private requestPermissions(permissions: PermissionObject[], callback?: (...params: any) => void) {
+  private requestPermissions(permissions: ComponentPermission[], callback?: (...params: any) => void) {
     this.postMessage(ComponentAction.RequestPermissions, { permissions }, () => {
       callback && callback()
     })
@@ -595,17 +626,14 @@ export default class ComponentManager {
     this.postMessage(ComponentAction.SetSize, { type, width, height })
   }
 
-  private jsonObjectForItem(item: any) {
-    const copy = Object.assign({}, item)
+  private jsonObjectForItem(item: SNItem | ItemPayload) {
+    const copy = Object.assign({}, item) as any
     copy.children = null
     copy.parent = null
     return copy
   }
 
-  public getItemAppDataValue(item: SNItem, key: string) : Record<string, unknown> | undefined {
-    const appDomain = 'org.standardnotes.sn'
-    const { safeContent } = item.payload
-    const data = safeContent.appData && safeContent.appData[appDomain]
-    return data[key]
+  public getItemAppDataValue(item: SNItem, key: AppDataField) : any {
+    return item.getAppDomainValue(key)
   }
 }

@@ -24,7 +24,7 @@ enum MessagePayloadApi {
 type Component = {
   uuid?: string;
   origin?: string;
-  data: ComponentData;
+  data?: ComponentData;
   sessionKey?: string;
   environment?: string;
   platform?: string;
@@ -94,7 +94,7 @@ type ItemPayload = {
 export default class ComponentManager {
   private initialPermissions?: ComponentPermission[];
   private onReadyCallback?: () => void;
-  private component: Component = { data: {}, activeThemes: [], acceptsThemes: true };
+  private component: Component = { activeThemes: [], acceptsThemes: true };
   private sentMessages: MessagePayload[] = [];
   private messageQueue: MessagePayload[] = [];
   private lastStreamedItem?: SNItem;
@@ -139,7 +139,6 @@ export default class ComponentManager {
   public deinit() : void {
     this.onReadyCallback = undefined
     this.component = {
-      data: {},
       acceptsThemes: true,
       activeThemes: []
     }

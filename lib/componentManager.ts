@@ -38,21 +38,27 @@ type ComponentData = {
 }
 
 export type MessageData = Partial<{
-  content_types: ContentType[]
-  item: RawPayload & { clientData: any }
-  items: (RawPayload & { clientData: any })[]
-  permissions: ComponentPermission[]
-  componentData: any
-  uuid: UuidString
-  environment: string
-  platform: string
-  activeThemeUrls: string[]
-  width: string | number
-  height: string | number
-  /** Related to setSize action */
-  type: 'container'
+  /** Related to the stream-item-context action */
+  item?: RawPayload & { clientData: any }
+  /** Related to the stream-items action */
+  content_types?: ContentType[]
+  items?: (RawPayload & { clientData: any })[]
+  /** Related to the request-permission action */
+  permissions?: ComponentPermission[]
+  /** Related to the component-registered action */
+  componentData?: any
+  uuid?: UuidString
+  environment?: string
+  platform?: string
+  activeThemeUrls?: string[]
+  /** Related to set-size action */
+  width?: string | number
+  height?: string | number
+  type?: string
   /** Related to themes action */
-  themes: string[]
+  themes?: string[]
+  /** Related to clear-selection action */
+  content_type?: ContentType
 }>
 
 type MessagePayload = {
@@ -308,7 +314,7 @@ export default class ComponentManager {
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
 
-  private postMessage(action: ComponentAction, data: any, callback?: (...params: any) => void) {
+  private postMessage(action: ComponentAction, data: MessageData, callback?: (...params: any) => void) {
     if (!this.component.sessionKey || !this.component.origin) {
       this.messageQueue.push({
         action,

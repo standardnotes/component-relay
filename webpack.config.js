@@ -3,6 +3,11 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js']
   },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'dist.js',
+    sourceMapFilename: 'dist.js.map',
+  },
   module: {
     rules: [
       {

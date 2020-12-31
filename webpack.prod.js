@@ -5,11 +5,6 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 module.exports = merge(config, {
   mode: 'production',
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'dist.js',
-    sourceMapFilename: 'dist.js.map',
-  },
   plugins: [
     new BundleAnalyzerPlugin()
   ],

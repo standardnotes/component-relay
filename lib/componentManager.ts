@@ -37,7 +37,7 @@ type ComponentData = {
   [key: string]: any
 }
 
-export type MessageData = Partial<{
+type MessageData = Partial<{
   /** Related to the stream-item-context action */
   item?: RawPayload & { clientData: any }
   /** Related to the stream-items action */

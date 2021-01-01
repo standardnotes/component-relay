@@ -15,6 +15,7 @@
       "diagnostics": false
     }
   },
+  "preset": "ts-jest",
   "resetMocks": true,
   "restoreMocks": true,
   "roots": [
@@ -22,12 +23,12 @@
     "<rootDir>/test"
   ],
   "setupFiles": [
-    "<rootDir>/test/setup/jsdom.js",
-    "<rootDir>/test/setup/fakeHttpServer.js"
+    "<rootDir>/test/setup/jsdom.ts",
+    "<rootDir>/test/setup/fakeHttpServer.ts"
   ],
   "testEnvironment": "jsdom",
   "testMatch": [
-    "**/?(*.)+(test).+(ts|js)"
+    "**/?(*.)+(test).+(ts)"
   ],
   "verbose": true
 }

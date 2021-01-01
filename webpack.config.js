@@ -1,7 +1,9 @@
+const path = require('path');
+
 module.exports = {
   entry: './lib/index.ts',
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts']
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -11,17 +13,24 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(ts|js)?$/,
-        use: [
-          'babel-loader', {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-            },
-          },
-        ],
         exclude: /node_modules/,
-      },
-    ],
-  },
+        test: /\.(ts)?$/,
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              cacheDirectory: true,
+              presets: [
+                ["@babel/preset-env"],
+                ["@babel/preset-typescript"]
+              ],
+              plugins: [
+                "@babel/plugin-proposal-class-properties"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
 };

@@ -9,7 +9,7 @@ export const generateUuid = () : string => {
   return uuidv4()
 }
 
-export const isValidJsonString = (str: Record<string, unknown>) : boolean => {
+export const isValidJsonString = (str: unknown) : boolean => {
   if (typeof str !== 'string') {
     return false
   }

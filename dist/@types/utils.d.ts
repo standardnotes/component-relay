@@ -5,5 +5,5 @@ declare global {
     }
 }
 export declare const generateUuid: () => string;
-export declare const isValidJsonString: (str: Record<string, unknown>) => boolean;
+export declare const isValidJsonString: (str: unknown) => boolean;
 export declare const environmentToString: (environment: Environment) => string;

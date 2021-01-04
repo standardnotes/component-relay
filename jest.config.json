@@ -12,6 +12,7 @@
   ],
   "globals": {
     "ts-jest": {
+      "tsConfig": false,
       "diagnostics": false
     }
   },
@@ -28,7 +29,7 @@
   ],
   "testEnvironment": "jsdom",
   "testMatch": [
-    "**/?(*.)+(test).+(ts)"
+    "<rootDir>/test/?(*.)+(test).+(ts)"
   ],
   "verbose": true
 }

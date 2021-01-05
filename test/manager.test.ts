@@ -47,7 +47,8 @@ describe("ComponentManager", () => {
     testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     testComponent = await createComponentItem(testSNApp, testExtensionEditorPackage);
 
-    componentManager = new ComponentManager(childWindow, {
+    componentManager = new ComponentManager({
+      targetWindow: childWindow,
       options: {
         acceptsThemes: true
       }
@@ -95,7 +96,8 @@ describe("ComponentManager", () => {
     expect.hasAssertions();
     const onReady = jest.fn();
     componentManager.deinit();
-    componentManager = new ComponentManager(childWindow, {
+    componentManager = new ComponentManager({
+      targetWindow: childWindow,
       onReady
     });
     expect(onReady).toBeCalledTimes(0);
@@ -105,7 +107,8 @@ describe("ComponentManager", () => {
     expect.hasAssertions();
     const onReady = jest.fn();
     componentManager.deinit();
-    componentManager = new ComponentManager(childWindow, {
+    componentManager = new ComponentManager({
+      targetWindow: childWindow,
       onReady
     });
     await registerComponent(testSNApp, childWindow, testComponent);
@@ -261,12 +264,13 @@ describe("ComponentManager", () => {
 
   it('should request permissions when ready', async () => {
     const params = {
+      targetWindow: childWindow,
       initialPermissions: [
         { name: ComponentAction.StreamContextItem }
       ]
     };
     componentManager.deinit();
-    componentManager = new ComponentManager(childWindow, params);
+    componentManager = new ComponentManager(params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
@@ -286,7 +290,9 @@ describe("ComponentManager", () => {
     testComponent = await createComponentItem(testSNApp, testExtensionEditorPackage);
 
     componentManager.deinit();
-    componentManager = new ComponentManager(childWindow);
+    componentManager = new ComponentManager({
+      targetWindow: childWindow
+    });
     await registerComponent(testSNApp, childWindow, testComponent);
 
     // Performing an action so it can call parent.postMessage function.

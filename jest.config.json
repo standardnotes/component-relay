@@ -8,8 +8,14 @@
     "<rootDir>/node_modules"
   ],
   "coverageReporters": [
+    "text",
     "html"
   ],
+  "globals": {
+    "ts-jest": {
+      "diagnostics": false
+    }
+  },
   "preset": "ts-jest",
   "resetMocks": true,
   "restoreMocks": true,

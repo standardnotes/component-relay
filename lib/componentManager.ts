@@ -80,6 +80,7 @@ type ComponentManagerOptions = {
 }
 
 type ComponentManagerParams = {
+  targetWindow: Window
   initialPermissions?: ComponentPermission[]
   options?: ComponentManagerOptions,
   onReady?: () => void
@@ -92,6 +93,7 @@ type ItemPayload = {
 }
 
 export default class ComponentManager {
+  private contentWindow: Window;
   private initialPermissions?: ComponentPermission[];
   private onReadyCallback?: () => void;
   private component: Component = { activeThemes: [], acceptsThemes: true };
@@ -105,13 +107,12 @@ export default class ComponentManager {
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
 
-  constructor(private contentWindow: Window, params?: ComponentManagerParams) {
-    if (!contentWindow) {
+  constructor(params: ComponentManagerParams) {
+    if (!params || !params.targetWindow) {
       throw new Error('contentWindow must be a valid Window object.')
     }
-    if (params) {
-      this.processParameters(params)
-    }
+    this.contentWindow = params.targetWindow
+    this.processParameters(params)
     this.registerMessageHandler()
   }
 

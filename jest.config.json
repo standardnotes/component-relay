@@ -10,12 +10,6 @@
   "coverageReporters": [
     "html"
   ],
-  "globals": {
-    "ts-jest": {
-      "tsConfig": false,
-      "diagnostics": false
-    }
-  },
   "preset": "ts-jest",
   "resetMocks": true,
   "restoreMocks": true,

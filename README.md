@@ -1,6 +1,6 @@
 # Components API
 
-To get started using the Components API, read the [Intro to Extensions guide](https://docs.standardnotes.org/extensions/intro).
+To get started using the Components API, read the [getting started guide](https://docs.standardnotes.org/extensions/intro).
 
 ## Installation      
 

@@ -3,7 +3,7 @@
   "description": "Standard Notes Component Relay",
   "main": "dist/dist.js",
   "license": "MIT",
-  "homepage": "https://github.com/sn-extensions/component-relay",
+  "homepage": "https://github.com/standardnotes/component-relay",
   "ignore": [
     "**/.*",
     "node_modules",

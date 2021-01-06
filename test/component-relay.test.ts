@@ -26,10 +26,10 @@ import {
   SHORT_DELAY_TIME,
   createTagItem,
 } from './helpers';
-import ComponentRelay from './../lib/componentRelay';
+import ComponentRelay from '../lib/componentRelay';
 import { createApplication } from './lib/appFactory';
 
-describe("ComponentRelay", () => {
+describe("Component Relay", () => {
   /** The child window. This is where the extension lives. */
   let childWindow: Window;
   let componentRelay: ComponentRelay;

@@ -1,5 +1,5 @@
 {
-  "include": ["lib/componentManager.ts"],
+  "include": ["lib/componentRelay.ts"],
   "exclude": ["node_modules", "test/**/*", "webpack.*.js"],
   "compilerOptions": {
     "target": "esnext",
@@ -19,8 +19,8 @@
     "forceConsistentCasingInFileNames": true
   },
   "typedocOptions": {
-    "inputFiles": ["./lib/componentManager.ts"],
-    "name": "SN Components API",
+    "inputFiles": ["./lib/componentRelay.ts"],
+    "name": "Component Relay API Reference",
     "includeVersion": true,
     "mode": "modules",
     "out": "docs"

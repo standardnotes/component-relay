@@ -26,13 +26,13 @@ import {
   SHORT_DELAY_TIME,
   createTagItem,
 } from './helpers';
-import ComponentManager from './../lib/componentManager';
+import ComponentRelay from './../lib/componentRelay';
 import { createApplication } from './lib/appFactory';
 
-describe("ComponentManager", () => {
+describe("ComponentRelay", () => {
   /** The child window. This is where the extension lives. */
   let childWindow: Window;
-  let componentManager: ComponentManager;
+  let componentRelay: ComponentRelay;
   /** The Standard Notes application. */
   let testSNApp: SNApplication;
   /** The test component. */
@@ -47,7 +47,7 @@ describe("ComponentManager", () => {
     testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     testComponent = await createComponentItem(testSNApp, testExtensionEditorPackage);
 
-    componentManager = new ComponentManager({
+    componentRelay = new ComponentRelay({
       targetWindow: childWindow,
       options: {
         acceptsThemes: true
@@ -71,8 +71,8 @@ describe("ComponentManager", () => {
   });
 
   afterEach(() => {
-    componentManager.deinit();
-    componentManager = undefined;
+    componentRelay.deinit();
+    componentRelay = undefined;
 
     const childIframe = window.document.getElementsByTagName('iframe')[0];
     window.document.body.removeChild(childIframe);
@@ -85,18 +85,18 @@ describe("ComponentManager", () => {
   });
 
   it('should throw error if contentWindow is undefined', () => {
-    expect(() => new ComponentManager(undefined)).toThrow('contentWindow must be a valid Window object.');
+    expect(() => new ComponentRelay(undefined)).toThrow('contentWindow must be a valid Window object.');
   });
 
   it('should not be undefined', () => {
-    expect(componentManager).not.toBeUndefined();
+    expect(componentRelay).not.toBeUndefined();
   });
 
   it('should not run onReady callback when component has not been registered', () => {
     expect.hasAssertions();
     const onReady = jest.fn();
-    componentManager.deinit();
-    componentManager = new ComponentManager({
+    componentRelay.deinit();
+    componentRelay = new ComponentRelay({
       targetWindow: childWindow,
       onReady
     });
@@ -106,8 +106,8 @@ describe("ComponentManager", () => {
   it('should run onReady callback when component is registered', async () => {
     expect.hasAssertions();
     const onReady = jest.fn();
-    componentManager.deinit();
-    componentManager = new ComponentManager({
+    componentRelay.deinit();
+    componentRelay = new ComponentRelay({
       targetWindow: childWindow,
       onReady
     });
@@ -116,57 +116,57 @@ describe("ComponentManager", () => {
   });
 
   test('getSelfComponentUUID() before the component is registered should be undefined', () => {
-    const uuid = componentManager.getSelfComponentUUID();
+    const uuid = componentRelay.getSelfComponentUUID();
     expect(uuid).toBeUndefined();
   });
 
   test('getSelfComponentUUID() after the component is registered should not be undefined', async () => {
     await registerComponent(testSNApp, childWindow, testComponent);
-    const uuid = componentManager.getSelfComponentUUID();
+    const uuid = componentRelay.getSelfComponentUUID();
     expect(uuid).not.toBeUndefined();
     expect(uuid).toBe(testComponent.uuid);
   });
 
   test('getComponentDataValueForKey() before the component is registered should return undefined', async () => {
-    const value = componentManager.getComponentDataValueForKey("foo");
+    const value = componentRelay.getComponentDataValueForKey("foo");
     expect(value).toBeUndefined();
   });
 
   test('getComponentDataValueForKey() with a key that does not exist should return undefined', async () => {
     await registerComponent(testSNApp, childWindow, testComponent);
-    const value = componentManager.getComponentDataValueForKey("bar");
+    const value = componentRelay.getComponentDataValueForKey("bar");
     expect(value).toBeUndefined();
   });
 
   test('getComponentDataValueForKey() with an existing key should return value', async () => {
     await registerComponent(testSNApp, childWindow, testComponent);
-    const value = componentManager.getComponentDataValueForKey("foo");
+    const value = componentRelay.getComponentDataValueForKey("foo");
     expect(value).toBe("bar");
   });
 
   it('should not return the platform and/or environment if component is not initialized', async () => {
-    const { platform, environment } = componentManager;
+    const { platform, environment } = componentRelay;
     expect(platform).toBeUndefined();
     expect(environment).toBeUndefined();
   });
 
   it('should return the string representation of the platform', async () => {
     await registerComponent(testSNApp, childWindow, testComponent);
-    const { platform } = componentManager;
+    const { platform } = componentRelay;
     expect(typeof platform).toBe('string');
     expect(platformFromString(platform)).toBe(testSNApp.platform);
   });
 
   it('should return the string representation of the environment', async () => {
     await registerComponent(testSNApp, childWindow, testComponent);
-    const { environment } = componentManager;
+    const { environment } = componentRelay;
     expect(typeof environment).toBe('string');
     expect(environmentFromString(environment)).toBe(testSNApp.environment);
   });
 
   test('setComponentDataValueForKey() should throw an error if component is not initialized', () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    expect(() => componentManager.setComponentDataValueForKey("", ""))
+    expect(() => componentRelay.setComponentDataValueForKey("", ""))
       .toThrow('The component has not been initialized.');
     expect(parentPostMessage).not.toBeCalled();
   });
@@ -174,7 +174,7 @@ describe("ComponentManager", () => {
   test('setComponentDataValueForKey() with an invalid key should throw an error', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
-    expect(() => componentManager.setComponentDataValueForKey("", ""))
+    expect(() => componentRelay.setComponentDataValueForKey("", ""))
       .toThrow('The key for the data value should be a valid string.');
     expect(parentPostMessage).not.toBeCalled();
   });
@@ -183,7 +183,7 @@ describe("ComponentManager", () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
     const dataValue = `value-${Date.now()}`;
-    componentManager.setComponentDataValueForKey("testing", dataValue);
+    componentRelay.setComponentDataValueForKey("testing", dataValue);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     const expectedComponentData = {
       componentData: {
@@ -198,14 +198,14 @@ describe("ComponentManager", () => {
       sessionKey: expect.any(String),
       api: "component"
     }), expect.any(String));
-    const value = componentManager.getComponentDataValueForKey("testing");
+    const value = componentRelay.getComponentDataValueForKey("testing");
     expect(value).toEqual(dataValue);
   });
 
   test('clearComponentData() should clear all component data', async () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
-    componentManager.clearComponentData();
+    componentRelay.clearComponentData();
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.SetComponentData,
@@ -216,49 +216,49 @@ describe("ComponentManager", () => {
       sessionKey: expect.any(String),
       api: "component"
     }), expect.any(String));
-    const value = componentManager.getComponentDataValueForKey("foo");
+    const value = componentRelay.getComponentDataValueForKey("foo");
     expect(value).toBeUndefined();
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is web', async () => {
     testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     await registerComponent(testSNApp, childWindow, testComponent);
-    const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
+    const isRunningInDesktop = componentRelay.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
   });
 
   test('isRunningInDesktopApplication() should return false if the environment is mobile', async () => {
     testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Ios);
     await registerComponent(testSNApp, childWindow, testComponent);
-    const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
+    const isRunningInDesktop = componentRelay.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(false);
   });
 
   test('isRunningInDesktopApplication() should return true if the environment is desktop', async () => {
     testSNApp = await createApplication('test-application', Environment.Desktop, Platform.LinuxDesktop);
     await registerComponent(testSNApp, childWindow, testComponent);
-    const isRunningInDesktop = componentManager.isRunningInDesktopApplication();
+    const isRunningInDesktop = componentRelay.isRunningInDesktopApplication();
     expect(isRunningInDesktop).toBe(true);
   });
 
   test('isRunningInMobileApplication() should return false if the environment is web', async () => {
     testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     await registerComponent(testSNApp, childWindow, testComponent);
-    const isRunningInMobile = componentManager.isRunningInMobileApplication();
+    const isRunningInMobile = componentRelay.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(false);
   });
 
   test('isRunningInMobileApplication() should return false if the environment is desktop', async () => {
     testSNApp = await createApplication('test-application', Environment.Desktop, Platform.LinuxDesktop);
     await registerComponent(testSNApp, childWindow, testComponent);
-    const isRunningInMobile = componentManager.isRunningInMobileApplication();
+    const isRunningInMobile = componentRelay.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(false);
   });
 
   test('isRunningInMobileApplication() should return true if the environment is mobile', async () => {
     testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Ios);
     await registerComponent(testSNApp, childWindow, testComponent);
-    const isRunningInMobile = componentManager.isRunningInMobileApplication();
+    const isRunningInMobile = componentRelay.isRunningInMobileApplication();
     expect(isRunningInMobile).toBe(true);
   });
 
@@ -269,8 +269,8 @@ describe("ComponentManager", () => {
         { name: ComponentAction.StreamContextItem }
       ]
     };
-    componentManager.deinit();
-    componentManager = new ComponentManager(params);
+    componentRelay.deinit();
+    componentRelay = new ComponentRelay(params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
@@ -289,14 +289,14 @@ describe("ComponentManager", () => {
     testSNApp = await createApplication('test-application', Environment.Mobile, Platform.Ios);
     testComponent = await createComponentItem(testSNApp, testExtensionEditorPackage);
 
-    componentManager.deinit();
-    componentManager = new ComponentManager({
+    componentRelay.deinit();
+    componentRelay = new ComponentRelay({
       targetWindow: childWindow
     });
     await registerComponent(testSNApp, childWindow, testComponent);
 
     // Performing an action so it can call parent.postMessage function.
-    componentManager.clearSelection();
+    componentRelay.clearSelection();
 
     expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(
@@ -374,7 +374,7 @@ describe("ComponentManager", () => {
 
     await registerComponent(testSNApp, childWindow, testComponent);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
-    componentManager.setComponentDataValueForKey("testing", "1234");
+    componentRelay.setComponentDataValueForKey("testing", "1234");
     expect(parentPostMessage).not.toHaveBeenCalled();
   });
 
@@ -403,7 +403,7 @@ describe("ComponentManager", () => {
 
       await registerComponent(testSNApp, childWindow, testComponent);
   
-      componentManager.streamItems(contentTypes, (items) => {
+      componentRelay.streamItems(contentTypes, (items) => {
         expect(items).not.toBeUndefined();
         expect(items.length).toBeGreaterThanOrEqual(0);
         expect(items[0].uuid).toBe(savedTestNote.uuid);
@@ -427,7 +427,7 @@ describe("ComponentManager", () => {
   
       let itemInContext;
   
-      componentManager.streamContextItem((item) => {
+      componentRelay.streamContextItem((item) => {
         itemInContext = item;
       });
   
@@ -474,7 +474,7 @@ describe("ComponentManager", () => {
       const onSelectTag = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testTagsComponent.area], testTag1, onSelectTag);
-      componentManager.selectItem(testTag1);
+      componentRelay.selectItem(testTag1);
   
       await sleep(SHORT_DELAY_TIME);
   
@@ -490,7 +490,7 @@ describe("ComponentManager", () => {
       );
   
       registerComponentHandler(testSNApp, [testTagsComponent.area], testTag2, onSelectTag);
-      componentManager.selectItem(testTag2);
+      componentRelay.selectItem(testTag2);
   
       await sleep(SHORT_DELAY_TIME);
   
@@ -515,7 +515,7 @@ describe("ComponentManager", () => {
       const onClearSelection = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onClearSelection);
-      componentManager.clearSelection();
+      componentRelay.clearSelection();
   
       await sleep(SHORT_DELAY_TIME);
   
@@ -540,7 +540,7 @@ describe("ComponentManager", () => {
 
       let createdItem;
   
-      componentManager.createItem(noteItem, (item) => {
+      componentRelay.createItem(noteItem, (item) => {
         createdItem = item;
       });
   
@@ -590,7 +590,7 @@ describe("ComponentManager", () => {
   
       let createdItems;
 
-      componentManager.createItems(noteItems, (item) => {
+      componentRelay.createItems(noteItems, (item) => {
         createdItems = item;
       });
   
@@ -635,7 +635,7 @@ describe("ComponentManager", () => {
       const onAssociateItem = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onAssociateItem);
-      componentManager.associateItem({
+      componentRelay.associateItem({
         uuid: simpleNote.uuid
       });
 
@@ -662,7 +662,7 @@ describe("ComponentManager", () => {
       const onDeassociateItem = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onDeassociateItem);
-      componentManager.deassociateItem({
+      componentRelay.deassociateItem({
         uuid: simpleNote.uuid
       });
 
@@ -692,9 +692,9 @@ describe("ComponentManager", () => {
       /**
        * We can only delete an Item that was created through a component.
        * In this case, we want to create the item, and later delete it via
-       * componentManager.deleteItem()
+       * componentRelay.deleteItem()
        */
-      componentManager.createItem(createItemPayload, (data) => {
+      componentRelay.createItem(createItemPayload, (data) => {
         createdNote = data;
       });
 
@@ -708,7 +708,7 @@ describe("ComponentManager", () => {
        * deleteItems is the main function, that takes an array of items to be deleted.
        * deleteItem calls deleteItems internally, by passing an array with a single item.
        */
-      componentManager.deleteItem(createdNote, (data) => {
+      componentRelay.deleteItem(createdNote, (data) => {
         result = data;
       });
   
@@ -748,7 +748,7 @@ describe("ComponentManager", () => {
       registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onClearSelection);
 
       // We'll perform the clearSelection action, but using the sendCustomEvent function instead.
-      componentManager.sendCustomEvent(
+      componentRelay.sendCustomEvent(
         ComponentAction.ClearSelection,
         customEventData
       );
@@ -775,9 +775,9 @@ describe("ComponentManager", () => {
       /**
        * We can only save an Item that was created through a component.
        * In this case, we want to create the item, and later modify it then save it via
-       * componentManager.saveItem()
+       * componentRelay.saveItem()
        */
-      componentManager.createItem(createItemPayload, (data) => {
+      componentRelay.createItem(createItemPayload, (data) => {
         createdNote = data;
       });
 
@@ -792,7 +792,7 @@ describe("ComponentManager", () => {
       createdNote.content.text = 'This note is ready!';
 
       const onSaveItemCallback = jest.fn();
-      componentManager.saveItem(createdNote, onSaveItemCallback);
+      componentRelay.saveItem(createdNote, onSaveItemCallback);
   
       await sleep(SHORT_DELAY_TIME);
 
@@ -823,7 +823,7 @@ describe("ComponentManager", () => {
       const onSetSize = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testComponent.area], undefined, onSetSize);
-      componentManager.setSize("content", "100px", "100px");
+      componentRelay.setSize("content", "100px", "100px");
   
       await sleep(SHORT_DELAY_TIME);
   
@@ -842,7 +842,7 @@ describe("ComponentManager", () => {
       text: 'This is a note created for testing purposes.'
     });
 
-    let appDataValue = componentManager.getItemAppDataValue(simpleNote, "foo");
+    let appDataValue = componentRelay.getItemAppDataValue(simpleNote, "foo");
     expect(appDataValue).toBeUndefined();
 
     simpleNote = await testSNApp.changeAndSaveItem(simpleNote.uuid, (mutator: NoteMutator) => {
@@ -850,7 +850,7 @@ describe("ComponentManager", () => {
       mutator.setAppDataItem("foo", "bar");
     }) as SNNote;
 
-    appDataValue = componentManager.getItemAppDataValue(simpleNote, "foo");
+    appDataValue = componentRelay.getItemAppDataValue(simpleNote, "foo");
     expect(appDataValue).not.toBeUndefined();
     expect(appDataValue).toBe("bar");
   });

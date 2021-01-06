@@ -296,7 +296,7 @@ export default class ComponentManager {
   }
 
   /**
-   * Gets the components UUID.
+   * Gets the component UUID.
    */
   public getSelfComponentUUID() : string | undefined {
     return this.component.uuid

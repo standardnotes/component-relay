@@ -6,6 +6,7 @@ declare type ComponentManagerOptions = {
     acceptsThemes?: boolean;
 };
 declare type ComponentManagerParams = {
+    targetWindow: Window;
     initialPermissions?: ComponentPermission[];
     options?: ComponentManagerOptions;
     onReady?: () => void;
@@ -29,7 +30,7 @@ export default class ComponentManager {
     private coallesedSaving;
     private coallesedSavingDelay;
     private messageHandler?;
-    constructor(contentWindow: Window, params?: ComponentManagerParams);
+    constructor(params: ComponentManagerParams);
     private processParameters;
     deinit(): void;
     private registerMessageHandler;

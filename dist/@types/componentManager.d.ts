@@ -56,7 +56,7 @@ export default class ComponentManager {
     private handleMessage;
     private onReady;
     /**
-     * Gets the components UUID.
+     * Gets the component UUID.
      */
     getSelfComponentUUID(): string | undefined;
     /**

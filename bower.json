@@ -1,9 +1,9 @@
 {
-  "name": "components-api",
-  "description": "Standard Notes components API",
+  "name": "@standardnotes/component-relay",
+  "description": "Standard Notes Component Relay",
   "main": "dist/dist.js",
   "license": "MIT",
-  "homepage": "https://github.com/sn-extensions/components-api",
+  "homepage": "https://github.com/sn-extensions/component-relay",
   "ignore": [
     "**/.*",
     "node_modules",

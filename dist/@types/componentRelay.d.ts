@@ -12,13 +12,22 @@ declare type ComponentRelayOptions = {
     acceptsThemes?: boolean;
 };
 declare type ComponentRelayParams = {
+    /**
+     * Represents the window object that the component is running in.
+     */
     targetWindow: Window;
     /**
      * A collection of permissions that the component can request
      * access once it's ready.
      */
     initialPermissions?: ComponentPermission[];
+    /**
+     * The options to initialize
+     */
     options?: ComponentRelayOptions;
+    /**
+     * A callback that is executed after the component has been registered.
+     */
     onReady?: () => void;
 };
 declare type ItemPayload = {

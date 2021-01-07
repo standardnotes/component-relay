@@ -525,15 +525,15 @@ export default class ComponentManager {
   }
 
   /**
-   * Selects an item which typically needs to be a Tag.
-   * @param item The Item to select.
+   * Selects a `Tag` item.
+   * @param item The Item (`Tag` or `SmartTag`) to select.
    */
-  public selectItem(item: SNItem) : void {
+  public selectItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) })
   }
 
   /**
-   * Clears current selected Tag (if any).
+   * Clears current selected `Tag` (if any).
    */
   public clearSelection() : void {
     this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag })
@@ -571,10 +571,18 @@ export default class ComponentManager {
     })
   }
 
+  /**
+   * Associates a `Tag` with the current Note.
+   * @param item The `Tag` item to associate.
+   */
   public associateItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) })
   }
 
+  /**
+   * Deassociates a `Tag` with the current Note.
+   * @param item The `Tag` item to deassociate.
+   */
   public deassociateItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.DeassociateItem, { item: this.jsonObjectForItem(item) } )
   }
@@ -604,6 +612,12 @@ export default class ComponentManager {
     })
   }
 
+  /**
+   * Performs a custom action to the component manager.
+   * @param action
+   * @param data 
+   * @param callback The callback with the result of the operation.
+   */
   public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) : void {
     this.postMessage(action, data, (data: any) => {
       callback && callback(data)
@@ -621,6 +635,7 @@ export default class ComponentManager {
   }
 
   /**
+   * Runs a callback before saving an Item.
    * @param item An existing Item to be saved.
    * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
@@ -632,6 +647,7 @@ export default class ComponentManager {
   }
 
   /**
+   * Runs a callback before saving a collection of Items.
    * @param items A collection of existing Items to be saved.
    * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
@@ -659,6 +675,7 @@ export default class ComponentManager {
   }
 
   /**
+   * Saves a collection of existing Items.
    * @param items The items to be saved.
    * @param callback
    * @param skipDebouncer Allows saves to go through right away rather than waiting for timeout.
@@ -694,8 +711,8 @@ export default class ComponentManager {
       // We'll potentially need to commit early if stream-context-item message comes in.
       this.pendingSaveParams = {
         items: this.pendingSaveItems,
-        presave: presave,
-        callback: callback
+        presave,
+        callback
       }
 
       this.pendingSaveTimeout = setTimeout(() => {
@@ -710,13 +727,12 @@ export default class ComponentManager {
   }
 
   /**
-   * Sets a new size for the current component.
-   * @param type The new size type (container).
+   * Sets a new container size for the current component.
    * @param width The new width.
    * @param height The new height.
    */
-  public setSize(type: string, width: string | number, height: string | number) : void {
-    this.postMessage(ComponentAction.SetSize, { type, width, height })
+  public setSize(width: string | number, height: string | number) : void {
+    this.postMessage(ComponentAction.SetSize, { type: 'container', width, height })
   }
 
   private jsonObjectForItem(item: SNItem | ItemPayload) {

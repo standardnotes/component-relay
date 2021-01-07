@@ -823,13 +823,13 @@ describe("ComponentManager", () => {
       const onSetSize = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testComponent.area], undefined, onSetSize);
-      componentManager.setSize("content", "100px", "100px");
+      componentManager.setSize("100px", "100px");
   
       await sleep(SHORT_DELAY_TIME);
   
       expect(onSetSize).toHaveBeenCalledTimes(1);
       expect(onSetSize).toReturnWith(expect.objectContaining({
-        type: "content",
+        type: "container",
         width: "100px",
         height: "100px"
       }));

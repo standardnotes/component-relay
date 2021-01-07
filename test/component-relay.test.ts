@@ -823,13 +823,13 @@ describe("Component Relay", () => {
       const onSetSize = jest.fn().mockImplementation((data) => data);
   
       registerComponentHandler(testSNApp, [testComponent.area], undefined, onSetSize);
-      componentRelay.setSize("content", "100px", "100px");
+      componentRelay.setSize("100px", "100px");
   
       await sleep(SHORT_DELAY_TIME);
   
       expect(onSetSize).toHaveBeenCalledTimes(1);
       expect(onSetSize).toReturnWith(expect.objectContaining({
-        type: "content",
+        type: "container",
         width: "100px",
         height: "100px"
       }));

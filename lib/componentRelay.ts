@@ -75,14 +75,33 @@ type MessagePayload = {
 type ComponentRelayOptions = {
   coallesedSaving?: boolean,
   coallesedSavingDelay?: number,
+  /**
+   * Outputs debugging information to console.
+   */
   debug?: boolean,
+  /**
+   * Indicates whether or not the component accepts themes.
+   */
   acceptsThemes?: boolean
 }
 
 type ComponentRelayParams = {
+  /**
+   * Represents the window object that the component is running in.
+   */
   targetWindow: Window
+  /**
+   * A collection of permissions that the component can request 
+   * access once it's ready.
+   */
   initialPermissions?: ComponentPermission[]
+  /**
+   * The options to initialize
+   */
   options?: ComponentRelayOptions,
+  /**
+   * A callback that is executed after the component has been registered.
+   */
   onReady?: () => void
 }
 
@@ -276,18 +295,32 @@ export default class ComponentRelay {
     }
   }
 
+  /**
+   * Gets the component UUID.
+   */
   public getSelfComponentUUID() : string | undefined {
     return this.component.uuid
   }
 
+  /**
+   * Checks if the component is running in a Desktop application.
+   */
   public isRunningInDesktopApplication() : boolean {
     return this.component.environment === environmentToString(Environment.Desktop)
   }
 
+  /**
+   * Checks if the component is running in a Mobile application.
+   */
   public isRunningInMobileApplication() : boolean {
     return this.component.environment === environmentToString(Environment.Mobile)
   }
 
+  /**
+   * Gets the component's data value for the specified key.
+   * @param key The key for the data object.
+   * @returns `undefined` if the value for the key does not exist. Returns the stored value otherwise.
+   */
   public getComponentDataValueForKey(key: string) : any {
     if (!this.component.data) {
       return
@@ -295,6 +328,11 @@ export default class ComponentRelay {
     return this.component.data[key]
   }
 
+  /**
+   * Sets the component's data value for the specified key.
+   * @param key The key for the data object.
+   * @param value The value to store under the specified key.
+   */
   public setComponentDataValueForKey(key: string, value: any) : void {
     if (!this.component.data) {
       throw new Error('The component has not been initialized.')
@@ -309,6 +347,9 @@ export default class ComponentRelay {
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
 
+  /**
+   * Clears the component's data object.
+   */
   public clearComponentData() : void {
     this.component.data = {}
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
@@ -430,22 +471,36 @@ export default class ComponentRelay {
     return generateUuid()
   }
 
+  /**
+   * Gets the current platform where the component is running.
+   */
   public get platform() : string | undefined {
     return this.component.platform
   }
 
+  /**
+   * Gets the current environment where the component is running.
+   */
   public get environment() : string | undefined {
     return this.component.environment
   }
 
-  /** Components actions */
-
+  /**
+   * Streams a collection of Items, filtered by content type.
+   * New items are passed to the callback as they come.
+   * @param contentTypes A collection of Content Types.
+   * @param callback A callback to process the streamed items.
+   */
   public streamItems(contentTypes: ContentType[], callback: (data: any) => void) : void {
     this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
       callback(data.items)
     })
   }
 
+  /**
+   * Streams the current Item in context.
+   * @param callback A callback to process the streamed item.
+   */
   public streamContextItem(callback: (data: any) => void) : void {
     this.postMessage(ComponentAction.StreamContextItem, {}, (data) => {
       const { item } = data
@@ -470,20 +525,25 @@ export default class ComponentRelay {
   }
 
   /**
-   * Selects an item which typically needs to be a tag.
-   * @param item the item to select.
+   * Selects a `Tag` item.
+   * @param item The Item (`Tag` or `SmartTag`) to select.
    */
-  public selectItem(item: SNItem) : void {
+  public selectItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) })
   }
 
   /**
-   * Clears current selected tags.
+   * Clears current selected `Tag` (if any).
    */
   public clearSelection() : void {
     this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag })
   }
 
+  /**
+   * Creates and stores an Item in the item store.
+   * @param item The Item's payload content.
+   * @param callback The callback to process the created Item.
+   */
   public createItem(item: ItemPayload, callback: (data: any) => void) : void {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
       let { item } = data
@@ -499,6 +559,11 @@ export default class ComponentRelay {
     })
   }
 
+  /**
+   * Creates and stores a collection of Items in the item store.
+   * @param items The Item(s) payload collection.
+   * @param callback The callback to process the created Item(s).
+   */
   public createItems(items: ItemPayload[], callback: (data: any) => void) : void {
     const mapped = items.map((item) => this.jsonObjectForItem(item))
     this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
@@ -506,18 +571,36 @@ export default class ComponentRelay {
     })
   }
 
+  /**
+   * Associates a `Tag` with the current Note.
+   * @param item The `Tag` item to associate.
+   */
   public associateItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) })
   }
 
+  /**
+   * Deassociates a `Tag` with the current Note.
+   * @param item The `Tag` item to deassociate.
+   */
   public deassociateItem(item: ItemPayload) : void {
     this.postMessage(ComponentAction.DeassociateItem, { item: this.jsonObjectForItem(item) } )
   }
 
+  /**
+   * Deletes an Item from the item store.
+   * @param item The Item to delete.
+   * @param callback The callback with the result of the operation.
+   */
   public deleteItem(item: SNItem, callback: (data: any) => void) : void {
     this.deleteItems([item], callback)
   }
 
+  /**
+   * Deletes a collection of Items from the item store.
+   * @param items The Item(s) to delete.
+   * @param callback The callback with the result of the operation.
+   */
   public deleteItems(items: SNItem[], callback: (data: any) => void) : void {
     const params = {
       items: items.map((item: SNItem) => {
@@ -529,18 +612,31 @@ export default class ComponentRelay {
     })
   }
 
+  /**
+   * Performs a custom action to the component manager.
+   * @param action
+   * @param data 
+   * @param callback The callback with the result of the operation.
+   */
   public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) : void {
     this.postMessage(action, data, (data: any) => {
       callback && callback(data)
     })
   }
 
+  /**
+   * Saves an existing Item in the item store.
+   * @param item An existing Item to be saved.
+   * @param callback 
+   * @param skipDebouncer 
+   */
   public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) : void {
     this.saveItems([item], callback, skipDebouncer)
   }
 
   /**
-   * @param item The item to be saved.
+   * Runs a callback before saving an Item.
+   * @param item An existing Item to be saved.
    * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
@@ -551,7 +647,8 @@ export default class ComponentRelay {
   }
 
   /**
-   * @param items The items to be saved.
+   * Runs a callback before saving a collection of Items.
+   * @param items A collection of existing Items to be saved.
    * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
    * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
@@ -578,6 +675,7 @@ export default class ComponentRelay {
   }
 
   /**
+   * Saves a collection of existing Items.
    * @param items The items to be saved.
    * @param callback
    * @param skipDebouncer Allows saves to go through right away rather than waiting for timeout.
@@ -613,8 +711,8 @@ export default class ComponentRelay {
       // We'll potentially need to commit early if stream-context-item message comes in.
       this.pendingSaveParams = {
         items: this.pendingSaveItems,
-        presave: presave,
-        callback: callback
+        presave,
+        callback
       }
 
       this.pendingSaveTimeout = setTimeout(() => {
@@ -628,8 +726,13 @@ export default class ComponentRelay {
     }
   }
 
-  public setSize(type: string, width: string | number, height: string | number) : void {
-    this.postMessage(ComponentAction.SetSize, { type, width, height })
+  /**
+   * Sets a new container size for the current component.
+   * @param width The new width.
+   * @param height The new height.
+   */
+  public setSize(width: string | number, height: string | number) : void {
+    this.postMessage(ComponentAction.SetSize, { type: 'container', width, height })
   }
 
   private jsonObjectForItem(item: SNItem | ItemPayload) {
@@ -639,6 +742,12 @@ export default class ComponentRelay {
     return copy
   }
 
+  /**
+   * Gets the Item's appData value for the specified key.
+   * Uses the default domain (org.standardnotes.sn).
+   * @param item The Item to get the appData value from.
+   * @param key The key to get the value from.
+   */
   public getItemAppDataValue(item: SNItem, key: AppDataField) : any {
     return item.getAppDomainValue(key)
   }

@@ -1,13 +1,13 @@
-import ComponentManager from './componentManager'
+import ComponentRelay from './componentRelay'
 
 declare global {
-  interface Window { ComponentManager: unknown }
+  interface Window { ComponentRelay: unknown }
 }
 
 if (typeof module != 'undefined' && typeof module.exports != 'undefined') {
-  module.exports = ComponentManager
+  module.exports = ComponentRelay
 }
 
 if (window) {
-  window.ComponentManager = ComponentManager
+  window.ComponentRelay = ComponentRelay
 }

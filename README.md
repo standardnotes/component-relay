@@ -1,17 +1,17 @@
-# Components API
+# Component Relay
 
-To get started using the Components API, read the [getting started guide](https://docs.standardnotes.org/extensions/intro).
+To get started using the Component Relay, read the [getting started guide](https://docs.standardnotes.org/extensions/intro).
 
 ## Installation
 
 ```
-yarn add sn-components-api
+yarn add @standardnotes/component-relay
 ```
 
 &dash; *or* &dash;
 
 ```
-npm install --save sn-components-api
+npm install --save @standardnotes/component-relay
 ```
 
 ### Manual
@@ -26,7 +26,7 @@ Import the file `dist/dist.js` in your HTML file. For example:
 
 ## Tests
 
-`components-api` uses [Jest](https://jestjs.io/) for tests. Tests are located in the [test](test) directory. Test files have the following name: `<name>.test.js`.
+The `component-relay` uses [Jest](https://jestjs.io/) for tests. Tests are located in the [test](test) directory. Test files have the following name: `<name>.test.js`.
 
 ### Run all tests
 

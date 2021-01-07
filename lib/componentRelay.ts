@@ -72,7 +72,7 @@ type MessagePayload = {
   callback?: (...params: any) => void;
 }
 
-type ComponentManagerOptions = {
+type ComponentRelayOptions = {
   coallesedSaving?: boolean,
   coallesedSavingDelay?: number,
   /**
@@ -85,7 +85,7 @@ type ComponentManagerOptions = {
   acceptsThemes?: boolean
 }
 
-type ComponentManagerParams = {
+type ComponentRelayParams = {
   /**
    * Represents the window object that the component is running in.
    */
@@ -98,7 +98,7 @@ type ComponentManagerParams = {
   /**
    * The options to initialize
    */
-  options?: ComponentManagerOptions,
+  options?: ComponentRelayOptions,
   /**
    * A callback that is executed after the component has been registered.
    */
@@ -111,7 +111,7 @@ type ItemPayload = {
   [key: string]: any
 }
 
-export default class ComponentManager {
+export default class ComponentRelay {
   private contentWindow: Window;
   private initialPermissions?: ComponentPermission[];
   private onReadyCallback?: () => void;
@@ -126,7 +126,7 @@ export default class ComponentManager {
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
 
-  constructor(params: ComponentManagerParams) {
+  constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
       throw new Error('contentWindow must be a valid Window object.')
     }
@@ -135,7 +135,7 @@ export default class ComponentManager {
     this.registerMessageHandler()
   }
 
-  private processParameters(params: ComponentManagerParams) {
+  private processParameters(params: ComponentRelayParams) {
     const { initialPermissions, options, onReady } = params
 
     if (initialPermissions && initialPermissions.length > 0) {

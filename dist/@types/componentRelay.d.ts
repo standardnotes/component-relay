@@ -1,5 +1,5 @@
 import { ComponentAction, ComponentPermission, ContentType, SNItem, AppDataField } from './snjsTypes';
-declare type ComponentManagerOptions = {
+declare type ComponentRelayOptions = {
     coallesedSaving?: boolean;
     coallesedSavingDelay?: number;
     /**
@@ -11,7 +11,7 @@ declare type ComponentManagerOptions = {
      */
     acceptsThemes?: boolean;
 };
-declare type ComponentManagerParams = {
+declare type ComponentRelayParams = {
     /**
      * Represents the window object that the component is running in.
      */
@@ -24,7 +24,7 @@ declare type ComponentManagerParams = {
     /**
      * The options to initialize
      */
-    options?: ComponentManagerOptions;
+    options?: ComponentRelayOptions;
     /**
      * A callback that is executed after the component has been registered.
      */
@@ -35,7 +35,7 @@ declare type ItemPayload = {
     content?: any;
     [key: string]: any;
 };
-export default class ComponentManager {
+export default class ComponentRelay {
     private contentWindow;
     private initialPermissions?;
     private onReadyCallback?;
@@ -49,7 +49,7 @@ export default class ComponentManager {
     private coallesedSaving;
     private coallesedSavingDelay;
     private messageHandler?;
-    constructor(params: ComponentManagerParams);
+    constructor(params: ComponentRelayParams);
     private processParameters;
     deinit(): void;
     private registerMessageHandler;

@@ -110,12 +110,12 @@ export default class ComponentManager {
      */
     streamContextItem(callback: (data: any) => void): void;
     /**
-     * Selects an item which typically needs to be a Tag.
-     * @param item The Item to select.
+     * Selects a `Tag` item.
+     * @param item The Item (`Tag` or `SmartTag`) to select.
      */
-    selectItem(item: SNItem): void;
+    selectItem(item: ItemPayload): void;
     /**
-     * Clears current selected Tag (if any).
+     * Clears current selected `Tag` (if any).
      */
     clearSelection(): void;
     /**
@@ -130,7 +130,15 @@ export default class ComponentManager {
      * @param callback The callback to process the created Item(s).
      */
     createItems(items: ItemPayload[], callback: (data: any) => void): void;
+    /**
+     * Associates a `Tag` with the current Note.
+     * @param item The `Tag` item to associate.
+     */
     associateItem(item: ItemPayload): void;
+    /**
+     * Deassociates a `Tag` with the current Note.
+     * @param item The `Tag` item to deassociate.
+     */
     deassociateItem(item: ItemPayload): void;
     /**
      * Deletes an Item from the item store.
@@ -144,6 +152,12 @@ export default class ComponentManager {
      * @param callback The callback with the result of the operation.
      */
     deleteItems(items: SNItem[], callback: (data: any) => void): void;
+    /**
+     * Performs a custom action to the component manager.
+     * @param action
+     * @param data
+     * @param callback The callback with the result of the operation.
+     */
     sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void): void;
     /**
      * Saves an existing Item in the item store.
@@ -153,6 +167,7 @@ export default class ComponentManager {
      */
     saveItem(item: SNItem, callback?: () => void, skipDebouncer?: boolean): void;
     /**
+     * Runs a callback before saving an Item.
      * @param item An existing Item to be saved.
      * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
      * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
@@ -161,6 +176,7 @@ export default class ComponentManager {
      */
     saveItemWithPresave(item: SNItem, presave: any, callback: () => void): void;
     /**
+     * Runs a callback before saving a collection of Items.
      * @param items A collection of existing Items to be saved.
      * @param presave Allows clients to perform any actions last second before the save actually occurs (like setting previews).
      * Saves debounce by default, so if a client needs to compute a property on an item before saving, it's best to
@@ -170,6 +186,7 @@ export default class ComponentManager {
     saveItemsWithPresave(items: SNItem[], presave: any, callback: () => void): void;
     private _performSavingOfItems;
     /**
+     * Saves a collection of existing Items.
      * @param items The items to be saved.
      * @param callback
      * @param skipDebouncer Allows saves to go through right away rather than waiting for timeout.
@@ -178,12 +195,11 @@ export default class ComponentManager {
      */
     saveItems(items: SNItem[], callback?: () => void, skipDebouncer?: boolean, presave?: any): void;
     /**
-     * Sets a new size for the current component.
-     * @param type The new size type (container).
+     * Sets a new container size for the current component.
      * @param width The new width.
      * @param height The new height.
      */
-    setSize(type: string, width: string | number, height: string | number): void;
+    setSize(width: string | number, height: string | number): void;
     private jsonObjectForItem;
     /**
      * Gets the Item's appData value for the specified key.

@@ -1,6 +1,6 @@
 # Component Relay
 
-To get started using the Component Relay, read the [getting started guide](https://docs.standardnotes.org/extensions/intro).
+To get started using the Component Relay, read the [Intro to Extensions guide](https://docs.standardnotes.org/extensions/intro).
 
 ## Installation
 

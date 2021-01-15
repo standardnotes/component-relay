@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './lib/index.ts',
+  entry: './lib/componentRelay.ts',
   resolve: {
     extensions: ['.ts']
   },
@@ -9,6 +9,9 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'dist.js',
     sourceMapFilename: 'dist.js.map',
+    library: 'ComponentRelay',
+    libraryTarget: 'umd',
+    umdNamedDefine: true
   },
   module: {
     rules: [

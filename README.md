@@ -8,7 +8,7 @@ To get started using the Component Relay, read the [Intro to Extensions guide](h
 yarn add @standardnotes/component-relay
 ```
 
-&dash; *or* &dash;
+&dash; _or_ &dash;
 
 ```
 npm install --save @standardnotes/component-relay
@@ -40,16 +40,16 @@ Then open the [coverage/index.html](coverage/index.html) file in a browser to vi
 
 ## Documentation
 
-Documentation is generated using `typedoc`. Make sure docs are up to date by running:
+Documentation is generated using [Typedoc](https://typedoc.org/). The documentation is available at https://standardnotes.github.io/component-relay/. To update the docs or to view the latest version, run:
 
 ```
-yarn build-docs
+yarn build:docs
 ```
 
-&dash; *or* &dash;
+This will generate documentation and place it in the `docs/` directory. Create a localhost server using `serve` or `http-server` and open the [docs/index.html](docs/index.html) file in a browser to view the docs.
+
+To deploy the latest version of the docs to the `gh-pages` branch to publish using [GitHub Pages](https://pages.github.com/), replace `2.0.1` with the latest version and run:
 
 ```
-npm run build-docs
+yarn deploy-docs -m "build: v2.0.1"
 ```
-
-This will generate documentation and place it on the `docs` directory. Open the [docs/index.html](docs/index.html) file in a browser to view.

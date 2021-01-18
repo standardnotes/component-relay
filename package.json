@@ -6,7 +6,7 @@
     "url": "git://github.com/standardnotes/component-relay.git"
   },
   "main": "dist/dist.js",
-  "types": "dist/@types",
+  "types": "dist/@types/componentRelay.d.ts",
   "scripts": {
     "build:docs": "typedoc",
     "build:types": "tsc",

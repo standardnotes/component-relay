@@ -11,6 +11,7 @@ module.exports = {
     sourceMapFilename: 'dist.js.map',
     library: 'ComponentRelay',
     libraryTarget: 'umd',
+    libraryExport: 'default',
     umdNamedDefine: true
   },
   module: {

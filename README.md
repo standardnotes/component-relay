@@ -46,7 +46,7 @@ Documentation is generated using [Typedoc](https://typedoc.org/). The documentat
 yarn build:docs
 ```
 
-This will generate documentation and place it in the `docs/` directory. Create a localhost server using `serve` or `http-server` and open the [docs/index.html](docs/index.html) file in a browser to view the docs.
+This will generate documentation and place it in the `docs/` directory. Create a localhost server using `http-server` and open the [docs/index.html](docs/index.html) file in a browser to view the docs.
 
 To deploy the latest version of the docs to the `gh-pages` branch to publish using [GitHub Pages](https://pages.github.com/), replace `2.0.1` with the latest version and run:
 

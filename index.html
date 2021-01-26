@@ -98,8 +98,10 @@
 					<h2>Documentation</h2>
 				</a>
 				<p>Documentation is generated using <a href="https://typedoc.org/">Typedoc</a>. The documentation is available at <a href="https://standardnotes.github.io/component-relay/">https://standardnotes.github.io/component-relay/</a>. To update the docs or to view the latest version, run:</p>
-				<pre><code><span class="hljs-attribute">yarn docs</span></code></pre>
-				<p>This will generate documentation and place it on the <code>docs/</code> directory. Open the <a href="docs/index.html">docs/index.html</a> file in a browser to view.</p>
+				<pre><code><span class="hljs-selector-tag">yarn</span> <span class="hljs-selector-tag">build</span><span class="hljs-selector-pseudo">:docs</span></code></pre>
+				<p>This will generate documentation and place it in the <code>docs/</code> directory. Create a localhost server using <code>http-server</code> and open the <a href="docs/index.html">docs/index.html</a> file in a browser to view the docs.</p>
+				<p>To deploy the latest version of the docs to the <code>gh-pages</code> branch to publish using <a href="https://pages.github.com/">GitHub Pages</a>, replace <code>2.0.1</code> with the latest version and run:</p>
+				<pre><code><span class="hljs-selector-tag">yarn</span> <span class="hljs-selector-tag">deploy-docs</span> <span class="hljs-selector-tag">-m</span> &quot;<span class="hljs-selector-tag">build</span>: <span class="hljs-selector-tag">v2</span><span class="hljs-selector-class">.0</span><span class="hljs-selector-class">.1</span>&quot;</code></pre>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">

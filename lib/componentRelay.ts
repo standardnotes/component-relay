@@ -356,7 +356,11 @@ export default class ComponentRelay {
   }
 
   private postMessage(action: ComponentAction, data: MessageData, callback?: (...params: any) => void) {
-    if (!this.component.sessionKey || !this.component.origin) {
+    /**
+     * If the sessionKey is not set, we push the message to queue
+     * that will be processed later on.
+     */
+    if (!this.component.sessionKey) {
       this.messageQueue.push({
         action,
         data,
@@ -388,7 +392,7 @@ export default class ComponentRelay {
     }
 
     Logger.info('Posting message:', postMessagePayload)
-    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin)
+    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!)
   }
 
   private requestPermissions(permissions: ComponentPermission[], callback?: (...params: any) => void) {

@@ -1167,10 +1167,10 @@
   resolved "https://registry.yarnpkg.com/@standardnotes/sncrypto-common/-/sncrypto-common-1.2.9.tgz#5212a959e4ec563584e42480bfd39ef129c3cbdf"
   integrity sha512-xJ5IUGOZztjSgNP/6XL+Ut5+q9UgSTv6xMtKkcQC5aJxCOkJy9u6RamPLdF00WQgwibxx2tu0e43bKUjTgzMig==
 
-"@standardnotes/snjs@^2.0.29":
-  version "2.0.29"
-  resolved "https://registry.yarnpkg.com/@standardnotes/snjs/-/snjs-2.0.29.tgz#6c788d982bf06ceef8ed034822d7a4e2da201f28"
-  integrity sha512-8JiwVtnzrpoZBtneyr/bft+rni6Im+Ax1gRcSRYUNzzGd+yJTEfHjm6YFmuxFUlECt2JCbe82cz81wxcD9eEFQ==
+"@standardnotes/snjs@^2.0.62":
+  version "2.0.62"
+  resolved "https://registry.yarnpkg.com/@standardnotes/snjs/-/snjs-2.0.62.tgz#026dceec4e576525393b8ff5e350773aff73eb4c"
+  integrity sha512-YdoGJYFlwtv1thiRfxxGv49gjfP4EuQUoAqRtXKLJejBqpU15TCDMLVWxymFqMknU3kmts/RSPeHKaaTkpNXEQ==
   dependencies:
     "@standardnotes/sncrypto-common" "^1.2.9"
 

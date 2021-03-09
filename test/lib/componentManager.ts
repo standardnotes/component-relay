@@ -7,8 +7,8 @@ import {
 
 export class WebComponentManager extends SNComponentManager {
   presentPermissionsDialog(dialog: PermissionDialog) {
-    const text = `${dialog.component.name} would like to interact with your ${dialog.permissionsString}`;
-    const approved = window.confirm(text);
+    const permissions = JSON.stringify(dialog.permissions);
+    const approved = window.confirm(permissions);
     dialog.callback(approved);
   }
 }
@@ -17,8 +17,8 @@ export class MobileComponentManager extends SNComponentManager {
   private mobileActiveTheme?: SNTheme;
 
   presentPermissionsDialog(dialog: PermissionDialog) {
-    const text = `${dialog.component.name} would like to interact with your ${dialog.permissionsString}`;
-    const approved = window.confirm(text);
+    const permissions = JSON.stringify(dialog.permissions);
+    const approved = window.confirm(permissions);
     dialog.callback(approved);
   }
 

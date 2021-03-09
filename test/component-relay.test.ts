@@ -876,10 +876,25 @@ describe("Component Relay", () => {
         expect(storedDataForKey).toBe(dataValue);
       });
 
+      test("streamContextItem", async () => {
+        let streamedNote;
+
+        componentRelay.streamContextItem((items) => {
+          streamedNote = items;
+        });
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+
+        expect(streamedNote).toBeUndefined();
+      });
+
       test("streamItems", async () => {
         let streamedNotes;
 
-        componentRelay.streamItems([ContentType.Note], function (items) {
+        componentRelay.streamItems([ContentType.Note], (items) => {
           streamedNotes = items;
         });
   
@@ -947,7 +962,8 @@ describe("Component Relay", () => {
           awesomeNote
         ];
 
-        componentRelay.deleteItems(items, function (result) {
+        //@ts-ignore
+        componentRelay.deleteItems(items, (result) => {
           console.info("You shouldn't see this message :(", result);
         });
   
@@ -956,6 +972,44 @@ describe("Component Relay", () => {
     
         await sleep(SHORT_DELAY_TIME);
   
+        simpleNote = testSNApp.findItem(simpleNote.uuid) as SNNote;
+        awesomeNote = testSNApp.findItem(awesomeNote.uuid) as SNNote;
+
+        expect(simpleNote.deleted).not.toBe(true);
+        expect(awesomeNote.deleted).not.toBe(true);
+      });
+
+      test("accepting an action and then rejecting another should not allow the second one", async () => {
+        let streamedNote;
+
+        const items = [
+          simpleNote,
+          awesomeNote
+        ];
+
+        // Accept request
+        window.confirm = (message) => true;
+
+        componentRelay.streamContextItem((items) => {
+          streamedNote = items;
+        });
+
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+
+        await sleep(SHORT_DELAY_TIME);
+
+        //@ts-ignore
+        componentRelay.deleteItems(items, (result) => {
+          console.info("You shouldn't see this message :(", result);
+        });
+
+        // Reject request
+        window.confirm = (message) => false;
+
+        // Simple note should be streamed.
+        expect(streamedNote.uuid).toBe(simpleNote.uuid);
+
         simpleNote = testSNApp.findItem(simpleNote.uuid) as SNNote;
         awesomeNote = testSNApp.findItem(awesomeNote.uuid) as SNNote;
 

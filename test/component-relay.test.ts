@@ -839,11 +839,6 @@ describe("Component Relay", () => {
       let simpleNote: SNNote;
       let awesomeNote: SNNote;
 
-      beforeAll(() => {
-        // Reject all requests.
-        window.confirm = (message) => false;
-      });
-
       beforeEach(async () => {
         simpleNote = await createNoteItem(testSNApp, {
           title: 'A simple note',
@@ -859,6 +854,18 @@ describe("Component Relay", () => {
       afterAll(() => {
         window.confirm = (message) => true;
       });
+
+      /**
+       * Rejects an action request if it's the expected action.
+       * This is used to simulate the case when a user rejects the permission request dialog.
+       */
+      const rejectActionRequest = (jsonString: string, fromAction: ComponentAction): boolean => {
+        const permissions = JSON.parse(jsonString);
+        return permissions.find((permission) => {
+          const action = permission.name;
+          return action !== fromAction;
+        });
+      };
 
       test("setComponentData", async () => {
         const dataKey = `key-${+new Date()}`;
@@ -877,6 +884,8 @@ describe("Component Relay", () => {
       });
 
       test("streamContextItem", async () => {
+        window.confirm = (message) => rejectActionRequest(message, ComponentAction.StreamContextItem);
+
         let streamedNote;
 
         componentRelay.streamContextItem((items) => {
@@ -892,6 +901,8 @@ describe("Component Relay", () => {
       });
 
       test("streamItems", async () => {
+        window.confirm = (message) => rejectActionRequest(message, ComponentAction.StreamItems);
+
         let streamedNotes;
 
         componentRelay.streamItems([ContentType.Note], (items) => {
@@ -907,6 +918,9 @@ describe("Component Relay", () => {
       });
 
       test("createItems", async () => {
+        window.confirm = (message) => rejectActionRequest(message, ComponentAction.CreateItems);
+
+        let createdNote;
         const noteItem = {
           content_type: ContentType.Note,
           content: {
@@ -914,8 +928,6 @@ describe("Component Relay", () => {
             text: 'This is an ordinary Note item that will created from an extension.'
           }
         };
-
-        let createdNote;
   
         componentRelay.createItem(noteItem, (result) => {
           createdNote = result;
@@ -934,6 +946,8 @@ describe("Component Relay", () => {
       });
 
       test("saveItems", async () => {
+        window.confirm = (message) => rejectActionRequest(message, ComponentAction.SaveItems);
+
         const itemToSave = {
           uuid: awesomeNote.uuid,
           content: {
@@ -957,14 +971,13 @@ describe("Component Relay", () => {
       });
 
       test("deleteItems", async () => {
-        const items = [
-          simpleNote,
-          awesomeNote
-        ];
+        window.confirm = (message) => rejectActionRequest(message, ComponentAction.DeleteItems);
 
-        //@ts-ignore
-        componentRelay.deleteItems(items, (result) => {
-          console.info("You shouldn't see this message :(", result);
+        componentRelay.streamItems([ContentType.Note], (items) => {
+          //@ts-ignore
+          componentRelay.deleteItems(items, (result) => {
+            console.info("You shouldn't see this message :(", result);
+          });
         });
   
         registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
@@ -975,46 +988,10 @@ describe("Component Relay", () => {
         simpleNote = testSNApp.findItem(simpleNote.uuid) as SNNote;
         awesomeNote = testSNApp.findItem(awesomeNote.uuid) as SNNote;
 
-        expect(simpleNote.deleted).not.toBe(true);
-        expect(awesomeNote.deleted).not.toBe(true);
-      });
-
-      test("accepting an action and then rejecting another should not allow the second one", async () => {
-        let streamedNote;
-
-        const items = [
-          simpleNote,
-          awesomeNote
-        ];
-
-        // Accept request
-        window.confirm = (message) => true;
-
-        componentRelay.streamContextItem((items) => {
-          streamedNote = items;
-        });
-
-        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
-        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
-
-        await sleep(SHORT_DELAY_TIME);
-
-        //@ts-ignore
-        componentRelay.deleteItems(items, (result) => {
-          console.info("You shouldn't see this message :(", result);
-        });
-
-        // Reject request
-        window.confirm = (message) => false;
-
-        // Simple note should be streamed.
-        expect(streamedNote.uuid).toBe(simpleNote.uuid);
-
-        simpleNote = testSNApp.findItem(simpleNote.uuid) as SNNote;
-        awesomeNote = testSNApp.findItem(awesomeNote.uuid) as SNNote;
-
-        expect(simpleNote.deleted).not.toBe(true);
-        expect(awesomeNote.deleted).not.toBe(true);
+        expect(simpleNote).not.toBeUndefined();
+        expect(awesomeNote).not.toBeUndefined();
+        expect(simpleNote.deleted).toBeFalsy();
+        expect(awesomeNote.deleted).toBeFalsy();
       });
     });
   });

@@ -834,6 +834,148 @@ describe("Component Relay", () => {
         height: "100px"
       }));
     });
+
+    describe('test permissions', () => {
+      let simpleNote: SNNote;
+      let awesomeNote: SNNote;
+
+      beforeAll(() => {
+        window.confirm = (message) => false;
+      });
+
+      beforeEach(async () => {
+        simpleNote = await createNoteItem(testSNApp, {
+          title: 'A simple note',
+          text: 'This is a note created for testing purposes.'
+        });
+        awesomeNote = await createNoteItem(testSNApp, {
+          title: 'Awesome note!',
+          text: 'This is not just any note, it\'s an awesome note!'
+        });
+        await registerComponent(testSNApp, childWindow, testComponent);
+      });
+
+      afterAll(() => {
+        window.confirm = (message) => true;
+      });
+
+      test("setComponentData", async () => {
+        const dataKey = `key-${+new Date()}`;
+        const dataValue = `value-${+new Date()}`;
+
+        // A component does not need special permissions to set its data.
+        componentRelay.setComponentDataValueForKey(dataKey, dataValue);
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+
+        const storedDataForKey = componentRelay.getComponentDataValueForKey(dataKey);
+        expect(storedDataForKey).toBe(dataValue);
+      });
+
+      test("streamContextItem", async () => {
+        let streamedNote;
+
+        componentRelay.streamContextItem((items) => {
+          streamedNote = items;
+        });
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+
+        expect(streamedNote).toBeUndefined();
+      });
+
+      test("streamItems", async () => {
+        let streamedNotes;
+
+        componentRelay.streamItems([ContentType.Note], (items) => {
+          streamedNotes = items;
+        });
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+
+        expect(streamedNotes).toBeUndefined();
+      });
+
+      test("createItems", async () => {
+        let createdNote;
+        const noteItem = {
+          content_type: ContentType.Note,
+          content: {
+            title: 'My note',
+            text: 'This is an ordinary Note item that will created from an extension.'
+          }
+        };
+  
+        componentRelay.createItem(noteItem, (result) => {
+          createdNote = result;
+        });
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+  
+        expect(createdNote).toBeUndefined();
+
+        // There should be 2 notes only.
+        const allNotes = testSNApp.getItems(ContentType.Note);
+        expect(allNotes.length).toBe(2);
+      });
+
+      test("saveItems", async () => {
+        const itemToSave = {
+          uuid: awesomeNote.uuid,
+          content: {
+            title: "Changed"
+          },
+          content_type: "Note"
+        };
+
+        //@ts-ignore
+        componentRelay.saveItem(itemToSave, () => {
+          console.info("You shouldn't see this message :(");
+        });
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+  
+        awesomeNote = testSNApp.findItem(awesomeNote.uuid) as SNNote;
+        expect(awesomeNote.title).not.toBe("Changed");
+      });
+
+      test("deleteItems", async () => {
+        componentRelay.streamItems([ContentType.Note], (items) => {
+          //@ts-ignore
+          componentRelay.deleteItems(items, (result) => {
+            console.info("You shouldn't see this message :(", result);
+          });
+        });
+  
+        registerComponentHandler(testSNApp, [testComponent.area], simpleNote);
+        testSNApp.componentManager.contextItemDidChangeInArea(testComponent.area);
+    
+        await sleep(SHORT_DELAY_TIME);
+  
+        simpleNote = testSNApp.findItem(simpleNote.uuid) as SNNote;
+        awesomeNote = testSNApp.findItem(awesomeNote.uuid) as SNNote;
+
+        expect(simpleNote).not.toBeUndefined();
+        expect(awesomeNote).not.toBeUndefined();
+        expect(simpleNote.deleted).toBeFalsy();
+        expect(awesomeNote.deleted).toBeFalsy();
+      });
+    });
   });
 
   test('getItemAppDataValue', async () => {

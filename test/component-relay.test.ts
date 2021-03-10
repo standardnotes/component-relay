@@ -839,6 +839,10 @@ describe("Component Relay", () => {
       let simpleNote: SNNote;
       let awesomeNote: SNNote;
 
+      beforeAll(() => {
+        window.confirm = (message) => false;
+      });
+
       beforeEach(async () => {
         simpleNote = await createNoteItem(testSNApp, {
           title: 'A simple note',
@@ -854,18 +858,6 @@ describe("Component Relay", () => {
       afterAll(() => {
         window.confirm = (message) => true;
       });
-
-      /**
-       * Rejects an action request if it's the expected action.
-       * This is used to simulate the case when a user rejects the permission request dialog.
-       */
-      const rejectActionRequest = (jsonString: string, fromAction: ComponentAction): boolean => {
-        const permissions = JSON.parse(jsonString);
-        return permissions.find((permission) => {
-          const action = permission.name;
-          return action !== fromAction;
-        });
-      };
 
       test("setComponentData", async () => {
         const dataKey = `key-${+new Date()}`;
@@ -884,8 +876,6 @@ describe("Component Relay", () => {
       });
 
       test("streamContextItem", async () => {
-        window.confirm = (message) => rejectActionRequest(message, ComponentAction.StreamContextItem);
-
         let streamedNote;
 
         componentRelay.streamContextItem((items) => {
@@ -901,8 +891,6 @@ describe("Component Relay", () => {
       });
 
       test("streamItems", async () => {
-        window.confirm = (message) => rejectActionRequest(message, ComponentAction.StreamItems);
-
         let streamedNotes;
 
         componentRelay.streamItems([ContentType.Note], (items) => {
@@ -918,8 +906,6 @@ describe("Component Relay", () => {
       });
 
       test("createItems", async () => {
-        window.confirm = (message) => rejectActionRequest(message, ComponentAction.CreateItems);
-
         let createdNote;
         const noteItem = {
           content_type: ContentType.Note,
@@ -946,8 +932,6 @@ describe("Component Relay", () => {
       });
 
       test("saveItems", async () => {
-        window.confirm = (message) => rejectActionRequest(message, ComponentAction.SaveItems);
-
         const itemToSave = {
           uuid: awesomeNote.uuid,
           content: {
@@ -971,8 +955,6 @@ describe("Component Relay", () => {
       });
 
       test("deleteItems", async () => {
-        window.confirm = (message) => rejectActionRequest(message, ComponentAction.DeleteItems);
-
         componentRelay.streamItems([ContentType.Note], (items) => {
           //@ts-ignore
           componentRelay.deleteItems(items, (result) => {

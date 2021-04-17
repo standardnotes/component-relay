@@ -453,6 +453,8 @@ export default class ComponentRelay {
       link.className = 'custom-theme'
       this.contentWindow.document.getElementsByTagName('head')[0].appendChild(link)
     }
+
+    this.postMessage(ComponentAction.ThemesActivated, {})
   }
 
   private themeElementForUrl(themeUrl: string) {

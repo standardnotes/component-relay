@@ -39,7 +39,6 @@ export const createApplication = async (identifier: string, environment: Environ
     },
     identifier,
     getSwappedClasses(environment),
-    undefined,
     'http://syncing.localhost'
   );
   await application.prepareForLaunch({

@@ -1,5 +1,4 @@
 import {
-  ComponentAction,
   ContentType,
   DeinitSource,
   Environment,
@@ -12,6 +11,9 @@ import {
   SNNote,
   environmentFromString
 } from '@standardnotes/snjs';
+import {
+  ComponentAction
+} from './../lib/snjsTypes';
 import {
   sleep,
   testExtensionEditorPackage,
@@ -320,6 +322,23 @@ describe("Component Relay", () => {
     expect(themeLink.type).toEqual('text/css');
     expect(themeLink.rel).toEqual('stylesheet');
     expect(themeLink.media).toEqual('screen,print');
+  });
+
+  it('should send the ThemesActivated action after themes are activated', async () => {
+    const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
+
+    await createComponentItem(testSNApp, testThemeDefaultPackage, {
+      active: true
+    }) as SNTheme;
+    await registerComponent(testSNApp, childWindow, testComponent);
+
+    expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
+      action: ComponentAction.ThemesActivated,
+      data: {},
+      messageId: expect.any(String),
+      sessionKey: expect.any(String),
+      api: "component"
+    }), expect.any(String));
   });
 
   test('postActiveThemesToComponent() should dispatch messages to activate/deactivate themes', async () => {

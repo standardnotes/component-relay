@@ -91,7 +91,7 @@ type ComponentRelayParams = {
    */
   targetWindow: Window
   /**
-   * A collection of permissions that the component can request 
+   * A collection of permissions that the component can request
    * access once it's ready.
    */
   initialPermissions?: ComponentPermission[]
@@ -256,16 +256,16 @@ export default class ComponentRelay {
         const originalMessage = this.sentMessages?.filter((message: MessagePayload) => {
           return message.messageId === payload.original?.messageId
         })[0]
-  
-        if (!originalMessage) {
-          // Connection must have been reset. We should alert the user.
+
+        if (!originalMessage && payload.action !== ComponentAction.Reply) {
+          // Connection must have been reset. We should alert the user unless it's a reply,
+          // in which case we may have been deallocated and reinitialized and lost the
+          // original message
           Logger.error('This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.')
           return
         }
-  
-        if (originalMessage.callback) {
-          originalMessage.callback(payload.data)
-        }
+
+        originalMessage?.callback?.(payload.data)
         break
       }
     }
@@ -619,7 +619,7 @@ export default class ComponentRelay {
   /**
    * Performs a custom action to the component manager.
    * @param action
-   * @param data 
+   * @param data
    * @param callback The callback with the result of the operation.
    */
   public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) : void {
@@ -631,8 +631,8 @@ export default class ComponentRelay {
   /**
    * Saves an existing Item in the item store.
    * @param item An existing Item to be saved.
-   * @param callback 
-   * @param skipDebouncer 
+   * @param callback
+   * @param skipDebouncer
    */
   public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) : void {
     this.saveItems([item], callback, skipDebouncer)

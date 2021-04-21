@@ -11,11 +11,6 @@ export class WebComponentManager extends SNComponentManager {
     const approved = window.confirm(permissions);
     dialog.callback(approved);
   }
-
-  /** @override */
-  handleThemesActivatedMessage() {
-    window.alert('All themes were activated.');
-  }
 }
 
 export class MobileComponentManager extends SNComponentManager {
@@ -49,10 +44,5 @@ export class MobileComponentManager extends SNComponentManager {
     } else {
       return [];
     }
-  }
-
-  /** @override */
-  handleThemesActivatedMessage() {
-    window.alert('All themes were activated.');
   }
 }

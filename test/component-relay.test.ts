@@ -1,5 +1,6 @@
 import {
   ContentType,
+  ComponentAction,
   DeinitSource,
   Environment,
   Platform,
@@ -11,9 +12,6 @@ import {
   SNNote,
   environmentFromString
 } from '@standardnotes/snjs';
-import {
-  ComponentAction
-} from './../lib/snjsTypes';
 import {
   sleep,
   testExtensionEditorPackage,
@@ -341,6 +339,33 @@ describe("Component Relay", () => {
     }), expect.any(String));
   });
 
+  it.skip('should process the ThemesActivated action within the actionHandler', async () => {
+    expect.hasAssertions();
+    await createComponentItem(testSNApp, testThemeDefaultPackage, {
+      active: true
+    }) as SNTheme;
+
+    const onThemesActivated = jest.fn().mockImplementation((data) => data);
+
+    /**
+     * The actionHandler will have a different implementation
+     * for the ThemesActivated action depending of the environment.
+     */
+    const customActionHandler = (component, action, data) => {
+      if (action === ComponentAction.ThemesActivated) {
+        onThemesActivated();
+      }
+    }
+
+    registerComponentHandler(testSNApp, [testComponent.area], undefined, customActionHandler);
+    await registerComponent(testSNApp, childWindow, testComponent);
+
+    // Waiting for the ThemesActivated action to be triggered after the component relay has activated all themes.
+    await sleep(SHORT_DELAY_TIME);
+
+    expect(onThemesActivated).toHaveBeenCalledTimes(1);
+  });
+
   test('postActiveThemesToComponent() should dispatch messages to activate/deactivate themes', async () => {
     /**
      * Creating an active SNTheme, that will be activated once the component is registered.
@@ -348,7 +373,6 @@ describe("Component Relay", () => {
     const testThemeDefault = await createComponentItem(testSNApp, testThemeDefaultPackage, {
       active: true
     }) as SNTheme;
-    await registerComponent(testSNApp, childWindow, testComponent);
     await registerComponent(testSNApp, childWindow, testComponent);
 
     /**
@@ -491,8 +515,14 @@ describe("Component Relay", () => {
        * We will then check that the return value contains the Tag's UUID and Title.
        */
       const onSelectTag = jest.fn().mockImplementation((data) => data);
+
+      const customActionHandler = (component, action, data) => {
+        if (action === ComponentAction.SelectItem) {
+          onSelectTag(data);
+        }
+      }
   
-      registerComponentHandler(testSNApp, [testTagsComponent.area], testTag1, onSelectTag);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], testTag1, customActionHandler);
       componentRelay.selectItem(testTag1);
   
       await sleep(SHORT_DELAY_TIME);
@@ -508,7 +538,7 @@ describe("Component Relay", () => {
         })
       );
   
-      registerComponentHandler(testSNApp, [testTagsComponent.area], testTag2, onSelectTag);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], testTag2, customActionHandler);
       componentRelay.selectItem(testTag2);
   
       await sleep(SHORT_DELAY_TIME);
@@ -532,8 +562,14 @@ describe("Component Relay", () => {
       await registerComponent(testSNApp, childWindow, testTagsComponent);
   
       const onClearSelection = jest.fn().mockImplementation((data) => data);
+
+      const customActionHandler = (component, action, data) => {
+        if (action === ComponentAction.ClearSelection) {
+          onClearSelection(data);
+        }
+      }
   
-      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onClearSelection);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, customActionHandler);
       componentRelay.clearSelection();
   
       await sleep(SHORT_DELAY_TIME);
@@ -652,8 +688,14 @@ describe("Component Relay", () => {
       await registerComponent(testSNApp, childWindow, testTagsComponent);
   
       const onAssociateItem = jest.fn().mockImplementation((data) => data);
+
+      const customActionHandler = (component, action, data) => {
+        if (action === ComponentAction.AssociateItem) {
+          onAssociateItem(data);
+        }
+      }
   
-      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onAssociateItem);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, customActionHandler);
       componentRelay.associateItem({
         uuid: simpleNote.uuid
       });
@@ -679,8 +721,14 @@ describe("Component Relay", () => {
       await registerComponent(testSNApp, childWindow, testTagsComponent);
   
       const onDeassociateItem = jest.fn().mockImplementation((data) => data);
+
+      const customActionHandler = (component, action, data) => {
+        if (action === ComponentAction.DeassociateItem) {
+          onDeassociateItem(data);
+        }
+      }
   
-      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onDeassociateItem);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, customActionHandler);
       componentRelay.deassociateItem({
         uuid: simpleNote.uuid
       });
@@ -763,8 +811,14 @@ describe("Component Relay", () => {
       const customEventData = {
         content_type: ContentType.Tag
       };
+
+      const customActionHandler = (component, action, data) => {
+        if (action === ComponentAction.ClearSelection) {
+          onClearSelection(data);
+        }
+      }
   
-      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, onClearSelection);
+      registerComponentHandler(testSNApp, [testTagsComponent.area], undefined, customActionHandler);
 
       // We'll perform the clearSelection action, but using the sendCustomEvent function instead.
       componentRelay.sendCustomEvent(
@@ -840,8 +894,14 @@ describe("Component Relay", () => {
       await registerComponent(testSNApp, childWindow, testComponent);
   
       const onSetSize = jest.fn().mockImplementation((data) => data);
+
+      const customActionHandler = (component, action, data) => {
+        if (action === ComponentAction.SetSize) {
+          onSetSize(data);
+        }
+      }
   
-      registerComponentHandler(testSNApp, [testComponent.area], undefined, onSetSize);
+      registerComponentHandler(testSNApp, [testComponent.area], undefined, customActionHandler);
       componentRelay.setSize("100px", "100px");
   
       await sleep(SHORT_DELAY_TIME);

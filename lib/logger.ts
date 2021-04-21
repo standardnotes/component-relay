@@ -15,6 +15,9 @@ export default class Logger {
   }
 
   static get error () : any {
+    if (!Logger.isSupported) {
+      return noop
+    }
     return console.error.bind(console)
   }
 }

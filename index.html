@@ -3,10 +3,11 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Component Relay API Reference - v2.0.3</title>
-	<meta name="description" content="Documentation for Component Relay API Reference - v2.0.3">
+	<title>Component Relay API Reference - v2.0.4</title>
+	<meta name="description" content="Documentation for Component Relay API Reference - v2.0.4">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
+	<script async src="assets/js/search.js" id="search-script"></script>
 </head>
 <body>
 <header>
@@ -22,7 +23,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">Component Relay API Reference - v2.0.3</a>
+					<a href="index.html" class="title">Component Relay API Reference - v2.0.4</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -40,8 +41,6 @@
 							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
 							<input type="checkbox" id="tsd-filter-externals" checked />
 							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
-							<input type="checkbox" id="tsd-filter-only-exported" />
-							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
 						</div>
 					</div>
 					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
@@ -51,12 +50,7 @@
 	</div>
 	<div class="tsd-page-title">
 		<div class="container">
-			<ul class="tsd-breadcrumb">
-				<li>
-					<a href="globals.html">Globals</a>
-				</li>
-			</ul>
-			<h1>Component Relay API Reference - v2.0.3</h1>
+			<h1>Component Relay API Reference - v2.0.4</h1>
 		</div>
 	</div>
 </header>
@@ -71,16 +65,19 @@
 				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
 					<h2>Installation</h2>
 				</a>
-				<pre><code>yarn <span class="hljs-keyword">add</span><span class="bash"> @standardnotes/component-relay</span></code></pre>
+				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">add</span><span style="color: #000000"> @</span><span style="color: #001080">standardnotes</span><span style="color: #000000">/</span><span style="color: #001080">component</span><span style="color: #000000">-</span><span style="color: #001080">relay</span>
+</code></pre>
 				<p>&dash; <em>or</em> &dash;</p>
-				<pre><code><span class="hljs-built_in">npm</span> install --save @standardnotes/component-relay</code></pre>
+				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> --</span><span style="color: #001080">save</span><span style="color: #000000"> @</span><span style="color: #001080">standardnotes</span><span style="color: #000000">/</span><span style="color: #001080">component</span><span style="color: #000000">-</span><span style="color: #001080">relay</span>
+</code></pre>
 				<a href="#manual" id="manual" style="color: inherit; text-decoration: none;">
 					<h3>Manual</h3>
 				</a>
 				<p>Import the file <code>dist/dist.js</code> in your HTML file. For example:</p>
-				<pre><code class="language-html">...
-<span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;text/javascript&quot;</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;dist/dist.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
-...</code></pre>
+				<pre><code class="language-html"><span style="color: #000000">...</span>
+<span style="color: #800000">&lt;script</span><span style="color: #000000FF"> </span><span style="color: #FF0000">type</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;text/javascript&quot;</span><span style="color: #000000FF"> </span><span style="color: #FF0000">src</span><span style="color: #000000FF">=</span><span style="color: #0000FF">&quot;dist/dist.js&quot;</span><span style="color: #800000">&gt;&lt;/script&gt;</span>
+<span style="color: #000000">...</span>
+</code></pre>
 				<a href="#tests" id="tests" style="color: inherit; text-decoration: none;">
 					<h2>Tests</h2>
 				</a>
@@ -98,40 +95,27 @@
 					<h2>Documentation</h2>
 				</a>
 				<p>Documentation is generated using <a href="https://typedoc.org/">Typedoc</a>. The documentation is available at <a href="https://standardnotes.github.io/component-relay/">https://standardnotes.github.io/component-relay/</a>. To update the docs or to view the latest version, run:</p>
-				<pre><code><span class="hljs-selector-tag">yarn</span> <span class="hljs-selector-tag">build</span><span class="hljs-selector-pseudo">:docs</span></code></pre>
+				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> build:</span><span style="color: #001080">docs</span>
+</code></pre>
 				<p>This will generate documentation and place it in the <code>docs/</code> directory. Create a localhost server using <code>http-server</code> and open the <a href="docs/index.html">docs/index.html</a> file in a browser to view the docs.</p>
 				<p>To deploy the latest version of the docs to the <code>gh-pages</code> branch to publish using <a href="https://pages.github.com/">GitHub Pages</a>, replace <code>2.0.1</code> with the latest version and run:</p>
-				<pre><code><span class="hljs-selector-tag">yarn</span> <span class="hljs-selector-tag">deploy-docs</span> <span class="hljs-selector-tag">-m</span> &quot;<span class="hljs-selector-tag">build</span>: <span class="hljs-selector-tag">v2</span><span class="hljs-selector-class">.0</span><span class="hljs-selector-class">.1</span>&quot;</code></pre>
+				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">deploy</span><span style="color: #000000">-</span><span style="color: #001080">docs</span><span style="color: #000000"> -</span><span style="color: #001080">m</span><span style="color: #000000"> </span><span style="color: #A31515">&quot;build: v2.0.1&quot;</span>
+</code></pre>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 			<nav class="tsd-navigation primary">
 				<ul>
-					<li class="globals  ">
-						<a href="globals.html"><em>Globals</em></a>
-					</li>
-					<li class="label tsd-is-external">
-						<span>Internals</span>
-					</li>
-					<li class=" tsd-kind-module">
-						<a href="modules/_componentrelay_.html">&quot;component<wbr>Relay&quot;</a>
-					</li>
-					<li class="label tsd-is-external">
-						<span>Externals</span>
-					</li>
-					<li class=" tsd-kind-module tsd-is-external">
-						<a href="modules/_logger_.html">&quot;logger&quot;</a>
-					</li>
-					<li class=" tsd-kind-module tsd-is-external">
-						<a href="modules/_snjstypes_.html">&quot;snjs<wbr>Types&quot;</a>
-					</li>
-					<li class=" tsd-kind-module tsd-is-external">
-						<a href="modules/_utils_.html">&quot;utils&quot;</a>
+					<li class=" ">
+						<a href="modules.html">Exports</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-class">
+						<a href="classes/default.html" class="tsd-kind-icon">default</a>
+					</li>
 				</ul>
 			</nav>
 		</div>
@@ -142,14 +126,12 @@
 		<h2>Legend</h2>
 		<div class="tsd-legend-group">
 			<ul class="tsd-legend">
-				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
-				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
-			</ul>
-			<ul class="tsd-legend">
-				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
 			</ul>
 		</div>
 	</div>

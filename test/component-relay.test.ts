@@ -176,7 +176,13 @@ describe("Component Relay", () => {
     await registerComponent(testSNApp, childWindow, testComponent);
     expect(() => componentRelay.setComponentDataValueForKey("", ""))
       .toThrow('The key for the data value should be a valid string.');
-    expect(parentPostMessage).not.toBeCalled();
+    expect(parentPostMessage).not.toHaveBeenCalledWith(expect.objectContaining({
+      action: ComponentAction.SetComponentData,
+      data: expect.any(Object),
+      messageId: expect.any(String),
+      sessionKey: expect.any(String),
+      api: "component"
+    }), expect.any(String));
   });
 
   test('setComponentDataValueForKey() should set the value for the corresponding key', async () => {
@@ -184,7 +190,6 @@ describe("Component Relay", () => {
     await registerComponent(testSNApp, childWindow, testComponent);
     const dataValue = `value-${Date.now()}`;
     componentRelay.setComponentDataValueForKey("testing", dataValue);
-    expect(parentPostMessage).toHaveBeenCalledTimes(1);
     const expectedComponentData = {
       componentData: {
         ...testComponent.componentData,
@@ -206,7 +211,6 @@ describe("Component Relay", () => {
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
     componentRelay.clearComponentData();
-    expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.SetComponentData,
       data: {
@@ -273,7 +277,6 @@ describe("Component Relay", () => {
     componentRelay = new ComponentRelay(params);
     const parentPostMessage = jest.spyOn(childWindow.parent, 'postMessage');
     await registerComponent(testSNApp, childWindow, testComponent);
-    expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(expect.objectContaining({
       action: ComponentAction.RequestPermissions,
       data: { permissions: params.initialPermissions },
@@ -298,7 +301,6 @@ describe("Component Relay", () => {
     // Performing an action so it can call parent.postMessage function.
     componentRelay.clearSelection();
 
-    expect(parentPostMessage).toHaveBeenCalledTimes(1);
     expect(parentPostMessage).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(String) // TODO: jsdom should report the proper URL and not an empty string

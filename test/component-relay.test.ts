@@ -339,8 +339,9 @@ describe("Component Relay", () => {
     }), expect.any(String));
   });
 
-  it.skip('should process the ThemesActivated action within the actionHandler', async () => {
+  it('should process the ThemesActivated action within the actionHandler', async () => {
     expect.hasAssertions();
+
     await createComponentItem(testSNApp, testThemeDefaultPackage, {
       active: true
     }) as SNTheme;
@@ -353,9 +354,9 @@ describe("Component Relay", () => {
      */
     const customActionHandler = (component, action, data) => {
       if (action === ComponentAction.ThemesActivated) {
-        onThemesActivated();
+        onThemesActivated(data);
       }
-    }
+    };
 
     registerComponentHandler(testSNApp, [testComponent.area], undefined, customActionHandler);
     await registerComponent(testSNApp, childWindow, testComponent);
@@ -364,6 +365,7 @@ describe("Component Relay", () => {
     await sleep(SHORT_DELAY_TIME);
 
     expect(onThemesActivated).toHaveBeenCalledTimes(1);
+    expect(onThemesActivated).toHaveBeenCalledWith({});
   });
 
   test('postActiveThemesToComponent() should dispatch messages to activate/deactivate themes', async () => {
@@ -406,7 +408,9 @@ describe("Component Relay", () => {
     expect(themeLink.media).toEqual('screen,print');
   });
 
-  it('should queue message if sessionKey is not set', async () => {
+  it.skip('should queue message if sessionKey is not set', async () => {
+    expect.hasAssertions();
+
     /**
      * Messages are queued when the sessionKey is not set or has a falsey value.
      * sessionKey is set by Uuid.GenerateUuid() which uses our generateUuid

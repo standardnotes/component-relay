@@ -44,7 +44,7 @@ export const testThemeDefaultPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://localhost"
+  url: "http://localhost/themes/default-theme"
 };
 
 export const testThemeDarkPackage = {
@@ -53,7 +53,7 @@ export const testThemeDarkPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://localhost"
+  url: "http://localhost/themes/dark-theme"
 };
 
 export const getTestNoteItem = ({ title = 'Hello', text = 'World', dirty = true } = {}) => {

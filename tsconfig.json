@@ -19,10 +19,9 @@
     "forceConsistentCasingInFileNames": true
   },
   "typedocOptions": {
-    "inputFiles": ["./lib/componentRelay.ts"],
+    "entryPoints": ["./lib/componentRelay.ts"],
     "name": "Component Relay API Reference",
     "includeVersion": true,
-    "mode": "modules",
     "out": "docs"
   }
 }

@@ -261,7 +261,7 @@ export default class ComponentRelay {
           // Connection must have been reset. We should alert the user unless it's a reply,
           // in which case we may have been deallocated and reinitialized and lost the
           // original message
-          Logger.error('This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.')
+          alert('This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.')
           return
         }
 

@@ -27,7 +27,8 @@ export declare enum ComponentAction {
     ActivateThemes = "themes",
     Reply = "reply",
     SaveSuccess = "save-success",
-    SaveError = "save-error"
+    SaveError = "save-error",
+    ThemesActivated = "themes-activated"
 }
 export declare enum Environment {
     Web = 1,

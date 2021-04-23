@@ -1,4 +1,5 @@
 import {
+  ComponentAction,
   ComponentArea,
   ContentType,
   SNApplication,
@@ -43,7 +44,7 @@ export const testThemeDefaultPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://localhost"
+  url: "http://localhost/themes/default-theme"
 };
 
 export const testThemeDarkPackage = {
@@ -52,7 +53,7 @@ export const testThemeDarkPackage = {
   content_type: "SN|Theme",
   area: "themes",
   version: "1.0.0",
-  url: "http://localhost"
+  url: "http://localhost/themes/dark-theme"
 };
 
 export const getTestNoteItem = ({ title = 'Hello', text = 'World', dirty = true } = {}) => {
@@ -171,13 +172,13 @@ export const registerComponentHandler = (
   application: SNApplication,
   areas: ComponentArea[],
   itemInContext?: SNItem,
-  customActionHandler?: (data: any) => {},
+  customActionHandler?: (currentComponent: SNComponent, action: ComponentAction, data: any) => void,
 ) => {
   application.componentManager.registerHandler({
     identifier: 'generic-view-' + Math.random(),
     areas,
     actionHandler: (currentComponent, action, data) => {
-      customActionHandler && customActionHandler(data);
+      customActionHandler && customActionHandler(currentComponent, action, data);
     },
     contextRequestHandler: () => itemInContext
   });

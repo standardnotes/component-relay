@@ -3,6 +3,7 @@ import { htmlTemplate } from './../helpers';
 
 const { window } = new JSDOM(htmlTemplate, {
   resources: "usable",
+  url: 'http://localhost',
 });
 
 global.window.confirm = (message) => false;

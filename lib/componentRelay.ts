@@ -290,6 +290,9 @@ export default class ComponentRelay {
 
     this.activateThemes(data.activeThemeUrls || [])
 
+    // After activateThemes is done, we want to send a message with the ThemesActivated action.
+    this.postMessage(ComponentAction.ThemesActivated, {})
+
     if (this.onReadyCallback) {
       this.onReadyCallback()
     }

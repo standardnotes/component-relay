@@ -261,7 +261,9 @@ export default class ComponentRelay {
           // Connection must have been reset. We should alert the user unless it's a reply,
           // in which case we may have been deallocated and reinitialized and lost the
           // original message
-          alert('This extension is attempting to communicate with Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.')
+          const extensionName = this.contentWindow.document.title
+          alert(`The extension ${extensionName} is attempting to communicate with Standard Notes, ` +
+            'but an error is preventing it from doing so. Please restart this extension and try again.')
           return
         }
 

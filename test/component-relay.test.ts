@@ -39,10 +39,14 @@ describe("Component Relay", () => {
   let testComponent: SNComponent;
 
   beforeEach(async () => {
-    const childIframe = window.document.createElement('iframe');
-    window.document.body.appendChild(childIframe);
-    window.document.querySelector('iframe').srcdoc = htmlTemplate;
-    childWindow = childIframe.contentWindow;
+    window.document.body.innerHTML = `<iframe>${htmlTemplate}</iframe>`;
+    childWindow = window.document.querySelector('iframe').contentWindow;
+    childWindow.document.title = 'Testing';
+
+    // Mocking functions that are not implemented by JSDOM.
+    childWindow.alert = jest.fn();
+    childWindow.confirm = jest.fn();
+    childWindow.open = jest.fn();
 
     testSNApp = await createApplication('test-application', Environment.Web, Platform.LinuxWeb);
     testComponent = await createComponentItem(testSNApp, testExtensionEditorPackage);
@@ -454,7 +458,7 @@ describe("Component Relay", () => {
   
       componentRelay.streamItems(contentTypes, (items) => {
         expect(items).not.toBeUndefined();
-        expect(items.length).toBeGreaterThanOrEqual(0);
+        expect(items.length).toBe(1);
         expect(items[0].uuid).toBe(savedTestNote.uuid);
         done();
       });
@@ -1061,6 +1065,39 @@ describe("Component Relay", () => {
         expect(awesomeNote.deleted).toBeFalsy();
       });
     });
+
+    /**
+     * When the original message is not found, this mostly indicates that there's a communication
+     * issue between the component relay and Standard Notes.
+     */
+    test('should alert when original message is not found', async () => {
+      expect.hasAssertions();
+  
+      await createNoteItem(testSNApp);
+      const contentTypes = [
+        ContentType.Note
+      ];
+
+      await registerComponent(testSNApp, childWindow, testComponent);
+  
+      const extensionAlert = jest.spyOn(childWindow, 'alert');
+
+      // @ts-ignore
+      const sentMessagesPush = jest.spyOn(componentRelay["sentMessages"], 'push');
+      sentMessagesPush.mockImplementation(() => false);
+
+      componentRelay.streamItems(contentTypes, (items) => {
+        childWindow.alert('This should not be executed.');
+      });
+
+      await sleep(SHORT_DELAY_TIME);
+
+      expect(extensionAlert).toBeCalledTimes(1);
+
+      const expectedMessage = `The extension '${childWindow.document.title}' is attempting to communicate with ` + 
+        `Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.`;
+      expect(extensionAlert).toBeCalledWith(expectedMessage);
+    });
   });
 
   test('getItemAppDataValue', async () => {
@@ -1069,6 +1106,7 @@ describe("Component Relay", () => {
       text: 'This is a note created for testing purposes.'
     });
 
+    // @ts-ignore
     let appDataValue = componentRelay.getItemAppDataValue(simpleNote, "foo");
     expect(appDataValue).toBeUndefined();
 
@@ -1077,6 +1115,7 @@ describe("Component Relay", () => {
       mutator.setAppDataItem("foo", "bar");
     }) as SNNote;
 
+    // @ts-ignore
     appDataValue = componentRelay.getItemAppDataValue(simpleNote, "foo");
     expect(appDataValue).not.toBeUndefined();
     expect(appDataValue).toBe("bar");

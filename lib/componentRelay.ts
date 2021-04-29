@@ -257,7 +257,7 @@ export default class ComponentRelay {
           return message.messageId === payload.original?.messageId
         })[0]
 
-        if (!originalMessage && payload.action !== ComponentAction.Reply) {
+        if (!originalMessage) {
           // Connection must have been reset. We should alert the user unless it's a reply,
           // in which case we may have been deallocated and reinitialized and lost the
           // original message

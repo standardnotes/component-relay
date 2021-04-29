@@ -28,6 +28,7 @@ import {
 } from './helpers';
 import ComponentRelay from '../lib/componentRelay';
 import { createApplication } from './lib/appFactory';
+import Logger from '../lib/logger';
 
 describe("Component Relay", () => {
   /** The child window. This is where the extension lives. */
@@ -1080,7 +1081,8 @@ describe("Component Relay", () => {
 
       await registerComponent(testSNApp, childWindow, testComponent);
   
-      const extensionAlert = jest.spyOn(childWindow, 'alert');
+      const windowAlert = jest.spyOn(childWindow, 'alert');
+      const loggerInfo = jest.spyOn(Logger, 'info');
 
       // @ts-ignore
       const sentMessagesPush = jest.spyOn(componentRelay["sentMessages"], 'push');
@@ -1092,11 +1094,12 @@ describe("Component Relay", () => {
 
       await sleep(SHORT_DELAY_TIME);
 
-      expect(extensionAlert).toBeCalledTimes(1);
+      expect(windowAlert).toBeCalledTimes(0);
+      expect(loggerInfo).toBeCalled();
 
       const expectedMessage = `The extension '${childWindow.document.title}' is attempting to communicate with ` + 
         `Standard Notes, but an error is preventing it from doing so. Please restart this extension and try again.`;
-      expect(extensionAlert).toBeCalledWith(expectedMessage);
+      expect(loggerInfo).toBeCalledWith(expectedMessage);
     });
   });
 

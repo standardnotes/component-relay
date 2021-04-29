@@ -6,6 +6,7 @@ const { window } = new JSDOM(htmlTemplate, {
   url: 'http://localhost',
 });
 
-global.window.confirm = (message) => false;
-global.window.open = (url) => null;
+global.window.alert = jest.fn();
+global.window.confirm = jest.fn();
+global.window.open = jest.fn();
 global.document = window.document;

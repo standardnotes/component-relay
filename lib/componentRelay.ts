@@ -262,8 +262,10 @@ export default class ComponentRelay {
           // in which case we may have been deallocated and reinitialized and lost the
           // original message
           const extensionName = this.contentWindow.document.title
-          alert(`The extension ${extensionName} is attempting to communicate with Standard Notes, ` +
-            'but an error is preventing it from doing so. Please restart this extension and try again.')
+          const alertMessage = (`The extension '${extensionName}' is attempting to communicate with Standard Notes, ` +
+            'but an error is preventing it from doing so. Please restart this extension and try again.').replace('  ', ' ')
+
+          this.contentWindow.alert(alertMessage)
           return
         }
 

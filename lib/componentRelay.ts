@@ -653,7 +653,7 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemWithPresave(item: SNItem, presave: any, callback: () => void) : void {
+  public saveItemWithPresave(item: SNItem, presave: any, callback?: () => void) : void {
     this.saveItemsWithPresave([item], presave, callback)
   }
 
@@ -665,7 +665,7 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemsWithPresave(items: SNItem[], presave: any, callback: () => void) : void {
+  public saveItemsWithPresave(items: SNItem[], presave: any, callback?: () => void) : void {
     this.saveItems(items, callback, false, presave)
   }
 

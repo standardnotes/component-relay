@@ -1,4 +1,5 @@
-import { ComponentAction, ComponentPermission, ContentType, SNItem, AppDataField } from './snjsTypes';
+import { AppDataField, ComponentAction, ContentType } from './snjsTypes';
+import type { ComponentPermission, ItemMessagePayload, SNItem } from '@standardnotes/snjs';
 declare type ComponentRelayOptions = {
     coallesedSaving?: boolean;
     coallesedSavingDelay?: number;
@@ -204,9 +205,10 @@ export default class ComponentRelay {
     /**
      * Gets the Item's appData value for the specified key.
      * Uses the default domain (org.standardnotes.sn).
+     * This function is used with Items returned from streamContextItem() and streamItems()
      * @param item The Item to get the appData value from.
      * @param key The key to get the value from.
      */
-    getItemAppDataValue(item: SNItem, key: AppDataField): any;
+    getItemAppDataValue(item: ItemMessagePayload, key: AppDataField | string): any;
 }
 export {};

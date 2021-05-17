@@ -1,13 +1,15 @@
 import {
+  AppDataField,
   ComponentAction,
-  ComponentPermission,
   ContentType,
   Environment,
-  UuidString,
-  SNItem,
-  AppDataField,
-  RawPayload
 } from './snjsTypes'
+import type {
+  ComponentPermission,
+  ItemMessagePayload,
+  SNItem,
+  UuidString
+} from '@standardnotes/snjs'
 import {
   environmentToString,
   generateUuid,
@@ -39,10 +41,10 @@ type ComponentData = {
 
 type MessageData = Partial<{
   /** Related to the stream-item-context action */
-  item?: RawPayload & { clientData: any }
+  item?: ItemMessagePayload
   /** Related to the stream-items action */
   content_types?: ContentType[]
-  items?: (RawPayload & { clientData: any })[]
+  items?: ItemMessagePayload[]
   /** Related to the request-permission action */
   permissions?: ComponentPermission[]
   /** Related to the component-registered action */
@@ -756,10 +758,12 @@ export default class ComponentRelay {
   /**
    * Gets the Item's appData value for the specified key.
    * Uses the default domain (org.standardnotes.sn).
+   * This function is used with Items returned from streamContextItem() and streamItems()
    * @param item The Item to get the appData value from.
    * @param key The key to get the value from.
    */
-  public getItemAppDataValue(item: SNItem, key: AppDataField) : any {
-    return item.getAppDomainValue(key)
+  public getItemAppDataValue(item: ItemMessagePayload, key: AppDataField | string) : any {
+    const defaultDomain = 'org.standardnotes.sn'
+    return item.content.appData[defaultDomain][key]
   }
 }

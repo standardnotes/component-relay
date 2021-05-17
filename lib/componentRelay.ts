@@ -1,12 +1,15 @@
 import {
+  AppDataField,
   ComponentAction,
-  ComponentPermission,
   ContentType,
   Environment,
-  UuidString,
-  SNItem,
-  AppDataField
 } from './snjsTypes'
+import type {
+  ComponentPermission,
+  ItemMessagePayload,
+  SNItem,
+  UuidString
+} from '@standardnotes/snjs'
 import {
   environmentToString,
   generateUuid,
@@ -35,21 +38,6 @@ type Component = {
 type ComponentData = {
   [key: string]: any
 }
-
-type ItemMessagePayload = {
-  uuid: string;
-  content_type: ContentType;
-  created_at: Date;
-  updated_at: Date;
-  deleted: boolean;
-  content: any;
-  clientData: any;
-  /** isMetadataUpdate implies that the extension should make reference of updated
-   * metadata, but not update content values as they may be stale relative to what the
-   * extension currently has. Changes are always metadata updates if the mapping source
-   * is PayloadSource.RemoteSaved || PayloadSource.LocalSaved || PayloadSource.PreSyncSave */
-  isMetadataUpdate: any;
-};
 
 type MessageData = Partial<{
   /** Related to the stream-item-context action */

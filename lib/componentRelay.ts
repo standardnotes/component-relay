@@ -756,10 +756,12 @@ export default class ComponentRelay {
   /**
    * Gets the Item's appData value for the specified key.
    * Uses the default domain (org.standardnotes.sn).
+   * This function is used with Items returned from streamContextItem() and streamItems()
    * @param item The Item to get the appData value from.
    * @param key The key to get the value from.
    */
-  public getItemAppDataValue(item: SNItem, key: AppDataField) : any {
-    return item.getAppDomainValue(key)
+  public getItemAppDataValue(item: any, key: AppDataField) : any {
+    const defaultDomain = 'org.standardnotes.sn'
+    return item.content.appData[defaultDomain][key]
   }
 }

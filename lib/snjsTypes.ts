@@ -172,7 +172,7 @@ declare enum ProtocolVersion {
   VersionLength = 3
 }
 
-export declare enum AppDataField {
+export enum AppDataField {
   Pinned = 'pinned',
   Archived = 'archived',
   Locked = 'locked',

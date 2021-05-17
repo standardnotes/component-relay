@@ -5,8 +5,7 @@ import {
   Environment,
   UuidString,
   SNItem,
-  AppDataField,
-  RawPayload
+  AppDataField
 } from './snjsTypes'
 import {
   environmentToString,
@@ -37,12 +36,27 @@ type ComponentData = {
   [key: string]: any
 }
 
+type ItemMessagePayload = {
+  uuid: string;
+  content_type: ContentType;
+  created_at: Date;
+  updated_at: Date;
+  deleted: boolean;
+  content: any;
+  clientData: any;
+  /** isMetadataUpdate implies that the extension should make reference of updated
+   * metadata, but not update content values as they may be stale relative to what the
+   * extension currently has. Changes are always metadata updates if the mapping source
+   * is PayloadSource.RemoteSaved || PayloadSource.LocalSaved || PayloadSource.PreSyncSave */
+  isMetadataUpdate: any;
+};
+
 type MessageData = Partial<{
   /** Related to the stream-item-context action */
-  item?: RawPayload & { clientData: any }
+  item?: ItemMessagePayload
   /** Related to the stream-items action */
   content_types?: ContentType[]
-  items?: (RawPayload & { clientData: any })[]
+  items?: ItemMessagePayload[]
   /** Related to the request-permission action */
   permissions?: ComponentPermission[]
   /** Related to the component-registered action */
@@ -760,7 +774,7 @@ export default class ComponentRelay {
    * @param item The Item to get the appData value from.
    * @param key The key to get the value from.
    */
-  public getItemAppDataValue(item: any, key: AppDataField) : any {
+  public getItemAppDataValue(item: ItemMessagePayload, key: AppDataField | string) : any {
     const defaultDomain = 'org.standardnotes.sn'
     return item.content.appData[defaultDomain][key]
   }

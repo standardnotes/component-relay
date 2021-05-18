@@ -50,10 +50,12 @@ export default class ComponentRelay {
     private coallesedSaving;
     private coallesedSavingDelay;
     private messageHandler?;
+    private keyDownEventListener?;
     constructor(params: ComponentRelayParams);
     private processParameters;
     deinit(): void;
     private registerMessageHandler;
+    private registerKeyDownEventListener;
     private handleMessage;
     private onReady;
     /**
@@ -201,6 +203,11 @@ export default class ComponentRelay {
      * @param height The new height.
      */
     setSize(width: string | number, height: string | number): void;
+    /**
+     * Sends keyboard events to SN parent application.
+     * @param keyboardModifier The keyboard modifier that was pressed.
+     */
+    private keyPressed;
     private jsonObjectForItem;
     /**
      * Gets the Item's appData value for the specified key.

@@ -51,11 +51,12 @@ export default class ComponentRelay {
     private coallesedSavingDelay;
     private messageHandler?;
     private keyDownEventListener?;
+    private keyUpEventListener?;
     constructor(params: ComponentRelayParams);
     private processParameters;
     deinit(): void;
     private registerMessageHandler;
-    private registerKeyDownEventListener;
+    private registerKeyboardEventListeners;
     private handleMessage;
     private onReady;
     /**
@@ -204,10 +205,15 @@ export default class ComponentRelay {
      */
     setSize(width: string | number, height: string | number): void;
     /**
-     * Sends keyboard events to SN parent application.
+     * Sends the KeyDown keyboard event to the Standard Notes parent application.
      * @param keyboardModifier The keyboard modifier that was pressed.
      */
-    private keyPressed;
+    private keyDownEvent;
+    /**
+     * Sends the KeyUp keyboard event to the Standard Notes parent application.
+     * @param keyboardModifier The keyboard modifier that was released.
+     */
+    private keyUpEvent;
     private jsonObjectForItem;
     /**
      * Gets the Item's appData value for the specified key.

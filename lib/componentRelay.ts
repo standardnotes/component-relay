@@ -225,7 +225,7 @@ export default class ComponentRelay {
   }
 
   private registerKeyDownEventListener() {
-    this.keyDownEventListener= (event: KeyboardEvent) => {
+    this.keyDownEventListener = (event: KeyboardEvent) => {
       Logger.info(`A key has been pressed: ${event.key}`)
 
       if (event.ctrlKey) {

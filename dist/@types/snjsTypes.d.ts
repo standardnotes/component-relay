@@ -28,7 +28,8 @@ export declare enum ComponentAction {
     Reply = "reply",
     SaveSuccess = "save-success",
     SaveError = "save-error",
-    ThemesActivated = "themes-activated"
+    ThemesActivated = "themes-activated",
+    KeyPressed = "key-pressed"
 }
 export declare enum Environment {
     Web = 1,
@@ -48,7 +49,6 @@ export declare enum ContentType {
     Editor = "SN|Editor",
     ActionsExtension = "Extension",
     UserPrefs = "SN|UserPreferences",
-    Privileges = "SN|Privileges",
     HistorySession = "SN|HistorySession",
     Theme = "SN|Theme",
     Mfa = "SF|MFA",

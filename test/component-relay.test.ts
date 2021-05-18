@@ -1006,7 +1006,7 @@ describe("Component Relay", () => {
       test('ctrl key', async () => {
         expect.hasAssertions();
 
-        childWindow.dispatchEvent(new KeyboardEvent('keyup', { ctrlKey: true }))
+        childWindow.dispatchEvent(new KeyboardEvent('keyup', { key: 'Control' }))
     
         await sleep(SHORT_DELAY_TIME);
     
@@ -1019,7 +1019,7 @@ describe("Component Relay", () => {
       test('shift key', async () => {
         expect.hasAssertions();
 
-        childWindow.dispatchEvent(new KeyboardEvent('keyup', { shiftKey: true }))
+        childWindow.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }))
     
         await sleep(SHORT_DELAY_TIME);
     
@@ -1032,7 +1032,7 @@ describe("Component Relay", () => {
       test('meta key', async () => {
         expect.hasAssertions();
 
-        childWindow.dispatchEvent(new KeyboardEvent('keyup', { metaKey: true }))
+        childWindow.dispatchEvent(new KeyboardEvent('keyup', { key: 'Meta' }))
     
         await sleep(SHORT_DELAY_TIME);
     

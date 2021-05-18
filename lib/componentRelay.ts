@@ -244,11 +244,14 @@ export default class ComponentRelay {
     this.keyUpEventListener = (event: KeyboardEvent) => {
       Logger.info(`A key has been released: ${event.key}`)
 
-      if (event.ctrlKey) {
+      /**
+       * Checking using event.key instead of the corresponding boolean properties.
+       */
+      if (event.key === 'Control') {
         this.keyUpEvent(KeyboardModifier.Ctrl)
-      } else if (event.shiftKey) {
+      } else if (event.key === 'Shift') {
         this.keyUpEvent(KeyboardModifier.Shift)
-      } else if (event.metaKey || event.key === 'Meta') {
+      } else if (event.key === 'Meta') {
         this.keyUpEvent(KeyboardModifier.Meta)
       }
     }

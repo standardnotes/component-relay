@@ -232,12 +232,11 @@ export default class ComponentRelay {
         this.keyPressed(KeyboardModifier.Ctrl)
       } else if (event.shiftKey) {
         this.keyPressed(KeyboardModifier.Shift)
-      } else if (event.metaKey) {
+      } else if (event.metaKey || event.key === 'Meta') {
         this.keyPressed(KeyboardModifier.Meta)
       }
     }
 
-    this.contentWindow.document.addEventListener('keydown', this.keyDownEventListener, false)
     this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
   }
 

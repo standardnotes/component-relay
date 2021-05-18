@@ -925,15 +925,15 @@ describe("Component Relay", () => {
       }));
     });
 
-    describe('keyPressed', () => {
-      const onKeyPressed = jest.fn().mockImplementation((data) => data);
+    describe('keyDownEvent', () => {
+      const onKeyDown = jest.fn().mockImplementation((data) => data);
 
       beforeEach(async () => {
         await registerComponent(testSNApp, childWindow, testComponent);
 
         const customActionHandler = (component, action, data) => {
-          if (action === ComponentAction.KeyPressed) {
-            onKeyPressed(data);
+          if (action === ComponentAction.KeyDown) {
+            onKeyDown(data);
           }
         }
 
@@ -941,7 +941,7 @@ describe("Component Relay", () => {
       });
 
       afterEach(() => {
-        onKeyPressed.mockClear();
+        onKeyDown.mockClear();
       });
   
       test('ctrl key', async () => {
@@ -951,8 +951,8 @@ describe("Component Relay", () => {
     
         await sleep(SHORT_DELAY_TIME);
     
-        expect(onKeyPressed).toHaveBeenCalledTimes(1);
-        expect(onKeyPressed).toHaveBeenCalledWith(expect.objectContaining({
+        expect(onKeyDown).toHaveBeenCalledTimes(1);
+        expect(onKeyDown).toHaveBeenCalledWith(expect.objectContaining({
           keyboardModifier: 'Control'
         }));
       });
@@ -964,8 +964,8 @@ describe("Component Relay", () => {
     
         await sleep(SHORT_DELAY_TIME);
     
-        expect(onKeyPressed).toHaveBeenCalledTimes(1);
-        expect(onKeyPressed).toHaveBeenCalledWith(expect.objectContaining({
+        expect(onKeyDown).toHaveBeenCalledTimes(1);
+        expect(onKeyDown).toHaveBeenCalledWith(expect.objectContaining({
           keyboardModifier: 'Shift'
         }));
       });
@@ -977,8 +977,67 @@ describe("Component Relay", () => {
     
         await sleep(SHORT_DELAY_TIME);
     
-        expect(onKeyPressed).toHaveBeenCalledTimes(1);
-        expect(onKeyPressed).toHaveBeenCalledWith(expect.objectContaining({
+        expect(onKeyDown).toHaveBeenCalledTimes(1);
+        expect(onKeyDown).toHaveBeenCalledWith(expect.objectContaining({
+          keyboardModifier: 'Meta'
+        }));
+      });
+    });
+
+    describe('keyUpEvent', () => {
+      const onKeyUp = jest.fn().mockImplementation((data) => data);
+
+      beforeEach(async () => {
+        await registerComponent(testSNApp, childWindow, testComponent);
+
+        const customActionHandler = (component, action, data) => {
+          if (action === ComponentAction.KeyUp) {
+            onKeyUp(data);
+          }
+        }
+
+        registerComponentHandler(testSNApp, [testComponent.area], undefined, customActionHandler);
+      });
+
+      afterEach(() => {
+        onKeyUp.mockClear();
+      });
+  
+      test('ctrl key', async () => {
+        expect.hasAssertions();
+
+        childWindow.dispatchEvent(new KeyboardEvent('keyup', { ctrlKey: true }))
+    
+        await sleep(SHORT_DELAY_TIME);
+    
+        expect(onKeyUp).toHaveBeenCalledTimes(1);
+        expect(onKeyUp).toHaveBeenCalledWith(expect.objectContaining({
+          keyboardModifier: 'Control'
+        }));
+      });
+
+      test('shift key', async () => {
+        expect.hasAssertions();
+
+        childWindow.dispatchEvent(new KeyboardEvent('keyup', { shiftKey: true }))
+    
+        await sleep(SHORT_DELAY_TIME);
+    
+        expect(onKeyUp).toHaveBeenCalledTimes(1);
+        expect(onKeyUp).toHaveBeenCalledWith(expect.objectContaining({
+          keyboardModifier: 'Shift'
+        }));
+      });
+
+      test('meta key', async () => {
+        expect.hasAssertions();
+
+        childWindow.dispatchEvent(new KeyboardEvent('keyup', { metaKey: true }))
+    
+        await sleep(SHORT_DELAY_TIME);
+    
+        expect(onKeyUp).toHaveBeenCalledTimes(1);
+        expect(onKeyUp).toHaveBeenCalledWith(expect.objectContaining({
           keyboardModifier: 'Meta'
         }));
       });

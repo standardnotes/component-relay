@@ -163,12 +163,10 @@ export default class ComponentRelay {
     }
 
     if (this.keyDownEventListener) {
-      this.contentWindow.document.removeEventListener('keydown', this.keyDownEventListener)
       this.contentWindow.removeEventListener('keydown', this.keyDownEventListener)
     }
 
     if (this.keyUpEventListener) {
-      this.contentWindow.document.removeEventListener('keyup', this.keyUpEventListener)
       this.contentWindow.removeEventListener('keyup', this.keyUpEventListener)
     }
   }

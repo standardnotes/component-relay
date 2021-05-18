@@ -759,7 +759,7 @@ export default class ComponentRelay {
    * Sends keyboard events to SN parent application.
    * @param keyboardModifier The keyboard modifier that was pressed.
    */
-   private keyPressed(keyboardModifier: KeyboardModifier) : void {
+  private keyPressed(keyboardModifier: KeyboardModifier) : void {
     this.postMessage(ComponentAction.KeyPressed, { keyboardModifier })
   }
 

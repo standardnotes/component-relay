@@ -30,7 +30,8 @@ export enum ComponentAction {
   SaveSuccess = 'save-success',
   SaveError = 'save-error',
   ThemesActivated = 'themes-activated',
-  KeyPressed = 'key-pressed'
+  KeyDown = 'key-down',
+  KeyUp = 'key-up'
 }
 
 export enum Environment {

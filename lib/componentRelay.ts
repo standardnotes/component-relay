@@ -111,6 +111,7 @@ export default class ComponentRelay {
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
   private keyDownEventListener?: (event: any) => void;
+  private keyUpEventListener?: (event: any) => void;
 
   constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
@@ -119,7 +120,7 @@ export default class ComponentRelay {
     this.contentWindow = params.targetWindow
     this.processParameters(params)
     this.registerMessageHandler()
-    this.registerKeyDownEventListener()
+    this.registerKeyboardEventListeners()
   }
 
   private processParameters(params: ComponentRelayParams) {
@@ -164,6 +165,11 @@ export default class ComponentRelay {
     if (this.keyDownEventListener) {
       this.contentWindow.document.removeEventListener('keydown', this.keyDownEventListener)
       this.contentWindow.removeEventListener('keydown', this.keyDownEventListener)
+    }
+
+    if (this.keyUpEventListener) {
+      this.contentWindow.document.removeEventListener('keyup', this.keyUpEventListener)
+      this.contentWindow.removeEventListener('keyup', this.keyUpEventListener)
     }
   }
 
@@ -224,20 +230,33 @@ export default class ComponentRelay {
     Logger.info('Waiting for messages...')
   }
 
-  private registerKeyDownEventListener() {
+  private registerKeyboardEventListeners() {
     this.keyDownEventListener = (event: KeyboardEvent) => {
       Logger.info(`A key has been pressed: ${event.key}`)
 
       if (event.ctrlKey) {
-        this.keyPressed(KeyboardModifier.Ctrl)
+        this.keyDownEvent(KeyboardModifier.Ctrl)
       } else if (event.shiftKey) {
-        this.keyPressed(KeyboardModifier.Shift)
+        this.keyDownEvent(KeyboardModifier.Shift)
       } else if (event.metaKey || event.key === 'Meta') {
-        this.keyPressed(KeyboardModifier.Meta)
+        this.keyDownEvent(KeyboardModifier.Meta)
+      }
+    }
+
+    this.keyUpEventListener = (event: KeyboardEvent) => {
+      Logger.info(`A key has been released: ${event.key}`)
+
+      if (event.ctrlKey) {
+        this.keyUpEvent(KeyboardModifier.Ctrl)
+      } else if (event.shiftKey) {
+        this.keyUpEvent(KeyboardModifier.Shift)
+      } else if (event.metaKey || event.key === 'Meta') {
+        this.keyUpEvent(KeyboardModifier.Meta)
       }
     }
 
     this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
+    this.contentWindow.addEventListener('keyup', this.keyUpEventListener, false)
   }
 
   private handleMessage(payload: MessagePayload) {
@@ -755,11 +774,19 @@ export default class ComponentRelay {
   }
 
   /**
-   * Sends keyboard events to SN parent application.
+   * Sends the KeyDown keyboard event to the Standard Notes parent application.
    * @param keyboardModifier The keyboard modifier that was pressed.
    */
-  private keyPressed(keyboardModifier: KeyboardModifier) : void {
-    this.postMessage(ComponentAction.KeyPressed, { keyboardModifier })
+  private keyDownEvent(keyboardModifier: KeyboardModifier) : void {
+    this.postMessage(ComponentAction.KeyDown, { keyboardModifier })
+  }
+
+  /**
+   * Sends the KeyUp keyboard event to the Standard Notes parent application.
+   * @param keyboardModifier The keyboard modifier that was released.
+   */
+   private keyUpEvent(keyboardModifier: KeyboardModifier) : void {
+    this.postMessage(ComponentAction.KeyUp, { keyboardModifier })
   }
 
   private jsonObjectForItem(item: SNItem | ItemPayload) {

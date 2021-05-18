@@ -29,7 +29,8 @@ export enum ComponentAction {
   Reply = 'reply',
   SaveSuccess = 'save-success',
   SaveError = 'save-error',
-  ThemesActivated = 'themes-activated'
+  ThemesActivated = 'themes-activated',
+  KeyPressed = 'key-pressed'
 }
 
 export enum Environment {
@@ -51,7 +52,6 @@ export enum ContentType {
   Editor = 'SN|Editor',
   ActionsExtension = 'Extension',
   UserPrefs = 'SN|UserPreferences',
-  Privileges = 'SN|Privileges',
   HistorySession = 'SN|HistorySession',
   Theme = 'SN|Theme',
   Mfa = 'SF|MFA',
@@ -59,7 +59,7 @@ export enum ContentType {
   FilesafeCredentials = 'SN|FileSafe|Credentials',
   FilesafeFileMetadata = 'SN|FileSafe|FileMetadata',
   FilesafeIntegration = 'SN|FileSafe|Integration',
-  ExtensionRepo = 'SN|ExtensionRepo'
+  ExtensionRepo = 'SN|ExtensionRepo',
 }
 
 export enum AppDataField {

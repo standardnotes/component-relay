@@ -7,6 +7,7 @@ import {
 import type {
   ComponentPermission,
   ItemMessagePayload,
+  MessageData,
   SNItem,
   UuidString
 } from '@standardnotes/snjs'
@@ -38,30 +39,6 @@ type Component = {
 type ComponentData = {
   [key: string]: any
 }
-
-type MessageData = Partial<{
-  /** Related to the stream-item-context action */
-  item?: ItemMessagePayload
-  /** Related to the stream-items action */
-  content_types?: ContentType[]
-  items?: ItemMessagePayload[]
-  /** Related to the request-permission action */
-  permissions?: ComponentPermission[]
-  /** Related to the component-registered action */
-  componentData?: any
-  uuid?: UuidString
-  environment?: string
-  platform?: string
-  activeThemeUrls?: string[]
-  /** Related to set-size action */
-  width?: string | number
-  height?: string | number
-  type?: string
-  /** Related to themes action */
-  themes?: string[]
-  /** Related to clear-selection action */
-  content_type?: ContentType
-}>
 
 type MessagePayload = {
   action: ComponentAction;
@@ -113,6 +90,12 @@ type ItemPayload = {
   [key: string]: any
 }
 
+enum KeyboardModifier {
+  Shift = 'Shift',
+  Ctrl = 'Control',
+  Meta = 'Meta'
+}
+
 export default class ComponentRelay {
   private contentWindow: Window;
   private initialPermissions?: ComponentPermission[];
@@ -127,6 +110,7 @@ export default class ComponentRelay {
   private coallesedSaving = false;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
+  private keyDownEventListener?: (event: any) => void;
 
   constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
@@ -135,6 +119,7 @@ export default class ComponentRelay {
     this.contentWindow = params.targetWindow
     this.processParameters(params)
     this.registerMessageHandler()
+    this.registerKeyDownEventListener()
   }
 
   private processParameters(params: ComponentRelayParams) {
@@ -174,6 +159,11 @@ export default class ComponentRelay {
     if (this.messageHandler) {
       this.contentWindow.document.removeEventListener('message', this.messageHandler)
       this.contentWindow.removeEventListener('message', this.messageHandler)
+    }
+
+    if (this.keyDownEventListener) {
+      this.contentWindow.document.removeEventListener('keydown', this.keyDownEventListener)
+      this.contentWindow.removeEventListener('keydown', this.keyDownEventListener)
     }
   }
 
@@ -232,6 +222,23 @@ export default class ComponentRelay {
     this.contentWindow.addEventListener('message', this.messageHandler, false)
 
     Logger.info('Waiting for messages...')
+  }
+
+  private registerKeyDownEventListener() {
+    this.keyDownEventListener= (event: KeyboardEvent) => {
+      Logger.info(`A key has been pressed: ${event.key}`)
+
+      if (event.ctrlKey) {
+        this.keyPressed(KeyboardModifier.Ctrl)
+      } else if (event.shiftKey) {
+        this.keyPressed(KeyboardModifier.Shift)
+      } else if (event.metaKey) {
+        this.keyPressed(KeyboardModifier.Meta)
+      }
+    }
+
+    this.contentWindow.document.addEventListener('keydown', this.keyDownEventListener, false)
+    this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
   }
 
   private handleMessage(payload: MessagePayload) {
@@ -746,6 +753,14 @@ export default class ComponentRelay {
    */
   public setSize(width: string | number, height: string | number) : void {
     this.postMessage(ComponentAction.SetSize, { type: 'container', width, height })
+  }
+
+  /**
+   * Sends keyboard events to SN parent application.
+   * @param keyboardModifier The keyboard modifier that was pressed.
+   */
+   private keyPressed(keyboardModifier: KeyboardModifier) : void {
+    this.postMessage(ComponentAction.KeyPressed, { keyboardModifier })
   }
 
   private jsonObjectForItem(item: SNItem | ItemPayload) {

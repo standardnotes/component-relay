@@ -1,5 +1,5 @@
 import { AppDataField, ComponentAction, ContentType } from './snjsTypes';
-import type { ComponentPermission, ItemMessagePayload, SNItem } from '@standardnotes/snjs';
+import type { ComponentPermission, ItemMessagePayload } from '@standardnotes/snjs';
 declare type ComponentRelayOptions = {
     coallesedSaving?: boolean;
     coallesedSavingDelay?: number;
@@ -149,13 +149,13 @@ export default class ComponentRelay {
      * @param item The Item to delete.
      * @param callback The callback with the result of the operation.
      */
-    deleteItem(item: SNItem, callback: (data: any) => void): void;
+    deleteItem(item: ItemPayload, callback: (data: ItemMessagePayload) => void): void;
     /**
      * Deletes a collection of Items from the item store.
      * @param items The Item(s) to delete.
      * @param callback The callback with the result of the operation.
      */
-    deleteItems(items: SNItem[], callback: (data: any) => void): void;
+    deleteItems(items: ItemPayload[], callback: (data: ItemMessagePayload) => void): void;
     /**
      * Performs a custom action to the component manager.
      * @param action
@@ -169,7 +169,7 @@ export default class ComponentRelay {
      * @param callback
      * @param skipDebouncer
      */
-    saveItem(item: SNItem, callback?: () => void, skipDebouncer?: boolean): void;
+    saveItem(item: ItemPayload, callback?: () => void, skipDebouncer?: boolean): void;
     /**
      * Runs a callback before saving an Item.
      * @param item An existing Item to be saved.
@@ -178,7 +178,7 @@ export default class ComponentRelay {
      * hook into the debounce cycle so that clients don't have to implement their own debouncing.
      * @param callback
      */
-    saveItemWithPresave(item: SNItem, presave: any, callback?: () => void): void;
+    saveItemWithPresave(item: ItemPayload, presave: any, callback?: () => void): void;
     /**
      * Runs a callback before saving a collection of Items.
      * @param items A collection of existing Items to be saved.
@@ -187,7 +187,7 @@ export default class ComponentRelay {
      * hook into the debounce cycle so that clients don't have to implement their own debouncing.
      * @param callback
      */
-    saveItemsWithPresave(items: SNItem[], presave: any, callback?: () => void): void;
+    saveItemsWithPresave(items: ItemPayload[], presave: any, callback?: () => void): void;
     private _performSavingOfItems;
     /**
      * Saves a collection of existing Items.
@@ -197,7 +197,7 @@ export default class ComponentRelay {
      * This should be used when saving items via other means besides keystrokes.
      * @param presave
      */
-    saveItems(items: SNItem[], callback?: () => void, skipDebouncer?: boolean, presave?: any): void;
+    saveItems(items: ItemPayload[], callback?: () => void, skipDebouncer?: boolean, presave?: any): void;
     /**
      * Sets a new container size for the current component.
      * @param width The new width.
@@ -222,6 +222,6 @@ export default class ComponentRelay {
      * @param item The Item to get the appData value from.
      * @param key The key to get the value from.
      */
-    getItemAppDataValue(item: ItemMessagePayload, key: AppDataField | string): any;
+    getItemAppDataValue(item: ItemMessagePayload | undefined, key: AppDataField | string): any;
 }
 export {};

@@ -25,6 +25,7 @@ import {
   registerComponentHandler,
   SHORT_DELAY_TIME,
   createTagItem,
+  jsonForItem
 } from './helpers';
 import ComponentRelay from '../lib/componentRelay';
 import { createApplication } from './lib/appFactory';
@@ -1221,24 +1222,46 @@ describe("Component Relay", () => {
     });
   });
 
-  test('getItemAppDataValue', async () => {
-    let simpleNote = await createNoteItem(testSNApp, {
-      title: 'A simple note',
-      text: 'This is a note created for testing purposes.'
+  describe('getItemAppDataValue', () => {
+    test('on a JSON object', async () => {
+      let simpleNote = await createNoteItem(testSNApp, {
+        title: 'A simple note',
+        text: 'This is a note created for testing purposes.'
+      });
+  
+      let item = jsonForItem(simpleNote, testComponent)
+  
+      let appDataValue = componentRelay.getItemAppDataValue(item, "foo");
+      expect(appDataValue).toBeUndefined();
+  
+      simpleNote = await testSNApp.changeAndSaveItem(simpleNote.uuid, (mutator: NoteMutator) => {
+        // @ts-ignore
+        mutator.setAppDataItem("foo", "bar");
+      }) as SNNote;
+  
+      item = jsonForItem(simpleNote, testComponent)
+  
+      appDataValue = componentRelay.getItemAppDataValue(item, "foo");
+      expect(appDataValue).not.toBeUndefined();
+      expect(appDataValue).toBe("bar");
     });
 
-    // @ts-ignore
-    let appDataValue = componentRelay.getItemAppDataValue(simpleNote, "foo");
-    expect(appDataValue).toBeUndefined();
+    it('should return undefined on an undefined value', () => {
+      expect(componentRelay.getItemAppDataValue(undefined, "foo")).toBeUndefined();
+    });
 
-    simpleNote = await testSNApp.changeAndSaveItem(simpleNote.uuid, (mutator: NoteMutator) => {
+    it('should return undefined on an undefined value', () => {
+      expect(componentRelay.getItemAppDataValue(undefined, "foo")).toBeUndefined();
+    });
+
+    it('should return undefined on an empty object', () => {
       // @ts-ignore
-      mutator.setAppDataItem("foo", "bar");
-    }) as SNNote;
+      expect(componentRelay.getItemAppDataValue({}, "foo")).toBeUndefined();
+    })
 
-    // @ts-ignore
-    appDataValue = componentRelay.getItemAppDataValue(simpleNote, "foo");
-    expect(appDataValue).not.toBeUndefined();
-    expect(appDataValue).toBe("bar");
+    it('should return undefined on a object that is not of type ItemMessagePayload', () => {
+      // @ts-ignore
+      expect(componentRelay.getItemAppDataValue({ test: 1, testing: {} }, "foo")).toBeUndefined();
+    })
   });
 });

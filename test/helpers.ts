@@ -2,6 +2,8 @@ import {
   ComponentAction,
   ComponentArea,
   ContentType,
+  ItemMessagePayload,
+  PayloadSource,
   SNApplication,
   SNComponent,
   SNItem,
@@ -183,3 +185,24 @@ export const registerComponentHandler = (
     contextRequestHandler: () => itemInContext
   });
 };
+
+export const jsonForItem = (item: SNItem, component: SNComponent) => {
+  const isMetadatUpdate =
+    item.payload.source === PayloadSource.RemoteSaved ||
+    item.payload.source === PayloadSource.LocalSaved ||
+    item.payload.source === PayloadSource.PreSyncSave;
+
+  const componentData = item.getDomainData('org.standardnotes.sn') || {};
+  const clientData = componentData[component.getClientDataKey()!] || {};
+
+  return {
+    uuid: item.uuid,
+    content_type: item.content_type!,
+    created_at: item.created_at!,
+    updated_at: item.serverUpdatedAt!,
+    deleted: item.deleted!,
+    isMetadataUpdate: isMetadatUpdate,
+    content: item.content,
+    clientData: clientData,
+  };
+}

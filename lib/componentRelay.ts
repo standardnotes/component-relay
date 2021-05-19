@@ -103,8 +103,8 @@ export default class ComponentRelay {
   private component: Component = { activeThemes: [], acceptsThemes: true };
   private sentMessages: MessagePayload[] = [];
   private messageQueue: MessagePayload[] = [];
-  private lastStreamedItem?: SNItem;
-  private pendingSaveItems?: SNItem[];
+  private lastStreamedItem?: ItemPayload;
+  private pendingSaveItems?: ItemPayload[];
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
   private coallesedSaving = false;
@@ -631,7 +631,7 @@ export default class ComponentRelay {
    * @param item The Item to delete.
    * @param callback The callback with the result of the operation.
    */
-  public deleteItem(item: SNItem, callback: (data: any) => void) : void {
+  public deleteItem(item: ItemPayload, callback: (data: ItemMessagePayload) => void) : void {
     this.deleteItems([item], callback)
   }
 
@@ -640,9 +640,9 @@ export default class ComponentRelay {
    * @param items The Item(s) to delete.
    * @param callback The callback with the result of the operation.
    */
-  public deleteItems(items: SNItem[], callback: (data: any) => void) : void {
+  public deleteItems(items: ItemPayload[], callback: (data: ItemMessagePayload) => void) : void {
     const params = {
-      items: items.map((item: SNItem) => {
+      items: items.map((item) => {
         return this.jsonObjectForItem(item)
       }),
     }
@@ -669,7 +669,7 @@ export default class ComponentRelay {
    * @param callback
    * @param skipDebouncer
    */
-  public saveItem(item: SNItem, callback?: () => void, skipDebouncer = false) : void {
+  public saveItem(item: ItemPayload, callback?: () => void, skipDebouncer = false) : void {
     this.saveItems([item], callback, skipDebouncer)
   }
 
@@ -681,7 +681,7 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemWithPresave(item: SNItem, presave: any, callback?: () => void) : void {
+  public saveItemWithPresave(item: ItemPayload, presave: any, callback?: () => void) : void {
     this.saveItemsWithPresave([item], presave, callback)
   }
 
@@ -693,11 +693,11 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemsWithPresave(items: SNItem[], presave: any, callback?: () => void) : void {
+  public saveItemsWithPresave(items: ItemPayload[], presave: any, callback?: () => void) : void {
     this.saveItems(items, callback, false, presave)
   }
 
-  private _performSavingOfItems({ items, presave, callback }: { items: SNItem[], presave: () => void, callback?: () => void }) {
+  private _performSavingOfItems({ items, presave, callback }: { items: ItemPayload[], presave: () => void, callback?: () => void }) {
     /**
      * Presave block allows client to gain the benefit of performing something in the debounce cycle.
      */
@@ -721,7 +721,7 @@ export default class ComponentRelay {
    * This should be used when saving items via other means besides keystrokes.
    * @param presave
    */
-  public saveItems(items: SNItem[], callback?: () => void, skipDebouncer = false, presave?: any) : void {
+  public saveItems(items: ItemPayload[], callback?: () => void, skipDebouncer = false, presave?: any) : void {
     /**
      * We need to make sure that when we clear a pending save timeout,
      * we carry over those pending items into the new save.
@@ -735,7 +735,7 @@ export default class ComponentRelay {
         clearTimeout(this.pendingSaveTimeout)
       }
 
-      const incomingIds = items.map((item: SNItem) => item.uuid)
+      const incomingIds = items.map((item) => item.uuid)
       /**
        * Replace any existing save items with incoming values.
        * Only keep items here who are not in incomingIds.
@@ -804,8 +804,8 @@ export default class ComponentRelay {
    * @param item The Item to get the appData value from.
    * @param key The key to get the value from.
    */
-  public getItemAppDataValue(item: ItemMessagePayload, key: AppDataField | string) : any {
+  public getItemAppDataValue(item: ItemMessagePayload | undefined, key: AppDataField | string) : any {
     const defaultDomain = 'org.standardnotes.sn'
-    return item.content.appData[defaultDomain][key]
+    return item?.content?.appData?.[defaultDomain][key]
   }
 }

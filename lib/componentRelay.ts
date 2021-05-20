@@ -171,6 +171,10 @@ export default class ComponentRelay {
     if (this.keyUpEventListener) {
       this.contentWindow.removeEventListener('keyup', this.keyUpEventListener)
     }
+
+    if (this.clickEventListener) {
+      this.contentWindow.removeEventListener('click', this.clickEventListener)
+    }
   }
 
   private registerMessageHandler() {

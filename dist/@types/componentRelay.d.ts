@@ -52,11 +52,13 @@ export default class ComponentRelay {
     private messageHandler?;
     private keyDownEventListener?;
     private keyUpEventListener?;
+    private clickEventListener?;
     constructor(params: ComponentRelayParams);
     private processParameters;
     deinit(): void;
     private registerMessageHandler;
     private registerKeyboardEventListeners;
+    private registerMouseEventListeners;
     private handleMessage;
     private onReady;
     /**
@@ -214,6 +216,10 @@ export default class ComponentRelay {
      * @param keyboardModifier The keyboard modifier that was released.
      */
     private keyUpEvent;
+    /**
+     * Sends the Click mouse event to the Standard Notes parent application.
+     */
+    private mouseClickEvent;
     private jsonObjectForItem;
     /**
      * Gets the Item's appData value for the specified key.

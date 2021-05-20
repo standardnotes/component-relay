@@ -30,7 +30,8 @@ export declare enum ComponentAction {
     SaveError = "save-error",
     ThemesActivated = "themes-activated",
     KeyDown = "key-down",
-    KeyUp = "key-up"
+    KeyUp = "key-up",
+    Click = "click"
 }
 export declare enum Environment {
     Web = 1,

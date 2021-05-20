@@ -1,6 +1,6 @@
 {
   "name": "@standardnotes/component-relay",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "repository": {
     "type": "git",
     "url": "git://github.com/standardnotes/component-relay.git"
@@ -25,7 +25,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.7",
     "@standardnotes/sncrypto-common": "^1.2.9",
-    "@standardnotes/snjs": "2.2.4",
+    "@standardnotes/snjs": "2.3.1",
     "@types/jest": "^26.0.19",
     "@types/jsdom": "^16.2.5",
     "@types/node": "^14.14.6",

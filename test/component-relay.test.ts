@@ -1044,6 +1044,37 @@ describe("Component Relay", () => {
       });
     });
 
+    describe('mouseClickEvent', async () => {
+      const onClick = jest.fn().mockImplementation((data) => data);
+
+      beforeEach(async () => {
+        await registerComponent(testSNApp, childWindow, testComponent);
+
+        const customActionHandler = (component, action, data) => {
+          if (action === ComponentAction.Click) {
+            onClick(data);
+          }
+        }
+
+        registerComponentHandler(testSNApp, [testComponent.area], undefined, customActionHandler);
+      });
+
+      afterEach(() => {
+        onClick.mockClear();
+      });
+
+      test('normal click', async () => {
+        expect.hasAssertions();
+
+        childWindow.dispatchEvent(new MouseEvent('click', {}))
+
+        await sleep(SHORT_DELAY_TIME);
+
+        expect(onClick).toHaveBeenCalledTimes(1);
+        expect(onClick).toHaveBeenCalledWith(expect.objectContaining({}));
+      });
+    });
+
     describe('test permissions', () => {
       let simpleNote: SNNote;
       let awesomeNote: SNNote;

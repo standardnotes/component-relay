@@ -110,8 +110,9 @@ export default class ComponentRelay {
   private coallesedSaving = false;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
-  private keyDownEventListener?: (event: any) => void;
-  private keyUpEventListener?: (event: any) => void;
+  private keyDownEventListener?: (event: KeyboardEvent) => void;
+  private keyUpEventListener?: (event: KeyboardEvent) => void;
+  private clickEventListener?: (event: MouseEvent) => void;
 
   constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
@@ -121,6 +122,7 @@ export default class ComponentRelay {
     this.processParameters(params)
     this.registerMessageHandler()
     this.registerKeyboardEventListeners()
+    this.registerMouseEventListeners()
   }
 
   private processParameters(params: ComponentRelayParams) {
@@ -258,6 +260,16 @@ export default class ComponentRelay {
 
     this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
     this.contentWindow.addEventListener('keyup', this.keyUpEventListener, false)
+  }
+
+  private registerMouseEventListeners() {
+    this.clickEventListener = (_event: MouseEvent) => {
+      Logger.info('A click has been performed.')
+
+      this.mouseClickEvent()
+    }
+
+    this.contentWindow.addEventListener('click', this.clickEventListener, false)
   }
 
   private handleMessage(payload: MessagePayload) {
@@ -788,6 +800,13 @@ export default class ComponentRelay {
    */
    private keyUpEvent(keyboardModifier: KeyboardModifier) : void {
     this.postMessage(ComponentAction.KeyUp, { keyboardModifier })
+  }
+
+  /**
+   * Sends the Click mouse event to the Standard Notes parent application.
+   */
+   private mouseClickEvent() : void {
+    this.postMessage(ComponentAction.Click, {})
   }
 
   private jsonObjectForItem(item: SNItem | ItemPayload) {

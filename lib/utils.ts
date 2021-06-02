@@ -30,3 +30,7 @@ export const environmentToString = (environment: Environment) : string => {
   }
   return map[environment] ?? map[Environment.Web]
 }
+
+export const isNotUndefinedOrNull = (value: any) : boolean => {
+  return value !== null && value !== undefined
+}

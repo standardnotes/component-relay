@@ -14,7 +14,8 @@ import type {
 import {
   environmentToString,
   generateUuid,
-  isValidJsonString
+  isValidJsonString,
+  isNotUndefinedOrNull
 } from './utils'
 import Logger from './logger'
 
@@ -131,16 +132,17 @@ export default class ComponentRelay {
     if (initialPermissions && initialPermissions.length > 0) {
       this.initialPermissions = initialPermissions
     }
-    if (typeof options?.coallesedSaving === 'boolean') {
-      this.coallesedSaving = options.coallesedSaving
+
+    if (isNotUndefinedOrNull(options?.coallesedSaving)) {
+      this.coallesedSaving = options!.coallesedSaving!
     }
-    if (typeof options?.coallesedSavingDelay === 'number') {
-      this.coallesedSavingDelay = options.coallesedSavingDelay
+    if (isNotUndefinedOrNull(options?.coallesedSavingDelay)) {
+      this.coallesedSavingDelay = options!.coallesedSavingDelay!
     }
-    if (typeof options?.acceptsThemes === 'boolean') {
-      this.component.acceptsThemes = options.acceptsThemes ?? true
+    if (isNotUndefinedOrNull(options?.acceptsThemes)) {
+      this.component.acceptsThemes = options?.acceptsThemes ?? true
     }
-    if (typeof onReady === 'function') {
+    if (isNotUndefinedOrNull(onReady)) {
       this.onReadyCallback = onReady
     }
     Logger.enabled = options?.debug ?? false

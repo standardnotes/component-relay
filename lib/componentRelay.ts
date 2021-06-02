@@ -14,7 +14,8 @@ import type {
 import {
   environmentToString,
   generateUuid,
-  isValidJsonString
+  isValidJsonString,
+  isNotUndefinedOrNull
 } from './utils'
 import Logger from './logger'
 
@@ -107,7 +108,7 @@ export default class ComponentRelay {
   private pendingSaveItems?: ItemPayload[];
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
-  private coallesedSaving = false;
+  private coallesedSaving = true;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
   private keyDownEventListener?: (event: KeyboardEvent) => void;
@@ -131,16 +132,17 @@ export default class ComponentRelay {
     if (initialPermissions && initialPermissions.length > 0) {
       this.initialPermissions = initialPermissions
     }
-    if (options?.coallesedSaving) {
-      this.coallesedSaving = options.coallesedSaving
+
+    if (isNotUndefinedOrNull(options?.coallesedSaving)) {
+      this.coallesedSaving = options!.coallesedSaving!
     }
-    if (options?.coallesedSavingDelay) {
-      this.coallesedSavingDelay = options.coallesedSavingDelay
+    if (isNotUndefinedOrNull(options?.coallesedSavingDelay)) {
+      this.coallesedSavingDelay = options!.coallesedSavingDelay!
     }
-    if (options?.acceptsThemes) {
+    if (isNotUndefinedOrNull(options?.acceptsThemes)) {
       this.component.acceptsThemes = options?.acceptsThemes ?? true
     }
-    if (onReady) {
+    if (isNotUndefinedOrNull(onReady)) {
       this.onReadyCallback = onReady
     }
     Logger.enabled = options?.debug ?? false

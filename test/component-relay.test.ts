@@ -56,7 +56,9 @@ describe("Component Relay", () => {
     componentRelay = new ComponentRelay({
       targetWindow: childWindow,
       options: {
-        acceptsThemes: true
+        acceptsThemes: true,
+        // Coallesed saving is disabled here to avoid delays and timeouts in tests.
+        coallesedSaving: false
       }
     });
 

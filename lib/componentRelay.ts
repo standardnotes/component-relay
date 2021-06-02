@@ -107,7 +107,7 @@ export default class ComponentRelay {
   private pendingSaveItems?: ItemPayload[];
   private pendingSaveTimeout?: NodeJS.Timeout;
   private pendingSaveParams?: any;
-  private coallesedSaving = false;
+  private coallesedSaving = true;
   private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY;
   private messageHandler?: (event: any) => void;
   private keyDownEventListener?: (event: KeyboardEvent) => void;
@@ -131,16 +131,16 @@ export default class ComponentRelay {
     if (initialPermissions && initialPermissions.length > 0) {
       this.initialPermissions = initialPermissions
     }
-    if (options?.coallesedSaving) {
+    if (typeof options?.coallesedSaving === 'boolean') {
       this.coallesedSaving = options.coallesedSaving
     }
-    if (options?.coallesedSavingDelay) {
+    if (typeof options?.coallesedSavingDelay === 'number') {
       this.coallesedSavingDelay = options.coallesedSavingDelay
     }
-    if (options?.acceptsThemes) {
-      this.component.acceptsThemes = options?.acceptsThemes ?? true
+    if (typeof options?.acceptsThemes === 'boolean') {
+      this.component.acceptsThemes = options.acceptsThemes ?? true
     }
-    if (onReady) {
+    if (typeof onReady === 'function') {
       this.onReadyCallback = onReady
     }
     Logger.enabled = options?.debug ?? false

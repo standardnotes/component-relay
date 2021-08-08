@@ -197,23 +197,23 @@ export default class ComponentRelay {
         }
       }
 
-      /**
-       * The first message will be the most reliable one, so we won't change it after any subsequent events,
-       * in case you receive an event from another window.
-       */
-      if (!this.component.origin) {
-        this.component.origin = event.origin
-      } else if (event.origin !== this.component.origin) {
-        // If event origin doesn't match first-run value, return.
-        return
-      }
-
       // Mobile environment sends data as JSON string.
       const { data } = event
       const parsedData = isValidJsonString(data) ? JSON.parse(data) : data
 
       if (!parsedData) {
         Logger.error('Invalid data received. Skipping...')
+        return
+      }
+
+      /**
+       * The first message will be the most reliable one, so we won't change it after any subsequent events,
+       * in case you receive an event from another window.
+       */
+       if (parsedData['action'] === 'component-registered') {
+        this.component.origin = event.origin
+      } else if (event.origin !== this.component.origin) {
+        // If event origin doesn't match first-run value, return.
         return
       }
 

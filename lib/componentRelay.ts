@@ -210,7 +210,7 @@ export default class ComponentRelay {
        * The Component Registered message will be the most reliable one, so we won't change it after any subsequent events,
        * in case you receive an event from another window.
        */
-      if (parsedData.action === ComponentAction.ComponentRegistered) {
+      if (typeof this.component.origin === 'undefined' && parsedData.action === ComponentAction.ComponentRegistered) {
         this.component.origin = event.origin
       } else if (event.origin !== this.component.origin) {
         // If event origin doesn't match first-run value, return.

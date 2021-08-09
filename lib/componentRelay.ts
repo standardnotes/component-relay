@@ -207,7 +207,7 @@ export default class ComponentRelay {
       }
 
       /**
-       * The first message will be the most reliable one, so we won't change it after any subsequent events,
+       * The Component Registered message will be the most reliable one, so we won't change it after any subsequent events,
        * in case you receive an event from another window.
        */
       if (parsedData.action === ComponentAction.ComponentRegistered) {

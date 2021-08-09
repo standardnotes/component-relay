@@ -69,13 +69,14 @@ describe("Component Relay", () => {
     childWindow.addEventListener("message", (event) => {
       if (event.origin === '') {
         event.stopImmediatePropagation();
+        event.stopPropagation();
         const eventWithOrigin = new MessageEvent('message', {
           data: event.data,
           origin: 'http://localhost',
         });
         childWindow.dispatchEvent(eventWithOrigin);
       }
-    });
+    }, true);
   });
 
   afterEach(() => {

@@ -124,6 +124,28 @@ describe("Component Relay", () => {
     expect(onReady).toBeCalledTimes(1);
   });
 
+  it('should run onThemesChange callback when a theme is activated', async () => {
+    expect.hasAssertions();
+    const onThemesChange = jest.fn();
+    componentRelay.deinit();
+    componentRelay = new ComponentRelay({
+      targetWindow: childWindow,
+      onReady: jest.fn(),
+      onThemesChange
+    });
+    await registerComponent(testSNApp, childWindow, testComponent);
+
+    await createComponentItem(testSNApp, testThemeDefaultPackage, {
+      active: true
+    }) as SNTheme;
+    await registerComponent(testSNApp, childWindow, testComponent);
+
+    testSNApp.componentManager.postActiveThemesToComponent(testComponent);
+    await sleep(0.001);
+
+    expect(onThemesChange).toBeCalledTimes(1);
+  });
+
   test('getSelfComponentUUID() before the component is registered should be undefined', () => {
     const uuid = componentRelay.getSelfComponentUUID();
     expect(uuid).toBeUndefined();

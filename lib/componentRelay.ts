@@ -82,7 +82,11 @@ type ComponentRelayParams = {
   /**
    * A callback that is executed after the component has been registered.
    */
-  onReady?: () => void
+  onReady?: () => void,
+  /**
+   * A callback that is executed after themes have been changed.
+   */
+  onThemesChange?: () => void,
 }
 
 type ItemPayload = {
@@ -114,6 +118,7 @@ export default class ComponentRelay {
   private keyDownEventListener?: (event: KeyboardEvent) => void;
   private keyUpEventListener?: (event: KeyboardEvent) => void;
   private clickEventListener?: (event: MouseEvent) => void;
+  private onThemesChangeCallback?: () => void;
 
   constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
@@ -127,7 +132,7 @@ export default class ComponentRelay {
   }
 
   private processParameters(params: ComponentRelayParams) {
-    const { initialPermissions, options, onReady } = params
+    const { initialPermissions, options, onReady, onThemesChange } = params
 
     if (initialPermissions && initialPermissions.length > 0) {
       this.initialPermissions = initialPermissions
@@ -145,10 +150,14 @@ export default class ComponentRelay {
     if (isNotUndefinedOrNull(onReady)) {
       this.onReadyCallback = onReady
     }
+    if (isNotUndefinedOrNull(onThemesChange)) {
+      this.onThemesChangeCallback = onThemesChange
+    }
+
     Logger.enabled = options?.debug ?? false
   }
 
-  public deinit() : void {
+  public deinit(): void {
     this.onReadyCallback = undefined
     this.component = {
       acceptsThemes: true,
@@ -351,21 +360,21 @@ export default class ComponentRelay {
   /**
    * Gets the component UUID.
    */
-  public getSelfComponentUUID() : string | undefined {
+  public getSelfComponentUUID(): string | undefined {
     return this.component.uuid
   }
 
   /**
    * Checks if the component is running in a Desktop application.
    */
-  public isRunningInDesktopApplication() : boolean {
+  public isRunningInDesktopApplication(): boolean {
     return this.component.environment === environmentToString(Environment.Desktop)
   }
 
   /**
    * Checks if the component is running in a Mobile application.
    */
-  public isRunningInMobileApplication() : boolean {
+  public isRunningInMobileApplication(): boolean {
     return this.component.environment === environmentToString(Environment.Mobile)
   }
 
@@ -374,7 +383,7 @@ export default class ComponentRelay {
    * @param key The key for the data object.
    * @returns `undefined` if the value for the key does not exist. Returns the stored value otherwise.
    */
-  public getComponentDataValueForKey(key: string) : any {
+  public getComponentDataValueForKey(key: string): any {
     if (!this.component.data) {
       return
     }
@@ -386,7 +395,7 @@ export default class ComponentRelay {
    * @param key The key for the data object.
    * @param value The value to store under the specified key.
    */
-  public setComponentDataValueForKey(key: string, value: any) : void {
+  public setComponentDataValueForKey(key: string, value: any): void {
     if (!this.component.data) {
       throw new Error('The component has not been initialized.')
     }
@@ -403,7 +412,7 @@ export default class ComponentRelay {
   /**
    * Clears the component's data object.
    */
-  public clearComponentData() : void {
+  public clearComponentData(): void {
     this.component.data = {}
     this.postMessage(ComponentAction.SetComponentData, { componentData: this.component.data })
   }
@@ -506,6 +515,8 @@ export default class ComponentRelay {
       link.className = 'custom-theme'
       this.contentWindow.document.getElementsByTagName('head')[0].appendChild(link)
     }
+
+    this.onThemesChangeCallback && this.onThemesChangeCallback()
   }
 
   private themeElementForUrl(themeUrl: string) {
@@ -531,14 +542,14 @@ export default class ComponentRelay {
   /**
    * Gets the current platform where the component is running.
    */
-  public get platform() : string | undefined {
+  public get platform(): string | undefined {
     return this.component.platform
   }
 
   /**
    * Gets the current environment where the component is running.
    */
-  public get environment() : string | undefined {
+  public get environment(): string | undefined {
     return this.component.environment
   }
 
@@ -548,7 +559,7 @@ export default class ComponentRelay {
    * @param contentTypes A collection of Content Types.
    * @param callback A callback to process the streamed items.
    */
-  public streamItems(contentTypes: ContentType[], callback: (data: any) => void) : void {
+  public streamItems(contentTypes: ContentType[], callback: (data: any) => void): void {
     this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
       callback(data.items)
     })
@@ -558,7 +569,7 @@ export default class ComponentRelay {
    * Streams the current Item in context.
    * @param callback A callback to process the streamed item.
    */
-  public streamContextItem(callback: (data: any) => void) : void {
+  public streamContextItem(callback: (data: any) => void): void {
     this.postMessage(ComponentAction.StreamContextItem, {}, (data) => {
       const { item } = data
       /**
@@ -585,14 +596,14 @@ export default class ComponentRelay {
    * Selects a `Tag` item.
    * @param item The Item (`Tag` or `SmartTag`) to select.
    */
-  public selectItem(item: ItemPayload) : void {
+  public selectItem(item: ItemPayload): void {
     this.postMessage(ComponentAction.SelectItem, { item: this.jsonObjectForItem(item) })
   }
 
   /**
    * Clears current selected `Tag` (if any).
    */
-  public clearSelection() : void {
+  public clearSelection(): void {
     this.postMessage(ComponentAction.ClearSelection, { content_type: ContentType.Tag })
   }
 
@@ -601,7 +612,7 @@ export default class ComponentRelay {
    * @param item The Item's payload content.
    * @param callback The callback to process the created Item.
    */
-  public createItem(item: ItemPayload, callback: (data: any) => void) : void {
+  public createItem(item: ItemPayload, callback: (data: any) => void): void {
     this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
       let { item } = data
       /**
@@ -621,7 +632,7 @@ export default class ComponentRelay {
    * @param items The Item(s) payload collection.
    * @param callback The callback to process the created Item(s).
    */
-  public createItems(items: ItemPayload[], callback: (data: any) => void) : void {
+  public createItems(items: ItemPayload[], callback: (data: any) => void): void {
     const mapped = items.map((item) => this.jsonObjectForItem(item))
     this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
       callback && callback(data.items)
@@ -632,7 +643,7 @@ export default class ComponentRelay {
    * Associates a `Tag` with the current Note.
    * @param item The `Tag` item to associate.
    */
-  public associateItem(item: ItemPayload) : void {
+  public associateItem(item: ItemPayload): void {
     this.postMessage(ComponentAction.AssociateItem, { item: this.jsonObjectForItem(item) })
   }
 
@@ -640,8 +651,8 @@ export default class ComponentRelay {
    * Deassociates a `Tag` with the current Note.
    * @param item The `Tag` item to deassociate.
    */
-  public deassociateItem(item: ItemPayload) : void {
-    this.postMessage(ComponentAction.DeassociateItem, { item: this.jsonObjectForItem(item) } )
+  public deassociateItem(item: ItemPayload): void {
+    this.postMessage(ComponentAction.DeassociateItem, { item: this.jsonObjectForItem(item) })
   }
 
   /**
@@ -649,7 +660,7 @@ export default class ComponentRelay {
    * @param item The Item to delete.
    * @param callback The callback with the result of the operation.
    */
-  public deleteItem(item: ItemPayload, callback: (data: ItemMessagePayload) => void) : void {
+  public deleteItem(item: ItemPayload, callback: (data: ItemMessagePayload) => void): void {
     this.deleteItems([item], callback)
   }
 
@@ -658,7 +669,7 @@ export default class ComponentRelay {
    * @param items The Item(s) to delete.
    * @param callback The callback with the result of the operation.
    */
-  public deleteItems(items: ItemPayload[], callback: (data: ItemMessagePayload) => void) : void {
+  public deleteItems(items: ItemPayload[], callback: (data: ItemMessagePayload) => void): void {
     const params = {
       items: items.map((item) => {
         return this.jsonObjectForItem(item)
@@ -675,7 +686,7 @@ export default class ComponentRelay {
    * @param data
    * @param callback The callback with the result of the operation.
    */
-  public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void) : void {
+  public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void): void {
     this.postMessage(action, data, (data: any) => {
       callback && callback(data)
     })
@@ -687,7 +698,7 @@ export default class ComponentRelay {
    * @param callback
    * @param skipDebouncer
    */
-  public saveItem(item: ItemPayload, callback?: () => void, skipDebouncer = false) : void {
+  public saveItem(item: ItemPayload, callback?: () => void, skipDebouncer = false): void {
     this.saveItems([item], callback, skipDebouncer)
   }
 
@@ -699,7 +710,7 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemWithPresave(item: ItemPayload, presave: any, callback?: () => void) : void {
+  public saveItemWithPresave(item: ItemPayload, presave: any, callback?: () => void): void {
     this.saveItemsWithPresave([item], presave, callback)
   }
 
@@ -711,7 +722,7 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemsWithPresave(items: ItemPayload[], presave: any, callback?: () => void) : void {
+  public saveItemsWithPresave(items: ItemPayload[], presave: any, callback?: () => void): void {
     this.saveItems(items, callback, false, presave)
   }
 
@@ -739,7 +750,7 @@ export default class ComponentRelay {
    * This should be used when saving items via other means besides keystrokes.
    * @param presave
    */
-  public saveItems(items: ItemPayload[], callback?: () => void, skipDebouncer = false, presave?: any) : void {
+  public saveItems(items: ItemPayload[], callback?: () => void, skipDebouncer = false, presave?: any): void {
     /**
      * We need to make sure that when we clear a pending save timeout,
      * we carry over those pending items into the new save.
@@ -788,7 +799,7 @@ export default class ComponentRelay {
    * @param width The new width.
    * @param height The new height.
    */
-  public setSize(width: string | number, height: string | number) : void {
+  public setSize(width: string | number, height: string | number): void {
     this.postMessage(ComponentAction.SetSize, { type: 'container', width, height })
   }
 
@@ -796,7 +807,7 @@ export default class ComponentRelay {
    * Sends the KeyDown keyboard event to the Standard Notes parent application.
    * @param keyboardModifier The keyboard modifier that was pressed.
    */
-  private keyDownEvent(keyboardModifier: KeyboardModifier) : void {
+  private keyDownEvent(keyboardModifier: KeyboardModifier): void {
     this.postMessage(ComponentAction.KeyDown, { keyboardModifier })
   }
 
@@ -804,14 +815,14 @@ export default class ComponentRelay {
    * Sends the KeyUp keyboard event to the Standard Notes parent application.
    * @param keyboardModifier The keyboard modifier that was released.
    */
-   private keyUpEvent(keyboardModifier: KeyboardModifier) : void {
+  private keyUpEvent(keyboardModifier: KeyboardModifier): void {
     this.postMessage(ComponentAction.KeyUp, { keyboardModifier })
   }
 
   /**
    * Sends the Click mouse event to the Standard Notes parent application.
    */
-   private mouseClickEvent() : void {
+  private mouseClickEvent(): void {
     this.postMessage(ComponentAction.Click, {})
   }
 
@@ -829,7 +840,7 @@ export default class ComponentRelay {
    * @param item The Item to get the appData value from.
    * @param key The key to get the value from.
    */
-  public getItemAppDataValue(item: ItemMessagePayload | undefined, key: AppDataField | string) : any {
+  public getItemAppDataValue(item: ItemMessagePayload | undefined, key: AppDataField | string): any {
     const defaultDomain = 'org.standardnotes.sn'
     return item?.content?.appData?.[defaultDomain][key]
   }

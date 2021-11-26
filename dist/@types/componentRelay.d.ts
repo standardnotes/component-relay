@@ -30,6 +30,10 @@ declare type ComponentRelayParams = {
      * A callback that is executed after the component has been registered.
      */
     onReady?: () => void;
+    /**
+     * A callback that is executed after themes have been changed.
+     */
+    onThemesChange?: () => void;
 };
 declare type ItemPayload = {
     content_type?: ContentType;
@@ -53,6 +57,7 @@ export default class ComponentRelay {
     private keyDownEventListener?;
     private keyUpEventListener?;
     private clickEventListener?;
+    private onThemesChangeCallback?;
     constructor(params: ComponentRelayParams);
     private processParameters;
     deinit(): void;

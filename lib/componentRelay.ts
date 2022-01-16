@@ -119,6 +119,7 @@ export default class ComponentRelay {
   private keyUpEventListener?: (event: KeyboardEvent) => void
   private clickEventListener?: (event: MouseEvent) => void
   private onThemesChangeCallback?: () => void
+  private concernTimeouts: NodeJS.Timeout[] = []
 
   constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
@@ -640,7 +641,7 @@ export default class ComponentRelay {
 
       if (isNewItem && this.pendingSaveTimeout) {
         clearTimeout(this.pendingSaveTimeout)
-        this._performSavingOfItems(this.pendingSaveParams)
+        this.performSavingOfItems(this.pendingSaveParams)
         this.pendingSaveTimeout = undefined
         this.pendingSaveParams = undefined
       }
@@ -825,7 +826,7 @@ export default class ComponentRelay {
     this.saveItems(items, callback, false, presave)
   }
 
-  private _performSavingOfItems({
+  private performSavingOfItems({
     items,
     presave,
     callback,
@@ -834,6 +835,18 @@ export default class ComponentRelay {
     presave: () => void
     callback?: () => void
   }) {
+    const ConcernIntervalMS = 5000
+    const concernTimeout = setTimeout(() => {
+      this.concernTimeouts.forEach((timeout) => clearTimeout(timeout))
+      alert(
+        'This editor is unable to communicate with Standard Notes. ' +
+          'Your changes may not be saved. Please backup your changes, then restart the ' +
+          'application and try again.',
+      )
+    }, ConcernIntervalMS)
+
+    this.concernTimeouts.push(concernTimeout)
+
     /**
      * Presave block allows client to gain the benefit of performing something in the debounce cycle.
      */
@@ -844,9 +857,16 @@ export default class ComponentRelay {
       mappedItems.push(this.jsonObjectForItem(item))
     }
 
-    this.postMessage(ComponentAction.SaveItems, { items: mappedItems }, () => {
-      callback && callback()
-    })
+    const wrappedCallback = () => {
+      this.concernTimeouts.forEach((timeout) => clearTimeout(timeout))
+      callback?.()
+    }
+
+    this.postMessage(
+      ComponentAction.SaveItems,
+      { items: mappedItems },
+      wrappedCallback,
+    )
   }
 
   /**
@@ -896,13 +916,13 @@ export default class ComponentRelay {
       }
 
       this.pendingSaveTimeout = setTimeout(() => {
-        this._performSavingOfItems(this.pendingSaveParams)
+        this.performSavingOfItems(this.pendingSaveParams)
         this.pendingSaveItems = []
         this.pendingSaveTimeout = undefined
         this.pendingSaveParams = null
       }, this.coallesedSavingDelay)
     } else {
-      this._performSavingOfItems({ items, presave, callback })
+      this.performSavingOfItems({ items, presave, callback })
     }
   }
 

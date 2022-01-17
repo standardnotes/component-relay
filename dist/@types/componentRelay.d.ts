@@ -58,6 +58,7 @@ export default class ComponentRelay {
     private keyUpEventListener?;
     private clickEventListener?;
     private onThemesChangeCallback?;
+    private concernTimeouts;
     constructor(params: ComponentRelayParams);
     private processParameters;
     deinit(): void;
@@ -195,7 +196,7 @@ export default class ComponentRelay {
      * @param callback
      */
     saveItemsWithPresave(items: ItemPayload[], presave: any, callback?: () => void): void;
-    private _performSavingOfItems;
+    private performSavingOfItems;
     /**
      * Saves a collection of existing Items.
      * @param items The items to be saved.

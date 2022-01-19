@@ -835,7 +835,7 @@ export default class ComponentRelay {
     presave: () => void
     callback?: () => void
   }) {
-    const ConcernIntervalMS = 5000
+    const ConcernIntervalMS = 10000
     const concernTimeout = setTimeout(() => {
       this.concernTimeouts.forEach((timeout) => clearTimeout(timeout))
       alert(

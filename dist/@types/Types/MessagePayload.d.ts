@@ -1,4 +1,4 @@
-import { MessageData, UuidString, ComponentAction } from '@standardnotes/snjs';
+import type { MessageData, UuidString, ComponentAction } from '@standardnotes/snjs';
 import { MessagePayloadApi } from './MessagePayloadApi';
 import { ComponentData } from './ComponentData';
 export declare type MessagePayload = {

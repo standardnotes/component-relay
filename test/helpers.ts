@@ -2,11 +2,10 @@ import {
   ComponentAction,
   ComponentArea,
   ContentType,
-  ItemMessagePayload,
   PayloadSource,
   SNApplication,
   SNComponent,
-  SNItem,
+  DecryptedItem,
   SNNote,
   SNTag
 } from '@standardnotes/snjs';
@@ -173,7 +172,7 @@ export const createComponentItem = async (
 export const registerComponentHandler = (
   application: SNApplication,
   areas: ComponentArea[],
-  itemInContext?: SNItem,
+  itemInContext?: DecryptedItem,
   customActionHandler?: (currentComponent: SNComponent, action: ComponentAction, data: any) => void,
 ) => {
   application.componentManager.registerHandler({
@@ -186,7 +185,7 @@ export const registerComponentHandler = (
   });
 };
 
-export const jsonForItem = (item: SNItem, component: SNComponent) => {
+export const jsonForItem = (item: DecryptedItem, component: SNComponent) => {
   const isMetadatUpdate =
     item.payload.source === PayloadSource.RemoteSaved ||
     item.payload.source === PayloadSource.LocalSaved ||

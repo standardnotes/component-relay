@@ -1,4 +1,4 @@
-import { Environment } from '@standardnotes/snjs'
+import { Environment } from './Types/Environment'
 import { v4 as uuidv4 } from 'uuid'
 
 declare global {

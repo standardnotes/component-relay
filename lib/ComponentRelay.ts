@@ -1,12 +1,10 @@
-import {
+import type {
   OutgoingItemMessagePayload,
   MessageData,
   DecryptedItem,
   AppDataField,
-  Environment,
   DecryptedTransferPayload,
   ItemContent,
-  ComponentAction,
   ContentType,
 } from '@standardnotes/snjs'
 import { environmentToString, generateUuid, isValidJsonString } from './Utils'
@@ -17,6 +15,8 @@ import { MessagePayload } from './Types/MessagePayload'
 import { Component } from './Types/Component'
 import { MessagePayloadApi } from './Types/MessagePayloadApi'
 import { ComponentRelayOptions } from './Types/ComponentRelayOptions'
+import { ComponentAction } from './Types/ComponentAction'
+import { Environment } from './Types/Environment'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
@@ -78,18 +78,12 @@ export default class ComponentRelay {
     this.pendingSaveParams = undefined
 
     if (this.messageHandler) {
-      this.contentWindow.document.removeEventListener(
-        'message',
-        this.messageHandler,
-      )
+      this.contentWindow.document.removeEventListener('message', this.messageHandler)
       this.contentWindow.removeEventListener('message', this.messageHandler)
     }
 
     if (this.keyDownEventListener) {
-      this.contentWindow.removeEventListener(
-        'keydown',
-        this.keyDownEventListener,
-      )
+      this.contentWindow.removeEventListener('keydown', this.keyDownEventListener)
     }
 
     if (this.keyUpEventListener) {
@@ -132,10 +126,7 @@ export default class ComponentRelay {
        * The Component Registered message will be the most reliable one, so we won't change it after any subsequent events,
        * in case you receive an event from another window.
        */
-      if (
-        typeof this.component.origin === 'undefined' &&
-        parsedData.action === ComponentAction.ComponentRegistered
-      ) {
+      if (typeof this.component.origin === 'undefined' && parsedData.action === ComponentAction.ComponentRegistered) {
         this.component.origin = event.origin
       } else if (event.origin !== this.component.origin) {
         // If event origin doesn't match first-run value, return.
@@ -155,11 +146,7 @@ export default class ComponentRelay {
      * Also, even with the new version of react-native-webview, Android may still require document.addEventListener (while iOS still only requires window.addEventListener)
      * https://github.com/react-native-community/react-native-webview/issues/323#issuecomment-467767933
      */
-    this.contentWindow.document.addEventListener(
-      'message',
-      this.messageHandler,
-      false,
-    )
+    this.contentWindow.document.addEventListener('message', this.messageHandler, false)
     this.contentWindow.addEventListener('message', this.messageHandler, false)
 
     Logger.info('Waiting for messages...')
@@ -193,11 +180,7 @@ export default class ComponentRelay {
       }
     }
 
-    this.contentWindow.addEventListener(
-      'keydown',
-      this.keyDownEventListener,
-      false,
-    )
+    this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
     this.contentWindow.addEventListener('keyup', this.keyUpEventListener, false)
   }
 
@@ -232,11 +215,9 @@ export default class ComponentRelay {
         }
 
         // Get the callback from queue.
-        const originalMessage = this.sentMessages?.filter(
-          (message: MessagePayload) => {
-            return message.messageId === payload.original?.messageId
-          },
-        )[0]
+        const originalMessage = this.sentMessages?.filter((message: MessagePayload) => {
+          return message.messageId === payload.original?.messageId
+        })[0]
 
         if (!originalMessage) {
           // Connection must have been reset. We should alert the user unless it's a reply,
@@ -264,7 +245,7 @@ export default class ComponentRelay {
     this.component.uuid = data.uuid
 
     for (const message of this.messageQueue) {
-      this.postMessage(message.action, message.data, message.callback)
+      this.postMessage(message.action as ComponentAction, message.data, message.callback)
     }
 
     this.messageQueue = []
@@ -292,18 +273,14 @@ export default class ComponentRelay {
    * Checks if the component is running in a Desktop application.
    */
   public isRunningInDesktopApplication(): boolean {
-    return (
-      this.component.environment === environmentToString(Environment.Desktop)
-    )
+    return this.component.environment === environmentToString(Environment.Desktop)
   }
 
   /**
    * Checks if the component is running in a Mobile application.
    */
   public isRunningInMobileApplication(): boolean {
-    return (
-      this.component.environment === environmentToString(Environment.Mobile)
-    )
+    return this.component.environment === environmentToString(Environment.Mobile)
   }
 
   /**
@@ -349,11 +326,7 @@ export default class ComponentRelay {
     })
   }
 
-  private postMessage(
-    action: ComponentAction,
-    data: MessageData,
-    callback?: (...params: any) => void,
-  ) {
+  private postMessage(action: ComponentAction, data: MessageData, callback?: (...params: any) => void) {
     /**
      * If the sessionKey is not set, we push the message to queue
      * that will be processed later on.
@@ -394,10 +367,7 @@ export default class ComponentRelay {
     }
 
     Logger.info('Posting message:', postMessagePayload)
-    this.contentWindow.parent.postMessage(
-      postMessagePayload,
-      this.component.origin!,
-    )
+    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!)
   }
 
   private activateThemes(incomingUrls: string[] = []) {
@@ -409,10 +379,7 @@ export default class ComponentRelay {
 
     const { activeThemes } = this.component
 
-    if (
-      activeThemes &&
-      activeThemes.sort().toString() == incomingUrls.sort().toString()
-    ) {
+    if (activeThemes && activeThemes.sort().toString() == incomingUrls.sort().toString()) {
       // Incoming theme URLs are same as active, do nothing.
       return
     }
@@ -453,18 +420,14 @@ export default class ComponentRelay {
       link.rel = 'stylesheet'
       link.media = 'screen,print'
       link.className = 'custom-theme'
-      this.contentWindow.document
-        .getElementsByTagName('head')[0]
-        .appendChild(link)
+      this.contentWindow.document.getElementsByTagName('head')[0].appendChild(link)
     }
 
     this.params.onThemesChange && this.params.onThemesChange()
   }
 
   private themeElementForUrl(themeUrl: string) {
-    const elements = Array.from(
-      this.contentWindow.document.getElementsByClassName('custom-theme'),
-    ).slice()
+    const elements = Array.from(this.contentWindow.document.getElementsByClassName('custom-theme')).slice()
     return elements.find((element) => {
       // We used to search here by `href`, but on desktop, with local file:// urls, that didn't work for some reason.
       return element.id == btoa(themeUrl)
@@ -503,17 +466,10 @@ export default class ComponentRelay {
    * @param contentTypes A collection of Content Types.
    * @param callback A callback to process the streamed items.
    */
-  public streamItems(
-    contentTypes: ContentType[],
-    callback: (data: any) => void,
-  ): void {
-    this.postMessage(
-      ComponentAction.StreamItems,
-      { content_types: contentTypes },
-      (data: any) => {
-        callback(data.items)
-      },
-    )
+  public streamItems(contentTypes: ContentType[], callback: (data: any) => void): void {
+    this.postMessage(ComponentAction.StreamItems, { content_types: contentTypes }, (data: any) => {
+      callback(data.items)
+    })
   }
 
   /**
@@ -529,8 +485,7 @@ export default class ComponentRelay {
        * component before it has commited its presave, it will end up first replacing the UI with new context item,
        * and when the debouncer executes to read the component UI, it will be reading the new UI for the previous item.
        */
-      const isNewItem =
-        !this.lastStreamedItem || this.lastStreamedItem.uuid !== item.uuid
+      const isNewItem = !this.lastStreamedItem || this.lastStreamedItem.uuid !== item.uuid
 
       if (isNewItem && this.pendingSaveTimeout) {
         clearTimeout(this.pendingSaveTimeout)
@@ -545,49 +500,23 @@ export default class ComponentRelay {
   }
 
   /**
-   * Selects a `Tag` item.
-   * @param item The Item (`Tag` or `SmartTag`) to select.
-   */
-  public selectItem(item: DecryptedTransferPayload): void {
-    this.postMessage(ComponentAction.SelectItem, {
-      item: this.jsonObjectForItem(item),
-    })
-  }
-
-  /**
-   * Clears current selected `Tag` (if any).
-   */
-  public clearSelection(): void {
-    this.postMessage(ComponentAction.ClearSelection, {
-      content_type: ContentType.Tag,
-    })
-  }
-
-  /**
    * Creates and stores an Item in the item store.
    * @param item The Item's payload content.
    * @param callback The callback to process the created Item.
    */
-  public createItem(
-    item: DecryptedTransferPayload,
-    callback: (data: any) => void,
-  ): void {
-    this.postMessage(
-      ComponentAction.CreateItem,
-      { item: this.jsonObjectForItem(item) },
-      (data: any) => {
-        let { item } = data
-        /**
-         * A previous version of the SN app had an issue where the item in the reply to ComponentActions.CreateItems
-         * would be nested inside "items" and not "item". So handle both cases here.
-         */
-        if (!item && data.items && data.items.length > 0) {
-          item = data.items[0]
-        }
-        this.associateItem(item)
-        callback && callback(item)
-      },
-    )
+  public createItem(item: DecryptedTransferPayload, callback: (data: any) => void): void {
+    this.postMessage(ComponentAction.CreateItem, { item: this.jsonObjectForItem(item) }, (data: any) => {
+      let { item } = data
+      /**
+       * A previous version of the SN app had an issue where the item in the reply to ComponentActions.CreateItems
+       * would be nested inside "items" and not "item". So handle both cases here.
+       */
+      if (!item && data.items && data.items.length > 0) {
+        item = data.items[0]
+      }
+
+      callback && callback(item)
+    })
   }
 
   /**
@@ -595,37 +524,10 @@ export default class ComponentRelay {
    * @param items The Item(s) payload collection.
    * @param callback The callback to process the created Item(s).
    */
-  public createItems(
-    items: DecryptedTransferPayload[],
-    callback: (data: any) => void,
-  ): void {
+  public createItems(items: DecryptedTransferPayload[], callback: (data: any) => void): void {
     const mapped = items.map((item) => this.jsonObjectForItem(item))
-    this.postMessage(
-      ComponentAction.CreateItems,
-      { items: mapped },
-      (data: any) => {
-        callback && callback(data.items)
-      },
-    )
-  }
-
-  /**
-   * Associates a `Tag` with the current Note.
-   * @param item The `Tag` item to associate.
-   */
-  public associateItem(item: DecryptedTransferPayload): void {
-    this.postMessage(ComponentAction.AssociateItem, {
-      item: this.jsonObjectForItem(item),
-    })
-  }
-
-  /**
-   * Deassociates a `Tag` with the current Note.
-   * @param item The `Tag` item to deassociate.
-   */
-  public deassociateItem(item: DecryptedTransferPayload): void {
-    this.postMessage(ComponentAction.DeassociateItem, {
-      item: this.jsonObjectForItem(item),
+    this.postMessage(ComponentAction.CreateItems, { items: mapped }, (data: any) => {
+      callback && callback(data.items)
     })
   }
 
@@ -634,10 +536,7 @@ export default class ComponentRelay {
    * @param item The Item to delete.
    * @param callback The callback with the result of the operation.
    */
-  public deleteItem(
-    item: DecryptedTransferPayload,
-    callback: (data: OutgoingItemMessagePayload) => void,
-  ): void {
+  public deleteItem(item: DecryptedTransferPayload, callback: (data: OutgoingItemMessagePayload) => void): void {
     this.deleteItems([item], callback)
   }
 
@@ -646,10 +545,7 @@ export default class ComponentRelay {
    * @param items The Item(s) to delete.
    * @param callback The callback with the result of the operation.
    */
-  public deleteItems(
-    items: DecryptedTransferPayload[],
-    callback: (data: OutgoingItemMessagePayload) => void,
-  ): void {
+  public deleteItems(items: DecryptedTransferPayload[], callback: (data: OutgoingItemMessagePayload) => void): void {
     const params = {
       items: items.map((item) => {
         return this.jsonObjectForItem(item)
@@ -666,11 +562,7 @@ export default class ComponentRelay {
    * @param data
    * @param callback The callback with the result of the operation.
    */
-  public sendCustomEvent(
-    action: ComponentAction,
-    data: any,
-    callback?: (data: any) => void,
-  ): void {
+  public sendCustomEvent(action: ComponentAction, data: any, callback?: (data: any) => void): void {
     this.postMessage(action, data, (data: any) => {
       callback && callback(data)
     })
@@ -682,11 +574,7 @@ export default class ComponentRelay {
    * @param callback
    * @param skipDebouncer
    */
-  public saveItem(
-    item: DecryptedTransferPayload,
-    callback?: () => void,
-    skipDebouncer = false,
-  ): void {
+  public saveItem(item: DecryptedTransferPayload, callback?: () => void, skipDebouncer = false): void {
     this.saveItems([item], callback, skipDebouncer)
   }
 
@@ -714,11 +602,7 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemsWithPresave(
-    items: DecryptedTransferPayload[],
-    presave: any,
-    callback?: () => void,
-  ): void {
+  public saveItemsWithPresave(items: DecryptedTransferPayload[], presave: any, callback?: () => void): void {
     this.saveItems(items, callback, false, presave)
   }
 
@@ -758,11 +642,7 @@ export default class ComponentRelay {
       callback?.()
     }
 
-    this.postMessage(
-      ComponentAction.SaveItems,
-      { items: mappedItems },
-      wrappedCallback,
-    )
+    this.postMessage(ComponentAction.SaveItems, { items: mappedItems }, wrappedCallback)
   }
 
   /**
@@ -872,10 +752,7 @@ export default class ComponentRelay {
    * @param item The Item to get the appData value from.
    * @param key The key to get the value from.
    */
-  public getItemAppDataValue(
-    item: OutgoingItemMessagePayload | undefined,
-    key: AppDataField | string,
-  ): any {
+  public getItemAppDataValue(item: OutgoingItemMessagePayload | undefined, key: AppDataField | string): any {
     const defaultDomain = 'org.standardnotes.sn'
     const domainData = item?.content?.appData?.[defaultDomain]
     return domainData?.[key as AppDataField]

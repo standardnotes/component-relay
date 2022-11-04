@@ -1,5 +1,6 @@
-import { OutgoingItemMessagePayload, AppDataField, DecryptedTransferPayload, ItemContent, ComponentAction, ContentType } from '@standardnotes/snjs';
+import type { OutgoingItemMessagePayload, AppDataField, DecryptedTransferPayload, ItemContent, ContentType } from '@standardnotes/snjs';
 import { ComponentRelayParams } from './Types/ComponentRelayParams';
+import { ComponentAction } from './Types/ComponentAction';
 export default class ComponentRelay {
     private contentWindow;
     private component;
@@ -77,15 +78,6 @@ export default class ComponentRelay {
      */
     streamContextItem(callback: (data: any) => void): void;
     /**
-     * Selects a `Tag` item.
-     * @param item The Item (`Tag` or `SmartTag`) to select.
-     */
-    selectItem(item: DecryptedTransferPayload): void;
-    /**
-     * Clears current selected `Tag` (if any).
-     */
-    clearSelection(): void;
-    /**
      * Creates and stores an Item in the item store.
      * @param item The Item's payload content.
      * @param callback The callback to process the created Item.
@@ -97,16 +89,6 @@ export default class ComponentRelay {
      * @param callback The callback to process the created Item(s).
      */
     createItems(items: DecryptedTransferPayload[], callback: (data: any) => void): void;
-    /**
-     * Associates a `Tag` with the current Note.
-     * @param item The `Tag` item to associate.
-     */
-    associateItem(item: DecryptedTransferPayload): void;
-    /**
-     * Deassociates a `Tag` with the current Note.
-     * @param item The `Tag` item to deassociate.
-     */
-    deassociateItem(item: DecryptedTransferPayload): void;
     /**
      * Deletes an Item from the item store.
      * @param item The Item to delete.

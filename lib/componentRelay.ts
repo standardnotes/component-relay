@@ -1,165 +1,71 @@
 import {
+  OutgoingItemMessagePayload,
+  MessageData,
+  DecryptedItem,
   AppDataField,
+  Environment,
+  DecryptedTransferPayload,
+  ItemContent,
   ComponentAction,
   ContentType,
-  Environment,
-} from './snjsTypes'
-import type {
-  ComponentPermission,
-  ItemMessagePayload,
-  MessageData,
-  SNItem,
-  UuidString,
 } from '@standardnotes/snjs'
-import {
-  environmentToString,
-  generateUuid,
-  isValidJsonString,
-  isNotUndefinedOrNull,
-} from './utils'
-import Logger from './logger'
+import { environmentToString, generateUuid, isValidJsonString } from './Utils'
+import Logger from './Logger'
+import { KeyboardModifier } from './Types/KeyboardModifier'
+import { ComponentRelayParams } from './Types/ComponentRelayParams'
+import { MessagePayload } from './Types/MessagePayload'
+import { Component } from './Types/Component'
+import { MessagePayloadApi } from './Types/MessagePayloadApi'
+import { ComponentRelayOptions } from './Types/ComponentRelayOptions'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
-enum MessagePayloadApi {
-  Component = 'component',
-}
-
-type Component = {
-  uuid?: string
-  origin?: string
-  data?: ComponentData
-  sessionKey?: string
-  environment?: string
-  platform?: string
-  isMobile?: boolean
-  acceptsThemes: boolean
-  activeThemes: string[]
-}
-
-type ComponentData = {
-  [key: string]: any
-}
-
-type MessagePayload = {
-  action: ComponentAction
-  data: MessageData
-  componentData?: ComponentData
-  messageId?: UuidString
-  sessionKey?: UuidString
-  api: MessagePayloadApi
-  original?: MessagePayload
-  callback?: (...params: any) => void
-}
-
-type ComponentRelayOptions = {
-  coallesedSaving?: boolean
-  coallesedSavingDelay?: number
-  /**
-   * Outputs debugging information to console.
-   */
-  debug?: boolean
-  /**
-   * Indicates whether or not the component accepts themes.
-   */
-  acceptsThemes?: boolean
-}
-
-type ComponentRelayParams = {
-  /**
-   * Represents the window object that the component is running in.
-   */
-  targetWindow: Window
-  /**
-   * A collection of permissions that the component can request
-   * access once it's ready.
-   */
-  initialPermissions?: ComponentPermission[]
-  /**
-   * The options to initialize
-   */
-  options?: ComponentRelayOptions
-  /**
-   * A callback that is executed after the component has been registered.
-   */
-  onReady?: () => void
-  /**
-   * A callback that is executed after themes have been changed.
-   */
-  onThemesChange?: () => void
-}
-
-type ItemPayload = {
-  content_type?: ContentType
-  content?: any
-  [key: string]: any
-}
-
-enum KeyboardModifier {
-  Shift = 'Shift',
-  Ctrl = 'Control',
-  Meta = 'Meta',
-}
-
 export default class ComponentRelay {
   private contentWindow: Window
-  private initialPermissions?: ComponentPermission[]
-  private onReadyCallback?: () => void
   private component: Component = { activeThemes: [], acceptsThemes: true }
   private sentMessages: MessagePayload[] = []
   private messageQueue: MessagePayload[] = []
-  private lastStreamedItem?: ItemPayload
-  private pendingSaveItems?: ItemPayload[]
+  private lastStreamedItem?: DecryptedTransferPayload
+  private pendingSaveItems?: DecryptedTransferPayload[]
   private pendingSaveTimeout?: NodeJS.Timeout
   private pendingSaveParams?: any
-  private coallesedSaving = true
-  private coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY
   private messageHandler?: (event: any) => void
   private keyDownEventListener?: (event: KeyboardEvent) => void
   private keyUpEventListener?: (event: KeyboardEvent) => void
   private clickEventListener?: (event: MouseEvent) => void
-  private onThemesChangeCallback?: () => void
   private concernTimeouts: NodeJS.Timeout[] = []
+  private options: ComponentRelayOptions
+  private params: Omit<ComponentRelayParams, 'options'>
 
   constructor(params: ComponentRelayParams) {
     if (!params || !params.targetWindow) {
       throw new Error('contentWindow must be a valid Window object.')
     }
+
+    this.params = params
+
+    this.options = params.options || {}
+
+    if (this.options.coallesedSaving == undefined) {
+      this.options.coallesedSaving = true
+    }
+    if (this.options.coallesedSavingDelay == undefined) {
+      this.options.coallesedSavingDelay = DEFAULT_COALLESED_SAVING_DELAY
+    }
+    if (this.options.acceptsThemes != undefined) {
+      this.component.acceptsThemes = this.options.acceptsThemes ?? true
+    }
+
+    Logger.enabled = this.options.debug ?? false
+
     this.contentWindow = params.targetWindow
-    this.processParameters(params)
     this.registerMessageHandler()
     this.registerKeyboardEventListeners()
     this.registerMouseEventListeners()
   }
 
-  private processParameters(params: ComponentRelayParams) {
-    const { initialPermissions, options, onReady, onThemesChange } = params
-
-    if (initialPermissions && initialPermissions.length > 0) {
-      this.initialPermissions = initialPermissions
-    }
-
-    if (isNotUndefinedOrNull(options?.coallesedSaving)) {
-      this.coallesedSaving = options!.coallesedSaving!
-    }
-    if (isNotUndefinedOrNull(options?.coallesedSavingDelay)) {
-      this.coallesedSavingDelay = options!.coallesedSavingDelay!
-    }
-    if (isNotUndefinedOrNull(options?.acceptsThemes)) {
-      this.component.acceptsThemes = options?.acceptsThemes ?? true
-    }
-    if (isNotUndefinedOrNull(onReady)) {
-      this.onReadyCallback = onReady
-    }
-    if (isNotUndefinedOrNull(onThemesChange)) {
-      this.onThemesChangeCallback = onThemesChange
-    }
-
-    Logger.enabled = options?.debug ?? false
-  }
-
   public deinit(): void {
-    this.onReadyCallback = undefined
+    this.params.onReady = undefined
     this.component = {
       acceptsThemes: true,
       activeThemes: [],
@@ -357,10 +263,6 @@ export default class ComponentRelay {
     this.component.platform = data.platform
     this.component.uuid = data.uuid
 
-    if (this.initialPermissions && this.initialPermissions.length > 0) {
-      this.requestPermissions(this.initialPermissions)
-    }
-
     for (const message of this.messageQueue) {
       this.postMessage(message.action, message.data, message.callback)
     }
@@ -374,8 +276,8 @@ export default class ComponentRelay {
     // After activateThemes is done, we want to send a message with the ThemesActivated action.
     this.postMessage(ComponentAction.ThemesActivated, {})
 
-    if (this.onReadyCallback) {
-      this.onReadyCallback()
+    if (this.params.onReady) {
+      this.params.onReady()
     }
   }
 
@@ -466,6 +368,10 @@ export default class ComponentRelay {
       return
     }
 
+    if (action === ComponentAction.SaveItems) {
+      data.height = this.params.handleRequestForContentHeight()
+    }
+
     const message = {
       action,
       data,
@@ -491,19 +397,6 @@ export default class ComponentRelay {
     this.contentWindow.parent.postMessage(
       postMessagePayload,
       this.component.origin!,
-    )
-  }
-
-  private requestPermissions(
-    permissions: ComponentPermission[],
-    callback?: (...params: any) => void,
-  ) {
-    this.postMessage(
-      ComponentAction.RequestPermissions,
-      { permissions },
-      () => {
-        callback && callback()
-      },
     )
   }
 
@@ -565,7 +458,7 @@ export default class ComponentRelay {
         .appendChild(link)
     }
 
-    this.onThemesChangeCallback && this.onThemesChangeCallback()
+    this.params.onThemesChange && this.params.onThemesChange()
   }
 
   private themeElementForUrl(themeUrl: string) {
@@ -655,7 +548,7 @@ export default class ComponentRelay {
    * Selects a `Tag` item.
    * @param item The Item (`Tag` or `SmartTag`) to select.
    */
-  public selectItem(item: ItemPayload): void {
+  public selectItem(item: DecryptedTransferPayload): void {
     this.postMessage(ComponentAction.SelectItem, {
       item: this.jsonObjectForItem(item),
     })
@@ -675,7 +568,10 @@ export default class ComponentRelay {
    * @param item The Item's payload content.
    * @param callback The callback to process the created Item.
    */
-  public createItem(item: ItemPayload, callback: (data: any) => void): void {
+  public createItem(
+    item: DecryptedTransferPayload,
+    callback: (data: any) => void,
+  ): void {
     this.postMessage(
       ComponentAction.CreateItem,
       { item: this.jsonObjectForItem(item) },
@@ -700,7 +596,7 @@ export default class ComponentRelay {
    * @param callback The callback to process the created Item(s).
    */
   public createItems(
-    items: ItemPayload[],
+    items: DecryptedTransferPayload[],
     callback: (data: any) => void,
   ): void {
     const mapped = items.map((item) => this.jsonObjectForItem(item))
@@ -717,7 +613,7 @@ export default class ComponentRelay {
    * Associates a `Tag` with the current Note.
    * @param item The `Tag` item to associate.
    */
-  public associateItem(item: ItemPayload): void {
+  public associateItem(item: DecryptedTransferPayload): void {
     this.postMessage(ComponentAction.AssociateItem, {
       item: this.jsonObjectForItem(item),
     })
@@ -727,7 +623,7 @@ export default class ComponentRelay {
    * Deassociates a `Tag` with the current Note.
    * @param item The `Tag` item to deassociate.
    */
-  public deassociateItem(item: ItemPayload): void {
+  public deassociateItem(item: DecryptedTransferPayload): void {
     this.postMessage(ComponentAction.DeassociateItem, {
       item: this.jsonObjectForItem(item),
     })
@@ -739,8 +635,8 @@ export default class ComponentRelay {
    * @param callback The callback with the result of the operation.
    */
   public deleteItem(
-    item: ItemPayload,
-    callback: (data: ItemMessagePayload) => void,
+    item: DecryptedTransferPayload,
+    callback: (data: OutgoingItemMessagePayload) => void,
   ): void {
     this.deleteItems([item], callback)
   }
@@ -751,8 +647,8 @@ export default class ComponentRelay {
    * @param callback The callback with the result of the operation.
    */
   public deleteItems(
-    items: ItemPayload[],
-    callback: (data: ItemMessagePayload) => void,
+    items: DecryptedTransferPayload[],
+    callback: (data: OutgoingItemMessagePayload) => void,
   ): void {
     const params = {
       items: items.map((item) => {
@@ -787,7 +683,7 @@ export default class ComponentRelay {
    * @param skipDebouncer
    */
   public saveItem(
-    item: ItemPayload,
+    item: DecryptedTransferPayload,
     callback?: () => void,
     skipDebouncer = false,
   ): void {
@@ -802,8 +698,8 @@ export default class ComponentRelay {
    * hook into the debounce cycle so that clients don't have to implement their own debouncing.
    * @param callback
    */
-  public saveItemWithPresave(
-    item: ItemPayload,
+  public saveItemWithPresave<C extends ItemContent = ItemContent>(
+    item: DecryptedTransferPayload<C>,
     presave: any,
     callback?: () => void,
   ): void {
@@ -819,7 +715,7 @@ export default class ComponentRelay {
    * @param callback
    */
   public saveItemsWithPresave(
-    items: ItemPayload[],
+    items: DecryptedTransferPayload[],
     presave: any,
     callback?: () => void,
   ): void {
@@ -831,7 +727,7 @@ export default class ComponentRelay {
     presave,
     callback,
   }: {
-    items: ItemPayload[]
+    items: DecryptedTransferPayload[]
     presave: () => void
     callback?: () => void
   }) {
@@ -878,7 +774,7 @@ export default class ComponentRelay {
    * @param presave
    */
   public saveItems(
-    items: ItemPayload[],
+    items: DecryptedTransferPayload[],
     callback?: () => void,
     skipDebouncer = false,
     presave?: any,
@@ -891,7 +787,7 @@ export default class ComponentRelay {
       this.pendingSaveItems = []
     }
 
-    if (this.coallesedSaving && !skipDebouncer) {
+    if (this.options.coallesedSaving && !skipDebouncer) {
       if (this.pendingSaveTimeout) {
         clearTimeout(this.pendingSaveTimeout)
       }
@@ -920,7 +816,7 @@ export default class ComponentRelay {
         this.pendingSaveItems = []
         this.pendingSaveTimeout = undefined
         this.pendingSaveParams = null
-      }, this.coallesedSavingDelay)
+      }, this.options.coallesedSavingDelay)
     } else {
       this.performSavingOfItems({ items, presave, callback })
     }
@@ -962,7 +858,7 @@ export default class ComponentRelay {
     this.postMessage(ComponentAction.Click, {})
   }
 
-  private jsonObjectForItem(item: SNItem | ItemPayload) {
+  private jsonObjectForItem(item: DecryptedItem | DecryptedTransferPayload) {
     const copy = Object.assign({}, item) as any
     copy.children = null
     copy.parent = null
@@ -977,10 +873,11 @@ export default class ComponentRelay {
    * @param key The key to get the value from.
    */
   public getItemAppDataValue(
-    item: ItemMessagePayload | undefined,
+    item: OutgoingItemMessagePayload | undefined,
     key: AppDataField | string,
   ): any {
     const defaultDomain = 'org.standardnotes.sn'
-    return item?.content?.appData?.[defaultDomain][key]
+    const domainData = item?.content?.appData?.[defaultDomain]
+    return domainData?.[key as AppDataField]
   }
 }

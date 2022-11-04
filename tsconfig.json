@@ -1,5 +1,5 @@
 {
-  "include": ["lib/componentRelay.ts"],
+  "include": ["lib/ComponentRelay.ts"],
   "exclude": ["node_modules", "test/**/*", "webpack.*.js"],
   "compilerOptions": {
     "target": "esnext",

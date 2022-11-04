@@ -1,4 +1,4 @@
-import { Environment } from './snjsTypes';
+import { Environment } from '@standardnotes/snjs';
 declare global {
     interface Window {
         msCrypto: unknown;

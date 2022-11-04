@@ -6,26 +6,31 @@
     "url": "git://github.com/standardnotes/component-relay.git"
   },
   "main": "dist/dist.js",
-  "types": "dist/@types/componentRelay.d.ts",
+  "types": "dist/@types/ComponentRelay.d.ts",
   "scripts": {
     "build:docs": "typedoc",
     "build:types": "tsc",
-    "bundle": "yarn run lint:fix && yarn run build:types && webpack --config webpack.prod.js",
+    "build": "yarn run build:types && webpack --config webpack.prod.js",
     "clean-cache:docs": "rm -rf node_modules/.cache/gh-pages",
     "publish:docs": "gh-pages -b gh-pages -d docs",
     "coverage": "yarn test --coverage --silent",
     "lint": "eslint lib --ext .ts",
     "lint:fix": "yarn run lint --fix",
     "start": "webpack -w --config webpack.dev.js",
-    "test": "jest"
+    "noci:test": "jest"
+  },
+  "dependencies": {
+    "@standardnotes/common": "^1.43.0",
+    "@standardnotes/features": "1.54.0",
+    "@standardnotes/models": "1.34.3",
+    "@standardnotes/sncrypto-common": "1.13.0",
+    "@standardnotes/snjs": "2.147.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.7",
-    "@standardnotes/sncrypto-common": "^1.2.9",
-    "@standardnotes/snjs": "2.3.1",
     "@types/jest": "^26.0.19",
     "@types/jsdom": "^16.2.5",
     "@types/node": "^14.14.6",

@@ -367,7 +367,8 @@ export default class ComponentRelay {
     }
 
     Logger.info('Posting message:', postMessagePayload)
-    this.contentWindow.parent.postMessage(postMessagePayload, this.component.origin!)
+    const targetOrigin = this.component.origin && this.component.origin !== 'null' ? this.component.origin : '*'
+    this.contentWindow.parent.postMessage(postMessagePayload, targetOrigin)
   }
 
   private activateThemes(incomingUrls: string[] = []) {

@@ -21,6 +21,12 @@ export default class ComponentRelay {
     deinit(): void;
     private registerMessageHandler;
     private registerKeyboardEventListeners;
+    /**
+     * Only forward keyboard events involving shortcut modifiers (Ctrl, Shift, Meta, Alt).
+     * Plain typing should stay in the editor and not be sent to the parent app.
+     */
+    private shouldForwardKeyboardEvent;
+    private forwardKeyboardEvent;
     private registerMouseEventListeners;
     private handleMessage;
     private onReady;
@@ -149,16 +155,6 @@ export default class ComponentRelay {
      * @param height The new height.
      */
     setSize(width: string | number, height: string | number): void;
-    /**
-     * Sends the KeyDown keyboard event to the Standard Notes parent application.
-     * @param keyboardModifier The keyboard modifier that was pressed.
-     */
-    private keyDownEvent;
-    /**
-     * Sends the KeyUp keyboard event to the Standard Notes parent application.
-     * @param keyboardModifier The keyboard modifier that was released.
-     */
-    private keyUpEvent;
     /**
      * Sends the Click mouse event to the Standard Notes parent application.
      */

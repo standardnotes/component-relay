@@ -9,7 +9,6 @@ import type {
 } from '@standardnotes/snjs'
 import { environmentToString, generateUuid, isValidJsonString } from './Utils'
 import Logger from './Logger'
-import { KeyboardModifier } from './Types/KeyboardModifier'
 import { ComponentRelayParams } from './Types/ComponentRelayParams'
 import { MessagePayload } from './Types/MessagePayload'
 import { Component } from './Types/Component'
@@ -154,34 +153,49 @@ export default class ComponentRelay {
 
   private registerKeyboardEventListeners() {
     this.keyDownEventListener = (event: KeyboardEvent) => {
-      Logger.info(`A key has been pressed: ${event.key}`)
-
-      if (event.ctrlKey) {
-        this.keyDownEvent(KeyboardModifier.Ctrl)
-      } else if (event.shiftKey) {
-        this.keyDownEvent(KeyboardModifier.Shift)
-      } else if (event.metaKey || event.key === 'Meta') {
-        this.keyDownEvent(KeyboardModifier.Meta)
+      if (!this.shouldForwardKeyboardEvent(event)) {
+        return
       }
+
+      Logger.info(`A key has been pressed: ${event.key}`)
+      this.forwardKeyboardEvent(ComponentAction.KeyDown, event)
     }
 
     this.keyUpEventListener = (event: KeyboardEvent) => {
-      Logger.info(`A key has been released: ${event.key}`)
-
-      /**
-       * Checking using event.key instead of the corresponding boolean properties.
-       */
-      if (event.key === 'Control') {
-        this.keyUpEvent(KeyboardModifier.Ctrl)
-      } else if (event.key === 'Shift') {
-        this.keyUpEvent(KeyboardModifier.Shift)
-      } else if (event.key === 'Meta') {
-        this.keyUpEvent(KeyboardModifier.Meta)
+      if (!this.shouldForwardKeyboardEvent(event)) {
+        return
       }
+
+      Logger.info(`A key has been released: ${event.key}`)
+      this.forwardKeyboardEvent(ComponentAction.KeyUp, event)
     }
 
     this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
     this.contentWindow.addEventListener('keyup', this.keyUpEventListener, false)
+  }
+
+  /**
+   * Only forward keyboard events involving shortcut modifiers (Ctrl, Shift, Meta, Alt).
+   * Plain typing should stay in the editor and not be sent to the parent app.
+   */
+  private shouldForwardKeyboardEvent(event: KeyboardEvent): boolean {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return true
+    }
+
+    // On keyup, modifier flags may already be false when the modifier key itself is released.
+    return event.key === 'Control' || event.key === 'Shift' || event.key === 'Meta' || event.key === 'Alt'
+  }
+
+  private forwardKeyboardEvent(action: ComponentAction.KeyDown | ComponentAction.KeyUp, event: KeyboardEvent): void {
+    this.postMessage(action, {
+      key: event.key,
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      altKey: event.altKey,
+    } as MessageData)
   }
 
   private registerMouseEventListeners() {
@@ -714,22 +728,6 @@ export default class ComponentRelay {
       width,
       height,
     })
-  }
-
-  /**
-   * Sends the KeyDown keyboard event to the Standard Notes parent application.
-   * @param keyboardModifier The keyboard modifier that was pressed.
-   */
-  private keyDownEvent(keyboardModifier: KeyboardModifier): void {
-    this.postMessage(ComponentAction.KeyDown, { keyboardModifier })
-  }
-
-  /**
-   * Sends the KeyUp keyboard event to the Standard Notes parent application.
-   * @param keyboardModifier The keyboard modifier that was released.
-   */
-  private keyUpEvent(keyboardModifier: KeyboardModifier): void {
-    this.postMessage(ComponentAction.KeyUp, { keyboardModifier })
   }
 
   /**

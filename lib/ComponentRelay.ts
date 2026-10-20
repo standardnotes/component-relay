@@ -16,6 +16,9 @@ import { MessagePayloadApi } from './Types/MessagePayloadApi'
 import { ComponentRelayOptions } from './Types/ComponentRelayOptions'
 import { ComponentAction } from './Types/ComponentAction'
 import { Environment } from './Types/Environment'
+import { ScrollContainer, ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
+
+export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
@@ -33,6 +36,7 @@ export default class ComponentRelay {
   private keyUpEventListener?: (event: KeyboardEvent) => void
   private clickEventListener?: (event: MouseEvent) => void
   private concernTimeouts: NodeJS.Timeout[] = []
+  private scrollContainer?: ScrollContainer
   private options: ComponentRelayOptions
   private params: Omit<ComponentRelayParams, 'options'>
 
@@ -75,6 +79,9 @@ export default class ComponentRelay {
     this.pendingSaveItems = undefined
     this.pendingSaveTimeout = undefined
     this.pendingSaveParams = undefined
+
+    this.scrollContainer?.dispose()
+    this.scrollContainer = undefined
 
     if (this.messageHandler) {
       this.contentWindow.document.removeEventListener('message', this.messageHandler)
@@ -223,6 +230,10 @@ export default class ComponentRelay {
         this.activateThemes(payload.data.themes)
         break
 
+      case ComponentAction.ScrollToEnd:
+        this.scrollContainer?.scrollToEnd((payload.data as { moveCaret?: boolean }).moveCaret === true)
+        break
+
       default: {
         if (!payload.original) {
           return
@@ -263,6 +274,8 @@ export default class ComponentRelay {
     }
 
     this.messageQueue = []
+
+    this.scrollContainer?.refresh(true)
 
     Logger.info('Data passed to onReady:', data)
 
@@ -715,6 +728,26 @@ export default class ComponentRelay {
     } else {
       this.performSavingOfItems({ items, presave, callback })
     }
+  }
+
+  /**
+   * Lets the host show its "scroll to bottom" button for this component and scroll it on request.
+   * Registering again replaces the previous container.
+   * @param element The element that scrolls the note's content.
+   */
+  public registerScrollContainer(
+    element: HTMLElement,
+    options: ScrollContainerOptions = {},
+  ): ScrollContainerRegistration {
+    this.scrollContainer?.dispose()
+
+    const container = new ScrollContainer(element, options, (state) => {
+      // MessageData from the pinned snjs predates the scroll state fields
+      this.postMessage(ComponentAction.ScrollState, state as unknown as MessageData)
+    })
+    this.scrollContainer = container
+
+    return { notifyContentChange: () => container.refresh() }
   }
 
   /**

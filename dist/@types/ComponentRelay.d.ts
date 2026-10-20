@@ -1,6 +1,8 @@
 import type { OutgoingItemMessagePayload, AppDataField, DecryptedTransferPayload, ItemContent, ContentType } from '@standardnotes/snjs';
 import { ComponentRelayParams } from './Types/ComponentRelayParams';
 import { ComponentAction } from './Types/ComponentAction';
+import { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer';
+export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer';
 export default class ComponentRelay {
     private contentWindow;
     private component;
@@ -15,6 +17,7 @@ export default class ComponentRelay {
     private keyUpEventListener?;
     private clickEventListener?;
     private concernTimeouts;
+    private scrollContainer?;
     private options;
     private params;
     constructor(params: ComponentRelayParams);
@@ -149,6 +152,12 @@ export default class ComponentRelay {
      * @param presave
      */
     saveItems(items: DecryptedTransferPayload[], callback?: () => void, skipDebouncer?: boolean, presave?: any): void;
+    /**
+     * Lets the host show its "scroll to bottom" button for this component and scroll it on request.
+     * Registering again replaces the previous container.
+     * @param element The element that scrolls the note's content.
+     */
+    registerScrollContainer(element: HTMLElement, options?: ScrollContainerOptions): ScrollContainerRegistration;
     /**
      * Sets a new container size for the current component.
      * @param width The new width.

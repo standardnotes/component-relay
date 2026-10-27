@@ -8,6 +8,8 @@ export type Component = {
   environment?: string
   platform?: string
   isMobile?: boolean
+  /** Whether the host scrolls to the end on its shortcut, which older hosts and some users don't */
+  hostHandlesScrollToEndShortcut?: boolean
   acceptsThemes: boolean
   activeThemes: string[]
 }

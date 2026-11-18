@@ -16,10 +16,19 @@ import { MessagePayloadApi } from './Types/MessagePayloadApi'
 import { ComponentRelayOptions } from './Types/ComponentRelayOptions'
 import { ComponentAction } from './Types/ComponentAction'
 import { Environment } from './Types/Environment'
+import { CaretHandler, CaretRegistration, CaretRestoration, CaretTracker } from './CaretTracker'
+import { createTextareaCaretHandler } from './textareaCaret'
+import { createCodeMirrorCaretHandler } from './codeMirrorCaret'
+
+export type { CaretHandler, CaretRegistration } from './CaretTracker'
+export type { CodeMirrorEditor } from './codeMirrorCaret'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
 export default class ComponentRelay {
+  static createTextareaCaretHandler = createTextareaCaretHandler
+  static createCodeMirrorCaretHandler = createCodeMirrorCaretHandler
+
   private contentWindow: Window
   private component: Component = { activeThemes: [], acceptsThemes: true }
   private sentMessages: MessagePayload[] = []
@@ -33,6 +42,8 @@ export default class ComponentRelay {
   private keyUpEventListener?: (event: KeyboardEvent) => void
   private clickEventListener?: (event: MouseEvent) => void
   private concernTimeouts: NodeJS.Timeout[] = []
+  private caretTracker?: CaretTracker
+  private caretRestoration?: CaretRestoration
   private options: ComponentRelayOptions
   private params: Omit<ComponentRelayParams, 'options'>
 
@@ -75,6 +86,10 @@ export default class ComponentRelay {
     this.pendingSaveItems = undefined
     this.pendingSaveTimeout = undefined
     this.pendingSaveParams = undefined
+
+    this.caretTracker?.dispose()
+    this.caretTracker = undefined
+    this.caretRestoration = undefined
 
     if (this.messageHandler) {
       this.contentWindow.document.removeEventListener('message', this.messageHandler)
@@ -257,6 +272,9 @@ export default class ComponentRelay {
     this.component.environment = data.environment
     this.component.platform = data.platform
     this.component.uuid = data.uuid
+    const { restoreCaret, caretOffset } = data as { restoreCaret?: boolean; caretOffset?: number }
+    this.caretRestoration = restoreCaret ? { offset: caretOffset } : undefined
+    this.caretTracker?.setRestoration(this.caretRestoration)
 
     for (const message of this.messageQueue) {
       this.postMessage(message.action as ComponentAction, message.data, message.callback)
@@ -715,6 +733,26 @@ export default class ComponentRelay {
     } else {
       this.performSavingOfItems({ items, presave, callback })
     }
+  }
+
+  /**
+   * Lets the host remember the caret in this component and restore it when the note is reopened.
+   * Registering again replaces the previous handler.
+   */
+  public registerCaretHandler(handler: CaretHandler): CaretRegistration {
+    this.caretTracker?.dispose()
+
+    const tracker = new CaretTracker(
+      this.contentWindow,
+      handler,
+      (caretOffset) => {
+        this.postMessage(ComponentAction.CaretOffset, { caretOffset } as unknown as MessageData)
+      },
+      this.caretRestoration,
+    )
+    this.caretTracker = tracker
+
+    return { notifyTextLoaded: () => tracker.notifyTextLoaded() }
   }
 
   /**

@@ -15,5 +15,6 @@ export declare enum ComponentAction {
     ThemesActivated = "themes-activated",
     KeyDown = "key-down",
     KeyUp = "key-up",
-    Click = "click"
+    Click = "click",
+    CaretOffset = "caret-offset"
 }

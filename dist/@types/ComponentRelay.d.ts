@@ -1,7 +1,14 @@
 import type { OutgoingItemMessagePayload, AppDataField, DecryptedTransferPayload, ItemContent, ContentType } from '@standardnotes/snjs';
 import { ComponentRelayParams } from './Types/ComponentRelayParams';
 import { ComponentAction } from './Types/ComponentAction';
+import { CaretHandler, CaretRegistration } from './CaretTracker';
+import { createTextareaCaretHandler } from './textareaCaret';
+import { createCodeMirrorCaretHandler } from './codeMirrorCaret';
+export type { CaretHandler, CaretRegistration } from './CaretTracker';
+export type { CodeMirrorEditor } from './codeMirrorCaret';
 export default class ComponentRelay {
+    static createTextareaCaretHandler: typeof createTextareaCaretHandler;
+    static createCodeMirrorCaretHandler: typeof createCodeMirrorCaretHandler;
     private contentWindow;
     private component;
     private sentMessages;
@@ -15,6 +22,8 @@ export default class ComponentRelay {
     private keyUpEventListener?;
     private clickEventListener?;
     private concernTimeouts;
+    private caretTracker?;
+    private caretRestoration?;
     private options;
     private params;
     constructor(params: ComponentRelayParams);
@@ -149,6 +158,11 @@ export default class ComponentRelay {
      * @param presave
      */
     saveItems(items: DecryptedTransferPayload[], callback?: () => void, skipDebouncer?: boolean, presave?: any): void;
+    /**
+     * Lets the host remember the caret in this component and restore it when the note is reopened.
+     * Registering again replaces the previous handler.
+     */
+    registerCaretHandler(handler: CaretHandler): CaretRegistration;
     /**
      * Sets a new container size for the current component.
      * @param width The new width.

@@ -19,6 +19,7 @@ export class CaretTracker {
   private changeTimeout?: ReturnType<typeof setTimeout>
   private restoration?: CaretRestoration
   private textLoaded = false
+  private trackingEnabled = false
   private onCaretMayHaveChanged = () => this.scheduleCaretRead()
   private onLeave = () => this.readCaret()
 
@@ -27,15 +28,36 @@ export class CaretTracker {
     private handler: CaretHandler,
     private onOffsetChange: (offset: number) => void,
     restoration?: CaretRestoration,
+    trackingEnabled = true,
   ) {
     this.restoration = restoration
+    this.setTrackingEnabled(trackingEnabled)
+  }
 
-    const { document } = targetWindow
-    document.addEventListener('selectionchange', this.onCaretMayHaveChanged)
-    targetWindow.addEventListener('keyup', this.onCaretMayHaveChanged)
-    targetWindow.addEventListener('pointerup', this.onCaretMayHaveChanged)
-    targetWindow.addEventListener('blur', this.onLeave)
-    targetWindow.addEventListener('pagehide', this.onLeave)
+  public setTrackingEnabled(enabled: boolean): void {
+    if (enabled === this.trackingEnabled) {
+      return
+    }
+
+    this.trackingEnabled = enabled
+    const { document } = this.targetWindow
+
+    if (enabled) {
+      document.addEventListener('selectionchange', this.onCaretMayHaveChanged)
+      this.targetWindow.addEventListener('keyup', this.onCaretMayHaveChanged)
+      this.targetWindow.addEventListener('pointerup', this.onCaretMayHaveChanged)
+      this.targetWindow.addEventListener('blur', this.onLeave)
+      this.targetWindow.addEventListener('pagehide', this.onLeave)
+      return
+    }
+
+    document.removeEventListener('selectionchange', this.onCaretMayHaveChanged)
+    this.targetWindow.removeEventListener('keyup', this.onCaretMayHaveChanged)
+    this.targetWindow.removeEventListener('pointerup', this.onCaretMayHaveChanged)
+    this.targetWindow.removeEventListener('blur', this.onLeave)
+    this.targetWindow.removeEventListener('pagehide', this.onLeave)
+    clearTimeout(this.changeTimeout)
+    this.changeTimeout = undefined
   }
 
   public setRestoration(restoration: CaretRestoration | undefined): boolean {
@@ -90,11 +112,6 @@ export class CaretTracker {
       this.readCaret()
     }
 
-    const { document } = this.targetWindow
-    document.removeEventListener('selectionchange', this.onCaretMayHaveChanged)
-    this.targetWindow.removeEventListener('keyup', this.onCaretMayHaveChanged)
-    this.targetWindow.removeEventListener('pointerup', this.onCaretMayHaveChanged)
-    this.targetWindow.removeEventListener('blur', this.onLeave)
-    this.targetWindow.removeEventListener('pagehide', this.onLeave)
+    this.setTrackingEnabled(false)
   }
 }

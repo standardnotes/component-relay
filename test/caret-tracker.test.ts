@@ -7,8 +7,11 @@ describe('CaretTracker', () => {
   let onOffsetChange: jest.Mock
   let tracker: CaretTracker
 
-  const createTracker = (restoration?: { type: 'focus' } | { type: 'offset'; offset: number }) => {
-    tracker = new CaretTracker(window, handler, onOffsetChange, restoration)
+  const createTracker = (
+    restoration?: { type: 'focus' } | { type: 'offset'; offset: number },
+    trackingEnabled = true,
+  ) => {
+    tracker = new CaretTracker(window, handler, onOffsetChange, restoration, trackingEnabled)
   }
 
   const moveCaret = (to: number | undefined) => {
@@ -19,7 +22,7 @@ describe('CaretTracker', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     offset = 0
-    handler = { getOffset: () => offset, restore: jest.fn().mockReturnValue(true) }
+    handler = { getOffset: jest.fn(() => offset), restore: jest.fn().mockReturnValue(true) }
     onOffsetChange = jest.fn()
   })
 
@@ -98,6 +101,17 @@ describe('CaretTracker', () => {
       tracker.dispose()
 
       expect(onOffsetChange).toHaveBeenCalledWith(8)
+    })
+
+    it('does not read or report the caret while tracking is disabled', () => {
+      createTracker(undefined, false)
+
+      moveCaret(8)
+      window.dispatchEvent(new Event('keyup'))
+      jest.runAllTimers()
+
+      expect(handler.getOffset).not.toHaveBeenCalled()
+      expect(onOffsetChange).not.toHaveBeenCalled()
     })
   })
 
@@ -218,14 +232,19 @@ describe('ComponentRelay caret handler', () => {
   })
 
   it('does not restore when the host did not ask to', () => {
+    jest.useFakeTimers()
     const { relay, handler, ready } = createRelay()
     const registration = relay.registerCaretHandler(handler)
 
     ready({})
     registration.notifyTextLoaded()
+    document.dispatchEvent(new Event('selectionchange'))
+    jest.runAllTimers()
 
     expect(handler.restore).not.toHaveBeenCalled()
+    expect(handler.getOffset).not.toHaveBeenCalled()
     relay.deinit()
+    jest.useRealTimers()
   })
 
   it('does not restore the original offset when the handler is replaced', () => {

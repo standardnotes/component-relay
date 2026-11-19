@@ -22,9 +22,11 @@ export declare class CaretTracker {
     private changeTimeout?;
     private restoration?;
     private textLoaded;
+    private trackingEnabled;
     private onCaretMayHaveChanged;
     private onLeave;
-    constructor(targetWindow: Window, handler: CaretHandler, onOffsetChange: (offset: number) => void, restoration?: CaretRestoration);
+    constructor(targetWindow: Window, handler: CaretHandler, onOffsetChange: (offset: number) => void, restoration?: CaretRestoration, trackingEnabled?: boolean);
+    setTrackingEnabled(enabled: boolean): void;
     setRestoration(restoration: CaretRestoration | undefined): boolean;
     notifyTextLoaded(): boolean;
     private restoreIfReady;

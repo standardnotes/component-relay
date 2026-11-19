@@ -49,6 +49,7 @@ export default class ComponentRelay {
   private concernTimeouts: NodeJS.Timeout[] = []
   private caretTracker?: CaretTracker
   private caretRestoration?: CaretRestoration
+  private caretTrackingEnabled = false
   private options: ComponentRelayOptions
   private params: Omit<ComponentRelayParams, 'options'>
 
@@ -83,6 +84,7 @@ export default class ComponentRelay {
     this.caretTracker?.dispose()
     this.caretTracker = undefined
     this.caretRestoration = undefined
+    this.caretTrackingEnabled = false
 
     this.params.onReady = undefined
     this.component = {
@@ -277,12 +279,14 @@ export default class ComponentRelay {
     this.component.environment = data.environment
     this.component.platform = data.platform
     this.component.uuid = data.uuid
+    this.caretTrackingEnabled = data.restoreCaret === true
     this.caretRestoration = data.restoreCaret
       ? data.caretOffset === undefined
         ? { type: 'focus' }
         : { type: 'offset', offset: data.caretOffset }
       : undefined
 
+    this.caretTracker?.setTrackingEnabled(this.caretTrackingEnabled)
     if (this.caretTracker?.setRestoration(this.caretRestoration)) {
       this.caretRestoration = undefined
     }
@@ -761,6 +765,7 @@ export default class ComponentRelay {
         this.postMessage(ComponentAction.CaretOffset, data)
       },
       this.caretRestoration,
+      this.caretTrackingEnabled,
     )
     this.caretTracker = tracker
 

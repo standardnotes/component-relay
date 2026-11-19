@@ -24,6 +24,7 @@ export default class ComponentRelay {
     private concernTimeouts;
     private caretTracker?;
     private caretRestoration?;
+    private caretTrackingEnabled;
     private options;
     private params;
     constructor(params: ComponentRelayParams);

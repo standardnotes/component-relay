@@ -17,11 +17,12 @@ export function createCodeMirrorCaretHandler(editor: CodeMirrorEditor): CaretHan
       editor.focus()
 
       if (offset === undefined) {
-        return
+        return true
       }
 
       // CodeMirror keeps the position inside the document if the offset is past its end
       editor.setCursor(editor.posFromIndex(offset))
+      return true
     },
   }
 }

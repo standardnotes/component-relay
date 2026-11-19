@@ -25,6 +25,11 @@ export type { CodeMirrorEditor } from './codeMirrorCaret'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
+type CaretMessageData = MessageData & {
+  caretOffset?: number
+  restoreCaret?: boolean
+}
+
 export default class ComponentRelay {
   static createTextareaCaretHandler = createTextareaCaretHandler
   static createCodeMirrorCaretHandler = createCodeMirrorCaretHandler
@@ -75,6 +80,10 @@ export default class ComponentRelay {
   }
 
   public deinit(): void {
+    this.caretTracker?.dispose()
+    this.caretTracker = undefined
+    this.caretRestoration = undefined
+
     this.params.onReady = undefined
     this.component = {
       acceptsThemes: true,
@@ -86,10 +95,6 @@ export default class ComponentRelay {
     this.pendingSaveItems = undefined
     this.pendingSaveTimeout = undefined
     this.pendingSaveParams = undefined
-
-    this.caretTracker?.dispose()
-    this.caretTracker = undefined
-    this.caretRestoration = undefined
 
     if (this.messageHandler) {
       this.contentWindow.document.removeEventListener('message', this.messageHandler)
@@ -268,13 +273,19 @@ export default class ComponentRelay {
     }
   }
 
-  private onReady(data: MessageData) {
+  private onReady(data: CaretMessageData) {
     this.component.environment = data.environment
     this.component.platform = data.platform
     this.component.uuid = data.uuid
-    const { restoreCaret, caretOffset } = data as { restoreCaret?: boolean; caretOffset?: number }
-    this.caretRestoration = restoreCaret ? { offset: caretOffset } : undefined
-    this.caretTracker?.setRestoration(this.caretRestoration)
+    this.caretRestoration = data.restoreCaret
+      ? data.caretOffset === undefined
+        ? { type: 'focus' }
+        : { type: 'offset', offset: data.caretOffset }
+      : undefined
+
+    if (this.caretTracker?.setRestoration(this.caretRestoration)) {
+      this.caretRestoration = undefined
+    }
 
     for (const message of this.messageQueue) {
       this.postMessage(message.action as ComponentAction, message.data, message.callback)
@@ -746,13 +757,20 @@ export default class ComponentRelay {
       this.contentWindow,
       handler,
       (caretOffset) => {
-        this.postMessage(ComponentAction.CaretOffset, { caretOffset } as unknown as MessageData)
+        const data: CaretMessageData = { caretOffset }
+        this.postMessage(ComponentAction.CaretOffset, data)
       },
       this.caretRestoration,
     )
     this.caretTracker = tracker
 
-    return { notifyTextLoaded: () => tracker.notifyTextLoaded() }
+    return {
+      notifyTextLoaded: () => {
+        if (tracker.notifyTextLoaded() && this.caretTracker === tracker) {
+          this.caretRestoration = undefined
+        }
+      },
+    }
   }
 
   /**

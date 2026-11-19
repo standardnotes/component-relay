@@ -7,7 +7,7 @@ describe('CaretTracker', () => {
   let onOffsetChange: jest.Mock
   let tracker: CaretTracker
 
-  const createTracker = (restoration?: { offset?: number }) => {
+  const createTracker = (restoration?: { type: 'focus' } | { type: 'offset'; offset: number }) => {
     tracker = new CaretTracker(window, handler, onOffsetChange, restoration)
   }
 
@@ -19,7 +19,7 @@ describe('CaretTracker', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     offset = 0
-    handler = { getOffset: () => offset, restore: jest.fn() }
+    handler = { getOffset: () => offset, restore: jest.fn().mockReturnValue(true) }
     onOffsetChange = jest.fn()
   })
 
@@ -90,11 +90,20 @@ describe('CaretTracker', () => {
 
       expect(onOffsetChange).not.toHaveBeenCalled()
     })
+
+    it('flushes a pending caret read when disposed', () => {
+      createTracker()
+      moveCaret(8)
+
+      tracker.dispose()
+
+      expect(onOffsetChange).toHaveBeenCalledWith(8)
+    })
   })
 
   describe('restoring the caret', () => {
     it('restores the offset once the text is loaded', () => {
-      createTracker({ offset: 12 })
+      createTracker({ type: 'offset', offset: 12 })
 
       expect(handler.restore).not.toHaveBeenCalled()
       tracker.notifyTextLoaded()
@@ -103,7 +112,7 @@ describe('CaretTracker', () => {
     })
 
     it('only focuses when the host has no offset to restore', () => {
-      createTracker({})
+      createTracker({ type: 'focus' })
 
       tracker.notifyTextLoaded()
 
@@ -122,13 +131,13 @@ describe('CaretTracker', () => {
       createTracker()
       tracker.notifyTextLoaded()
 
-      tracker.setRestoration({ offset: 7 })
+      tracker.setRestoration({ type: 'offset', offset: 7 })
 
       expect(handler.restore).toHaveBeenCalledWith(7)
     })
 
     it('restores only once', () => {
-      createTracker({ offset: 12 })
+      createTracker({ type: 'offset', offset: 12 })
 
       tracker.notifyTextLoaded()
       tracker.notifyTextLoaded()
@@ -136,8 +145,20 @@ describe('CaretTracker', () => {
       expect(handler.restore).toHaveBeenCalledTimes(1)
     })
 
+    it('keeps the restoration pending until the handler succeeds', () => {
+      createTracker({ type: 'offset', offset: 12 })
+      const restore = handler.restore as jest.Mock
+      restore.mockReturnValueOnce(false)
+
+      tracker.notifyTextLoaded()
+      tracker.notifyTextLoaded()
+
+      expect(handler.restore).toHaveBeenCalledTimes(2)
+      expect(handler.restore).toHaveBeenLastCalledWith(12)
+    })
+
     it('does not report the editor’s starting caret before the restore has happened', () => {
-      createTracker({ offset: 12 })
+      createTracker({ type: 'offset', offset: 12 })
 
       moveCaret(0)
       jest.runAllTimers()
@@ -146,7 +167,7 @@ describe('CaretTracker', () => {
     })
 
     it('reports the restored caret afterwards', () => {
-      createTracker({ offset: 12 })
+      createTracker({ type: 'offset', offset: 12 })
       tracker.notifyTextLoaded()
 
       moveCaret(12)
@@ -160,8 +181,12 @@ describe('CaretTracker', () => {
 describe('ComponentRelay caret handler', () => {
   const createRelay = () => {
     const relay = new ComponentRelay({ targetWindow: window, onReady: jest.fn() })
-    const handler: CaretHandler = { getOffset: jest.fn().mockReturnValue(9), restore: jest.fn() }
-    const ready = (data: object) => (relay as unknown as { onReady: (data: object) => void }).onReady(data)
+    const handler: CaretHandler = {
+      getOffset: jest.fn().mockReturnValue(9),
+      restore: jest.fn().mockReturnValue(true),
+    }
+    const ready = (data: Record<string, unknown>) =>
+      (relay as unknown as { onReady: (data: Record<string, unknown>) => void }).onReady(data)
 
     return { relay, handler, ready }
   }
@@ -200,6 +225,17 @@ describe('ComponentRelay caret handler', () => {
     registration.notifyTextLoaded()
 
     expect(handler.restore).not.toHaveBeenCalled()
+    relay.deinit()
+  })
+
+  it('does not restore the original offset when the handler is replaced', () => {
+    const { relay, handler, ready } = createRelay()
+    ready({ restoreCaret: true, caretOffset: 5 })
+
+    relay.registerCaretHandler(handler).notifyTextLoaded()
+    relay.registerCaretHandler(handler).notifyTextLoaded()
+
+    expect(handler.restore).toHaveBeenCalledTimes(1)
     relay.deinit()
   })
 })

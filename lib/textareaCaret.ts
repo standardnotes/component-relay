@@ -6,13 +6,14 @@ export function createTextareaCaretHandler(textarea: HTMLTextAreaElement): Caret
     restore: (offset) => {
       if (offset === undefined) {
         textarea.focus({ preventScroll: true })
-        return
+        return true
       }
 
       const boundedOffset = Math.min(Math.max(offset, 0), textarea.value.length)
       textarea.setSelectionRange(boundedOffset, boundedOffset)
       // The browser only scrolls the caret into view if focus comes after the selection
       textarea.focus()
+      return true
     },
   }
 }

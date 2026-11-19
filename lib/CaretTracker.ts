@@ -1,8 +1,8 @@
 export type CaretHandler = {
   /** The caret as an offset into the note's text, or undefined if the editor has no caret */
   getOffset: () => number | undefined
-  /** Focuses the editor and places the caret at the offset, or only focuses it if there is no offset */
-  restore: (offset: number | undefined) => void
+  /** Applies the restoration and returns whether it succeeded. Returning false keeps it pending for another attempt. */
+  restore: (offset: number | undefined) => boolean
 }
 
 export type CaretRegistration = {
@@ -10,9 +10,7 @@ export type CaretRegistration = {
   notifyTextLoaded: () => void
 }
 
-export type CaretRestoration = {
-  offset?: number
-}
+export type CaretRestoration = { type: 'focus' } | { type: 'offset'; offset: number }
 
 const CARET_CHANGE_DEBOUNCE_MS = 150
 
@@ -40,24 +38,28 @@ export class CaretTracker {
     targetWindow.addEventListener('pagehide', this.onLeave)
   }
 
-  public setRestoration(restoration: CaretRestoration | undefined): void {
+  public setRestoration(restoration: CaretRestoration | undefined): boolean {
     this.restoration = restoration
-    this.restoreIfReady()
+    return this.restoreIfReady()
   }
 
-  public notifyTextLoaded(): void {
+  public notifyTextLoaded(): boolean {
     this.textLoaded = true
-    this.restoreIfReady()
+    return this.restoreIfReady()
   }
 
-  private restoreIfReady(): void {
+  private restoreIfReady(): boolean {
     if (!this.textLoaded || !this.restoration) {
-      return
+      return false
     }
 
-    const { offset } = this.restoration
+    const offset = this.restoration.type === 'offset' ? this.restoration.offset : undefined
+    if (!this.handler.restore(offset)) {
+      return false
+    }
+
     this.restoration = undefined
-    this.handler.restore(offset)
+    return true
   }
 
   private scheduleCaretRead(): void {
@@ -67,6 +69,7 @@ export class CaretTracker {
 
   private readCaret(): void {
     clearTimeout(this.changeTimeout)
+    this.changeTimeout = undefined
 
     if (this.restoration) {
       return
@@ -83,7 +86,9 @@ export class CaretTracker {
   }
 
   public dispose(): void {
-    clearTimeout(this.changeTimeout)
+    if (this.changeTimeout !== undefined) {
+      this.readCaret()
+    }
 
     const { document } = this.targetWindow
     document.removeEventListener('selectionchange', this.onCaretMayHaveChanged)

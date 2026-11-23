@@ -4,8 +4,10 @@ import { ComponentAction } from './Types/ComponentAction';
 import { CaretHandler, CaretRegistration } from './CaretTracker';
 import { createTextareaCaretHandler } from './textareaCaret';
 import { createCodeMirrorCaretHandler } from './codeMirrorCaret';
+import { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer';
 export type { CaretHandler, CaretRegistration } from './CaretTracker';
 export type { CodeMirrorEditor } from './codeMirrorCaret';
+export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer';
 export default class ComponentRelay {
     static createTextareaCaretHandler: typeof createTextareaCaretHandler;
     static createCodeMirrorCaretHandler: typeof createCodeMirrorCaretHandler;
@@ -20,17 +22,21 @@ export default class ComponentRelay {
     private messageHandler?;
     private keyDownEventListener?;
     private keyUpEventListener?;
+    private scrollToEndShortcutListener?;
     private clickEventListener?;
     private concernTimeouts;
     private caretTracker?;
     private caretRestoration?;
     private caretTrackingEnabled;
+    private scrollContainer?;
     private options;
     private params;
     constructor(params: ComponentRelayParams);
     deinit(): void;
     private registerMessageHandler;
     private registerKeyboardEventListeners;
+    /** Matches the host's shortcut: Cmd+Down on Mac and Ctrl+End elsewhere, with no other modifiers. Keep in sync with `getKeyboardShortcuts` in the app's ui-services */
+    private isScrollToEndShortcut;
     /**
      * Only forward keyboard events involving shortcut modifiers (Ctrl, Shift, Meta, Alt).
      * Plain typing should stay in the editor and not be sent to the parent app.
@@ -164,6 +170,12 @@ export default class ComponentRelay {
      * Registering again replaces the previous handler.
      */
     registerCaretHandler(handler: CaretHandler): CaretRegistration;
+    /**
+     * Lets the host show its "scroll to bottom" button for this component and scroll it on request.
+     * Registering again replaces the previous container.
+     * @param element The element that scrolls the note's content.
+     */
+    registerScrollContainer(element: HTMLElement, options?: ScrollContainerOptions): ScrollContainerRegistration;
     /**
      * Sets a new container size for the current component.
      * @param width The new width.

@@ -19,9 +19,11 @@ import { Environment } from './Types/Environment'
 import { CaretHandler, CaretRegistration, CaretRestoration, CaretTracker } from './CaretTracker'
 import { createTextareaCaretHandler } from './textareaCaret'
 import { createCodeMirrorCaretHandler } from './codeMirrorCaret'
+import { ScrollContainer, ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
 
 export type { CaretHandler, CaretRegistration } from './CaretTracker'
 export type { CodeMirrorEditor } from './codeMirrorCaret'
+export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
@@ -45,11 +47,13 @@ export default class ComponentRelay {
   private messageHandler?: (event: any) => void
   private keyDownEventListener?: (event: KeyboardEvent) => void
   private keyUpEventListener?: (event: KeyboardEvent) => void
+  private scrollToEndShortcutListener?: (event: KeyboardEvent) => void
   private clickEventListener?: (event: MouseEvent) => void
   private concernTimeouts: NodeJS.Timeout[] = []
   private caretTracker?: CaretTracker
   private caretRestoration?: CaretRestoration
   private caretTrackingEnabled = false
+  private scrollContainer?: ScrollContainer
   private options: ComponentRelayOptions
   private params: Omit<ComponentRelayParams, 'options'>
 
@@ -98,6 +102,9 @@ export default class ComponentRelay {
     this.pendingSaveTimeout = undefined
     this.pendingSaveParams = undefined
 
+    this.scrollContainer?.dispose()
+    this.scrollContainer = undefined
+
     if (this.messageHandler) {
       this.contentWindow.document.removeEventListener('message', this.messageHandler)
       this.contentWindow.removeEventListener('message', this.messageHandler)
@@ -109,6 +116,10 @@ export default class ComponentRelay {
 
     if (this.keyUpEventListener) {
       this.contentWindow.removeEventListener('keyup', this.keyUpEventListener)
+    }
+
+    if (this.scrollToEndShortcutListener) {
+      this.contentWindow.removeEventListener('keydown', this.scrollToEndShortcutListener, true)
     }
 
     if (this.clickEventListener) {
@@ -192,8 +203,23 @@ export default class ComponentRelay {
       this.forwardKeyboardEvent(ComponentAction.KeyUp, event)
     }
 
+    // Captured so the editor doesn't jump to the end before the host, which receives the forwarded shortcut, animates the scroll
+    this.scrollToEndShortcutListener = (event: KeyboardEvent) => {
+      if (this.scrollContainer && this.component.hostHandlesScrollToEndShortcut && this.isScrollToEndShortcut(event)) {
+        event.preventDefault()
+      }
+    }
+
     this.contentWindow.addEventListener('keydown', this.keyDownEventListener, false)
     this.contentWindow.addEventListener('keyup', this.keyUpEventListener, false)
+    this.contentWindow.addEventListener('keydown', this.scrollToEndShortcutListener, true)
+  }
+
+  /** Matches the host's shortcut: Cmd+Down on Mac and Ctrl+End elsewhere, with no other modifiers. Keep in sync with `getKeyboardShortcuts` in the app's ui-services */
+  private isScrollToEndShortcut(event: KeyboardEvent): boolean {
+    const isMac = this.platform?.startsWith('mac-') === true
+    const primaryModifierOnly = isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey
+    return event.key === (isMac ? 'ArrowDown' : 'End') && primaryModifierOnly && !event.shiftKey && !event.altKey
   }
 
   /**
@@ -245,6 +271,10 @@ export default class ComponentRelay {
         this.activateThemes(payload.data.themes)
         break
 
+      case ComponentAction.ScrollToEnd:
+        this.scrollContainer?.scrollToEnd((payload.data as { moveCaret?: boolean }).moveCaret === true)
+        break
+
       default: {
         if (!payload.original) {
           return
@@ -290,12 +320,17 @@ export default class ComponentRelay {
     if (this.caretTracker?.setRestoration(this.caretRestoration)) {
       this.caretRestoration = undefined
     }
+    // MessageData from the pinned snjs predates this field
+    this.component.hostHandlesScrollToEndShortcut =
+      (data as { handlesScrollToEndShortcut?: boolean }).handlesScrollToEndShortcut === true
 
     for (const message of this.messageQueue) {
       this.postMessage(message.action as ComponentAction, message.data, message.callback)
     }
 
     this.messageQueue = []
+
+    this.scrollContainer?.refresh(true)
 
     Logger.info('Data passed to onReady:', data)
 
@@ -776,6 +811,26 @@ export default class ComponentRelay {
         }
       },
     }
+  }
+
+  /**
+   * Lets the host show its "scroll to bottom" button for this component and scroll it on request.
+   * Registering again replaces the previous container.
+   * @param element The element that scrolls the note's content.
+   */
+  public registerScrollContainer(
+    element: HTMLElement,
+    options: ScrollContainerOptions = {},
+  ): ScrollContainerRegistration {
+    this.scrollContainer?.dispose()
+
+    const container = new ScrollContainer(element, options, (state) => {
+      // MessageData from the pinned snjs predates the scroll state fields
+      this.postMessage(ComponentAction.ScrollState, state as unknown as MessageData)
+    })
+    this.scrollContainer = container
+
+    return { notifyContentChange: () => container.refresh() }
   }
 
   /**

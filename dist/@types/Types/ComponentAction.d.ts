@@ -16,5 +16,7 @@ export declare enum ComponentAction {
     KeyDown = "key-down",
     KeyUp = "key-up",
     Click = "click",
+    ScrollToEnd = "scroll-to-end",
+    ScrollState = "scroll-state",
     CaretOffset = "caret-offset"
 }

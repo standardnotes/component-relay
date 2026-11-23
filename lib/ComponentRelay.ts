@@ -17,6 +17,7 @@ import { ComponentRelayOptions } from './Types/ComponentRelayOptions'
 import { ComponentAction } from './Types/ComponentAction'
 import { Environment } from './Types/Environment'
 import { ScrollContainer, ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
+import { c } from 'ttag'
 
 export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
 
@@ -670,9 +671,8 @@ export default class ComponentRelay {
     const concernTimeout = setTimeout(() => {
       this.concernTimeouts.forEach((timeout) => clearTimeout(timeout))
       alert(
-        'This editor is unable to communicate with Standard Notes. ' +
-          'Your changes may not be saved. Please backup your changes, then restart the ' +
-          'application and try again.',
+        c('Plugins.ComponentRelay.Error')
+          .t`This editor is unable to communicate with Standard Notes. Your changes may not be saved. Please backup your changes, then restart the application and try again.`,
       )
     }, ConcernIntervalMS)
 

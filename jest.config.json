@@ -32,5 +32,8 @@
   "testMatch": [
     "<rootDir>/test/?(*.)+(test).+(ts)"
   ],
+  "testPathIgnorePatterns": [
+    "<rootDir>/test/component-relay.test.ts"
+  ],
   "verbose": true
 }

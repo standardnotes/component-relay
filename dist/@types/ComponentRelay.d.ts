@@ -1,9 +1,16 @@
 import type { OutgoingItemMessagePayload, AppDataField, DecryptedTransferPayload, ItemContent, ContentType } from '@standardnotes/snjs';
 import { ComponentRelayParams } from './Types/ComponentRelayParams';
 import { ComponentAction } from './Types/ComponentAction';
+import { CaretHandler, CaretRegistration } from './CaretTracker';
+import { createTextareaCaretHandler } from './textareaCaret';
+import { createCodeMirrorCaretHandler } from './codeMirrorCaret';
 import { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer';
+export type { CaretHandler, CaretRegistration } from './CaretTracker';
+export type { CodeMirrorEditor } from './codeMirrorCaret';
 export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer';
 export default class ComponentRelay {
+    static createTextareaCaretHandler: typeof createTextareaCaretHandler;
+    static createCodeMirrorCaretHandler: typeof createCodeMirrorCaretHandler;
     private contentWindow;
     private component;
     private sentMessages;
@@ -18,6 +25,9 @@ export default class ComponentRelay {
     private scrollToEndShortcutListener?;
     private clickEventListener?;
     private concernTimeouts;
+    private caretTracker?;
+    private caretRestoration?;
+    private caretTrackingEnabled;
     private scrollContainer?;
     private options;
     private params;
@@ -155,6 +165,11 @@ export default class ComponentRelay {
      * @param presave
      */
     saveItems(items: DecryptedTransferPayload[], callback?: () => void, skipDebouncer?: boolean, presave?: any): void;
+    /**
+     * Lets the host remember the caret in this component and restore it when the note is reopened.
+     * Registering again replaces the previous handler.
+     */
+    registerCaretHandler(handler: CaretHandler): CaretRegistration;
     /**
      * Lets the host show its "scroll to bottom" button for this component and scroll it on request.
      * Registering again replaces the previous container.

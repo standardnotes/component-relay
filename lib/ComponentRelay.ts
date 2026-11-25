@@ -16,14 +16,27 @@ import { MessagePayloadApi } from './Types/MessagePayloadApi'
 import { ComponentRelayOptions } from './Types/ComponentRelayOptions'
 import { ComponentAction } from './Types/ComponentAction'
 import { Environment } from './Types/Environment'
+import { CaretHandler, CaretRegistration, CaretRestoration, CaretTracker } from './CaretTracker'
+import { createTextareaCaretHandler } from './textareaCaret'
+import { createCodeMirrorCaretHandler } from './codeMirrorCaret'
 import { ScrollContainer, ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
 import { c } from 'ttag'
 
+export type { CaretHandler, CaretRegistration } from './CaretTracker'
+export type { CodeMirrorEditor } from './codeMirrorCaret'
 export type { ScrollContainerOptions, ScrollContainerRegistration } from './ScrollContainer'
 
 const DEFAULT_COALLESED_SAVING_DELAY = 250
 
+type CaretMessageData = MessageData & {
+  caretOffset?: number
+  restoreCaret?: boolean
+}
+
 export default class ComponentRelay {
+  static createTextareaCaretHandler = createTextareaCaretHandler
+  static createCodeMirrorCaretHandler = createCodeMirrorCaretHandler
+
   private contentWindow: Window
   private component: Component = { activeThemes: [], acceptsThemes: true }
   private sentMessages: MessagePayload[] = []
@@ -38,6 +51,9 @@ export default class ComponentRelay {
   private scrollToEndShortcutListener?: (event: KeyboardEvent) => void
   private clickEventListener?: (event: MouseEvent) => void
   private concernTimeouts: NodeJS.Timeout[] = []
+  private caretTracker?: CaretTracker
+  private caretRestoration?: CaretRestoration
+  private caretTrackingEnabled = false
   private scrollContainer?: ScrollContainer
   private options: ComponentRelayOptions
   private params: Omit<ComponentRelayParams, 'options'>
@@ -70,6 +86,11 @@ export default class ComponentRelay {
   }
 
   public deinit(): void {
+    this.caretTracker?.dispose()
+    this.caretTracker = undefined
+    this.caretRestoration = undefined
+    this.caretTrackingEnabled = false
+
     this.params.onReady = undefined
     this.component = {
       acceptsThemes: true,
@@ -285,10 +306,21 @@ export default class ComponentRelay {
     }
   }
 
-  private onReady(data: MessageData) {
+  private onReady(data: CaretMessageData) {
     this.component.environment = data.environment
     this.component.platform = data.platform
     this.component.uuid = data.uuid
+    this.caretTrackingEnabled = data.restoreCaret === true
+    this.caretRestoration = data.restoreCaret
+      ? data.caretOffset === undefined
+        ? { type: 'focus' }
+        : { type: 'offset', offset: data.caretOffset }
+      : undefined
+
+    this.caretTracker?.setTrackingEnabled(this.caretTrackingEnabled)
+    if (this.caretTracker?.setRestoration(this.caretRestoration)) {
+      this.caretRestoration = undefined
+    }
     // MessageData from the pinned snjs predates this field
     this.component.hostHandlesScrollToEndShortcut =
       (data as { handlesScrollToEndShortcut?: boolean }).handlesScrollToEndShortcut === true
@@ -750,6 +782,34 @@ export default class ComponentRelay {
       }, this.options.coallesedSavingDelay)
     } else {
       this.performSavingOfItems({ items, presave, callback })
+    }
+  }
+
+  /**
+   * Lets the host remember the caret in this component and restore it when the note is reopened.
+   * Registering again replaces the previous handler.
+   */
+  public registerCaretHandler(handler: CaretHandler): CaretRegistration {
+    this.caretTracker?.dispose()
+
+    const tracker = new CaretTracker(
+      this.contentWindow,
+      handler,
+      (caretOffset) => {
+        const data: CaretMessageData = { caretOffset }
+        this.postMessage(ComponentAction.CaretOffset, data)
+      },
+      this.caretRestoration,
+      this.caretTrackingEnabled,
+    )
+    this.caretTracker = tracker
+
+    return {
+      notifyTextLoaded: () => {
+        if (tracker.notifyTextLoaded() && this.caretTracker === tracker) {
+          this.caretRestoration = undefined
+        }
+      },
     }
   }
 

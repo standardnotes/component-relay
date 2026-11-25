@@ -5,7 +5,7 @@ import {
   timingSafeEqual,
   Utf8String,
 } from '@standardnotes/sncrypto-common';
-import { generateUuid } from '../../lib/utils';
+import { generateUuid } from '../../lib/Utils';
 
 /**
  * An SNPureCrypto implementation. Required to create a new SNApplication instance.

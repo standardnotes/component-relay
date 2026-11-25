@@ -9,7 +9,7 @@ import {
   SNNote,
   SNTag
 } from '@standardnotes/snjs';
-import { generateUuid } from './../lib/utils';
+import { generateUuid } from './../lib/Utils';
 
 export const htmlTemplate = `<!doctype html>
   <html>

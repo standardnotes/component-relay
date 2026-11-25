@@ -27,9 +27,9 @@ import {
   createTagItem,
   jsonForItem,
 } from './helpers'
-import ComponentRelay from '../lib/componentRelay'
+import ComponentRelay from '../lib/ComponentRelay'
 import { createApplication } from './lib/appFactory'
-import Logger from '../lib/logger'
+import Logger from '../lib/Logger'
 
 describe('Component Relay', () => {
   /** The child window. This is where the extension lives. */
@@ -506,7 +506,7 @@ describe('Component Relay', () => {
      * sessionKey is set by Uuid.GenerateUuid() which uses our generateUuid
      * function in our Utils module. We will mock the return value to be undefined.
      */
-    const Utils = require('./../lib/utils')
+    const Utils = require('./../lib/Utils')
     jest.spyOn(Utils, 'generateUuid').mockReturnValue(undefined)
 
     await registerComponent(testSNApp, childWindow, testComponent)

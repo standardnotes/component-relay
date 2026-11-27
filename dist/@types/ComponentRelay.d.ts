@@ -29,6 +29,7 @@ export default class ComponentRelay {
     private caretRestoration?;
     private caretTrackingEnabled;
     private scrollContainer?;
+    private scrollContainerRegistration?;
     private options;
     private params;
     constructor(params: ComponentRelayParams);
@@ -176,6 +177,8 @@ export default class ComponentRelay {
      * @param element The element that scrolls the note's content.
      */
     registerScrollContainer(element: HTMLElement, options?: ScrollContainerOptions): ScrollContainerRegistration;
+    /** Old hosts omit the capability flag, so registration stays inert until support is explicit. */
+    private activateScrollContainer;
     /**
      * Sets a new container size for the current component.
      * @param width The new width.

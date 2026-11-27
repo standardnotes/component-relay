@@ -232,7 +232,29 @@ describe('ComponentRelay scroll container', () => {
     relay.registerScrollContainer(createScrollableElement(childWindow.document, 0))
     expect(postedScrollStates()).toEqual([])
 
+    register({ handlesScrollToEndShortcut: true })
+
+    expect(postedScrollStates()).toContainEqual({ canScroll: true, isAtBottom: false, bottomInset: 0 })
+  })
+
+  it('does nothing when the host does not advertise scroll support', () => {
+    const moveCaretToEnd = jest.fn()
+    const registration = relay.registerScrollContainer(createScrollableElement(childWindow.document, 800), {
+      moveCaretToEnd,
+    })
+
+    registration.notifyContentChange()
     register()
+    registration.notifyContentChange()
+    sendFromHost({ action: ComponentAction.ScrollToEnd, sessionKey: 'session-key', data: { moveCaret: true } })
+
+    expect(postedScrollStates()).toEqual([])
+    expect(moveCaretToEnd).not.toHaveBeenCalled()
+  })
+
+  it('activates immediately when registered after a supported host is ready', () => {
+    register({ handlesScrollToEndShortcut: true })
+    relay.registerScrollContainer(createScrollableElement(childWindow.document, 0))
 
     expect(postedScrollStates()).toContainEqual({ canScroll: true, isAtBottom: false, bottomInset: 0 })
   })
@@ -240,7 +262,7 @@ describe('ComponentRelay scroll container', () => {
   it('scrolls to the end and moves the caret when the host asks', () => {
     const moveCaretToEnd = jest.fn()
     relay.registerScrollContainer(createScrollableElement(childWindow.document, 800), { moveCaretToEnd })
-    register()
+    register({ handlesScrollToEndShortcut: true })
 
     jest.useFakeTimers()
     sendFromHost({ action: ComponentAction.ScrollToEnd, sessionKey: 'session-key', data: { moveCaret: true } })

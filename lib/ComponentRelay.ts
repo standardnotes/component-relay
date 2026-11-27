@@ -55,6 +55,10 @@ export default class ComponentRelay {
   private caretRestoration?: CaretRestoration
   private caretTrackingEnabled = false
   private scrollContainer?: ScrollContainer
+  private scrollContainerRegistration?: {
+    element: HTMLElement
+    options: ScrollContainerOptions
+  }
   private options: ComponentRelayOptions
   private params: Omit<ComponentRelayParams, 'options'>
 
@@ -105,6 +109,7 @@ export default class ComponentRelay {
 
     this.scrollContainer?.dispose()
     this.scrollContainer = undefined
+    this.scrollContainerRegistration = undefined
 
     if (this.messageHandler) {
       this.contentWindow.document.removeEventListener('message', this.messageHandler)
@@ -324,14 +329,13 @@ export default class ComponentRelay {
     // MessageData from the pinned snjs predates this field
     this.component.hostHandlesScrollToEndShortcut =
       (data as { handlesScrollToEndShortcut?: boolean }).handlesScrollToEndShortcut === true
+    this.activateScrollContainer()
 
     for (const message of this.messageQueue) {
       this.postMessage(message.action as ComponentAction, message.data, message.callback)
     }
 
     this.messageQueue = []
-
-    this.scrollContainer?.refresh(true)
 
     Logger.info('Data passed to onReady:', data)
 
@@ -823,14 +827,37 @@ export default class ComponentRelay {
     options: ScrollContainerOptions = {},
   ): ScrollContainerRegistration {
     this.scrollContainer?.dispose()
+    this.scrollContainer = undefined
 
-    const container = new ScrollContainer(element, options, (state) => {
+    const registration = { element, options }
+    this.scrollContainerRegistration = registration
+    this.activateScrollContainer()
+
+    return {
+      notifyContentChange: () => {
+        if (this.scrollContainerRegistration === registration) {
+          this.scrollContainer?.refresh()
+        }
+      },
+    }
+  }
+
+  /** Old hosts omit the capability flag, so registration stays inert until support is explicit. */
+  private activateScrollContainer(): void {
+    if (!this.component.hostHandlesScrollToEndShortcut || !this.scrollContainerRegistration || this.scrollContainer) {
+      return
+    }
+
+    const registration = this.scrollContainerRegistration
+    const { element, options } = registration
+    this.scrollContainer = new ScrollContainer(element, options, (state) => {
+      if (this.scrollContainerRegistration !== registration) {
+        return
+      }
+
       // MessageData from the pinned snjs predates the scroll state fields
       this.postMessage(ComponentAction.ScrollState, state as unknown as MessageData)
     })
-    this.scrollContainer = container
-
-    return { notifyContentChange: () => container.refresh() }
   }
 
   /**
